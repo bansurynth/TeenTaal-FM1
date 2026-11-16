@@ -32,6 +32,16 @@ static int note_cents(const char *s, int32_t *out)
 static int swara_index(const char *s, int32_t *out)
 {
     int k;
+    char base[32];
+    size_t n = strlen(s);
+    if (n > 1 && n < sizeof base && s[n - 1] == '^') {          /* "Ma^": the upper octave (tanpura first string) */
+        memcpy(base, s, n - 1), base[n - 1] = 0;
+        if (swara_index(base, out) == 0 && *out + 12 <= TANPURA_FIRST_MAX) {
+            *out += 12;
+            return 0;
+        }
+        return -1;
+    }
     for (k = 0; k < SW_N; k++)
         if (!strcmp(s, tuning_swara_name(k))) {
             *out = k;

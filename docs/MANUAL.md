@@ -82,7 +82,7 @@ SELECT picks the row, PRESETS changes the value, HOME goes back. The dots at the
 | Deepchandi | 14 | 3+4+3+4 | Dha Dhin –, Dha Dha Tin –, Ta Tin –, Dha Dha Dhin – |
 | Dhamar | 14 | 5+2+3+4 | Ka Dhi Te Dhi Te, Dha –, Ga Ti Te, Ti Te Ta – |
 | Chautaal | 12 | 2×6 | Dha Dha, Din Ta, KiTa Dha, Din Ta, TiTa KaTa, GaDi GaNa |
-
+| Addha | 16 | 4+4+4+4 | Dha TiRaKiTa Dhin Na, Ta TiRaKiTa Dhin Na, Dha TiRaKiTa Dhin Na, Dha-Dha TiRaKiTa Dhin Na (Punjabi theka; variants exist) |
 Tempo: 20 to 600 matras a minute. At slow (vilambit) tempos the theka is played as it is, without the fillers a tabla
 player would add. Thekas vary between schools; the sources are in each file of `data/taal/`. To add a taal, write a
 new file there (format: [data/taal/FORMAT.md](../data/taal/FORMAT.md)) and rebuild the firmware.

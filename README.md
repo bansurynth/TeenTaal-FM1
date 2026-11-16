@@ -25,7 +25,7 @@ repository or check the [Releases](https://github.com/ELENICK97/TeenTaal-FM1/rel
   with the bridge, the slow swell of the body, a plucking cycle with a human irregularity. Sa tunable in cents, A
   reference 415–466 Hz, fine tuning of every string.
 - **Tabla** — recorded strokes (dayan tuned to your Sa, bayan at its own pitch), played by a **taal engine** with ten
-  taals: Teentaal, Ektaal, Jhaptaal, Rupak, Keherwa, Dadra, Jhoomra, Deepchandi, Dhamar, Chautaal. Tempo from 20 to
+  taals: Teentaal, Ektaal, Jhaptaal, Rupak, Keherwa, Dadra, Jhoomra, Deepchandi, Dhamar, Chautaal, Addha. Tempo from 20 to
   600 matras a minute, changed without jumps; the screen shows the matra, **sam (X)** and **khali (0)**. New taals
   can be added by writing a small text file ([data/taal/FORMAT.md](data/taal/FORMAT.md)).
 - **Reference tone** — a clean sine on any swara, in three octaves; hold a key to hear its swara, like an harmonium.

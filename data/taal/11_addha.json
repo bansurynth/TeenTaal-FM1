@@ -1,0 +1,10 @@
+{
+  "name": "Addha",
+  "matras": 16,
+  "vibhag": [4, 4, 4, 4],
+  "marks": ["X", "2", "0", "3"],
+  "theka": ["Dha","Ti-Ra-Ki-Ta","Dhin","Na", "Ta","Ti-Ra-Ki-Ta","Dhin","Na",
+            "Dha","Ti-Ra-Ki-Ta","Dhin","Na", "Dha-Dha","Ti-Ra-Ki-Ta","Dhin","Na"],
+  "tempo": 160,
+  "source": "Punjabi / Sikh kirtan theka as printed on hindigeet.in/taal/addha (Dha tirkit dhin na | Ta tirkit dhin na | Dha tirkit dhin na | Dha dha tirkit dhin na); the last vibhag's Dha dha is read as two halves of one matra to keep 16 matras. Variants exist between schools: to be confirmed by ElectroNick"
+}

@@ -3,7 +3,7 @@
 > Versione italiana. English: [MANUAL.md](MANUAL.md). Firmware generato con l'IA (Claude) e provato solo negli emulatori: si usa a proprio rischio (vedi il Disclaimer in [README.md](../README.md#disclaimer)).
 
 TeenTaal trasforma l'FM-1 in uno strumento per esercitarsi nella musica classica indiana: un **tanpura**, i
-**tabla** che suonano dieci taal, e un **tono di riferimento** per l'intonazione. Tutto si suona da una sola
+**tabla** che suonano undici taal, e un **tono di riferimento** per l'intonazione. Tutto si suona da una sola
 schermata. All'accensione è tutto spento; le impostazioni salvate tornano come le avevi lasciate.
 
 ## La schermata
@@ -71,7 +71,7 @@ dove sei nell'elenco.
 ## I taal
 
 Teentaal (16), Ektaal (12), Jhaptaal (10), Rupak (7), Keherwa (8), Dadra (6), Jhoomra (14), Deepchandi (14),
-Dhamar (14), Chautaal (12). Il tempo va da 20 a 600 matra al minuto. Ogni taal suona la sua theka; le fonti sono
+Dhamar (14), Chautaal (12), Addha (16). Il tempo va da 20 a 600 matra al minuto. Ogni taal suona la sua theka; le fonti sono
 nei file `data/taal/`. Per aggiungere un taal basta scrivere un file nuovo (formato in `data/taal/FORMAT.md`) e
 ricompilare.
 

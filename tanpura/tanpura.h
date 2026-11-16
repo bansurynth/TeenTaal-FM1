@@ -10,7 +10,7 @@
  *
  * Parameters (tanpura_set_param), besides the shared tuning (DSP_P_A4_DHZ, DSP_P_SA_CENTS):
  *   TANPURA_P_ON        0 / 1      1 starts the cycle; 0 stops plucking and fades out in 0.3 s
- *   TANPURA_P_FIRST     0..11      the first string's swara (SW_PA default; SW_MA, SW_NI, SW_NI_K, any)
+ *   TANPURA_P_FIRST     0..17      the first string's swara (SW_PA default; 12..17: the upper Sa .. Ma shuddha)
  *   TANPURA_P_JAWARI    0..100     the thread position: 0 = 4 mm (short jvari) .. 100 = 8 mm (long); 50 = 6 mm
  *   TANPURA_P_CYCLE     25..80     the cycle in tenths of a second (default 50: 5 s)
  *   TANPURA_P_PHASE     0..100     the plucks' offset in % of the cycle (default 0; moves a running cycle too)
@@ -32,6 +32,7 @@
 #include "tanpura/tstring.h"
 
 #define TANPURA_NSTR 4
+#define TANPURA_FIRST_MAX 17                     /* the first string: SW_SA..SW_NI, then the upper Sa .. Ma shuddha */
 #define TANPURA_OS 2                             /* the strings run at DSP_FS / TANPURA_OS */
 #define TANPURA_FS (DSP_FS / (float)TANPURA_OS)
 

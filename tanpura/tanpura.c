@@ -70,7 +70,7 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
 {
     float cents = (float)(m->fine[j] + reg_offset(m)), r, rho, E;
     if (j == 0)
-        cents += tuning_swara_cents(m->first) - 1200.0f;
+        cents += 100.0f * (float)m->first - 1200.0f;   /* 12..17: the upper Sa .. Ma, above the player's Sa */
     else if (j == 3)
         cents -= 1200.0f;
     /* the instrument follows Sa (step 2b): the large tanpura (1.1 m, steel 0.16 mm, kharaj bronze 0.25 mm) at Sa A2
@@ -203,7 +203,7 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
         for (j = 0; j < TANPURA_NSTR; j++)
             stage(m, j);
         break;
-    case TANPURA_P_FIRST:  m->first = clampi(v, 0, SW_N - 1); stage(m, 0); break;
+    case TANPURA_P_FIRST:  m->first = clampi(v, 0, TANPURA_FIRST_MAX); stage(m, 0); break;
     case TANPURA_P_JAWARI:
         m->jawari = clampi(v, 0, 100);
         for (j = 0; j < TANPURA_NSTR; j++)
