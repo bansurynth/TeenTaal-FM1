@@ -23,10 +23,10 @@
 static const char *const UI_SWARA[TANPURA_FIRST_MAX + 1] = {"SA", "RE KOMAL", "RE", "GA KOMAL", "GA", "MA", "MA TIVRA", "PA",
                                            "DHA KOMAL", "DHA", "NI KOMAL", "NI", "SA'", "RE KOMAL'", "RE'",
                                            "GA KOMAL'", "GA'", "MA'"};
-enum { ROW_FIRST, ROW_FINE0, ROW_FINE1, ROW_FINE2, ROW_FINE3, ROW_REGISTER, ROW_CYCLE, ROW_TAN2, ROW_TAN2_FIRST,
+enum { ROW_FIRST, ROW_FINE0, ROW_FINE1, ROW_FINE2, ROW_FINE3, ROW_CYCLE, ROW_TAN2, ROW_TAN2_FIRST,
        ROW_TAN2_PHASE, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, NROWS };
 static const char *const ROW_NAME[NROWS] = {"FIRST STRING", "FINE: 1ST STRING", "FINE: SA (2ND)", "FINE: SA (3RD)",
-                                            "FINE: KHARAJ", "TANPURA REGISTER", "PLUCK CYCLE", "2ND TANPURA", "2ND: FIRST STRING",
+                                            "FINE: KHARAJ", "PLUCK CYCLE", "2ND TANPURA", "2ND: FIRST STRING",
                                             "2ND: PHASE", "TANPURA IRREG.", "TABLA IRREG.", "TONE SWARA",
                                             "A REFERENCE"};
 #define UI_ROWS_SHOWN 7
@@ -69,7 +69,7 @@ static void ui_settings_now(ui_settings_t *p)
     p->a4_dhz = ui_get(ENG_ALL, DSP_P_A4_DHZ);
     p->sa_cents = ui_get(ENG_ALL, DSP_P_SA_CENTS);
     p->first = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_FIRST);
-    p->reg = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_REGISTER);
+    p->reg = 0;                     /* (the tanpura plays at the note shown: no register) */
     for (j = 0; j < TANPURA_NSTR; j++)
         p->fine[j] = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_FINE + j);
     p->jawari = (uint8_t)ui_get(ENG_TANPURA, TANPURA_P_JAWARI);
@@ -89,7 +89,7 @@ static void ui_settings_now(ui_settings_t *p)
     p->vol_tone = (uint8_t)ui_get(ENG_REFTONE, REFTONE_P_VOLUME);
 }
 
-/* Sa on the device: the engine's whole range (tuning.h: F#2 .. G4, default A3; the tanpura an octave under it) */
+/* Sa on the device: the engine's whole range (tuning.h: F#2 .. G4, default A3): the tanpura plays at the note shown */
 #define UI_SA_MIN TUNING_SA_MIN
 #define UI_SA_MAX TUNING_SA_MAX
 #define UI_SA_DEFAULT TUNING_SA_DEFAULT
@@ -130,7 +130,6 @@ static void ui_settings_apply(const ui_settings_t *p)
     engine_set_param(ui_eng, ENG_ALL, DSP_P_A4_DHZ, p->a4_dhz);
     engine_set_param(ui_eng, ENG_ALL, DSP_P_SA_CENTS, ui_sa_fold(p->sa_cents));   /* (an older record: the same note, in the central octave) */
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_FIRST, p->first);
-    engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_REGISTER, p->reg);
     for (j = 0; j < TANPURA_NSTR; j++)
         engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_FINE + j, p->fine[j]);
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_JAWARI, p->jawari);
@@ -169,6 +168,7 @@ static void ui_init_state(engine_t *e)
     ui_eng = e;
     engine_set_param(e, ENG_ALL, DSP_P_A4_DHZ, TUNING_A4_DHZ_DEFAULT);
     engine_set_param(e, ENG_ALL, DSP_P_SA_CENTS, UI_SA_DEFAULT);
+    engine_set_param(e, ENG_TANPURA, TANPURA_P_REGISTER, 0);
     if (plat_store_load(OBJ_SETTINGS, &s, sizeof s) == (int)sizeof s && ui_settings_valid(&s)) {
         ui_settings_apply(&s);
         ui_loaded = 1;
@@ -316,18 +316,15 @@ static void ui_taal(void)
 static void ui_main(void)
 {
     char t[48], u[24];
-    int32_t sa = ui_get(ENG_ALL, DSP_P_SA_CENTS), tsa = ui_get(ENG_TANPURA, TANPURA_P_SA_NOW);
+    int32_t tsa = ui_get(ENG_TANPURA, TANPURA_P_SA_NOW);
     int32_t ton = ui_get(ENG_TANPURA, TANPURA_P_ON), jw = ui_get(ENG_TANPURA, TANPURA_P_JAWARI);
     int32_t on = ui_get(ENG_REFTONE, REFTONE_P_ON), sw = ui_get(ENG_REFTONE, REFTONE_P_SWARA);
     int32_t oct = ui_get(ENG_REFTONE, REFTONE_P_OCTAVE), x;
     /* Sa */
     cv_begin(240, 26, C_BLACK);
-    x = cv_text(10, 6, &FONT_XS, "SA", C_GRAY);
-    ui_note(t, sa, 1);
-    cv_text(x + 6, 0, &FONT_B, t, C_HI);
-    x = cv_text(130, 6, &FONT_XS, "TANPURA", C_GRAY);
+    x = cv_text(10, 6, &FONT_XS, "TANPURA", C_GRAY);
     ui_note(t, tsa, 0);
-    cv_text(x + 6, 0, &FONT_B, t, C_WHITE);
+    cv_text(x + 6, 0, &FONT_B, t, C_HI);
     cv_blit(0, 32);
     ui_taal();
     /* the tanpura, the tone, the tabla's volume: a line each */
@@ -372,7 +369,6 @@ static void ui_row_value(char *t, int row)
     t[0] = 0;
     switch (row) {
     case ROW_FIRST:    ui_cat(t, UI_SWARA[ui_get(ENG_TANPURA, TANPURA_P_FIRST)]); break;
-    case ROW_REGISTER: ui_cat(t, ui_get(ENG_TANPURA, TANPURA_P_REGISTER) ? "OCTAVE BELOW" : "AT SA"); break;
     case ROW_A4:       ui_dec1(t, ui_get(ENG_ALL, DSP_P_A4_DHZ)); ui_cat(t, " HZ"); break;
     case ROW_CYCLE:    ui_dec1(t, ui_get(ENG_TANPURA, TANPURA_P_CYCLE)); ui_cat(t, " S"); break;
     case ROW_TAN2:     ui_cat(t, ui_get(ENG_TANPURA2, TANPURA_P_ON) ? "ON" : "OFF"); break;
@@ -434,7 +430,6 @@ static void ui_edit_step(int row, int32_t d)
     case ROW_FIRST:
         ui_set(ENG_TANPURA, TANPURA_P_FIRST, clamp(ui_get(ENG_TANPURA, TANPURA_P_FIRST) + d, 0, TANPURA_FIRST_MAX));
         break;
-    case ROW_REGISTER: ui_set(ENG_TANPURA, TANPURA_P_REGISTER, d > 0); break;
     case ROW_A4:       ui_set(ENG_ALL, DSP_P_A4_DHZ, ui_get(ENG_ALL, DSP_P_A4_DHZ) + d); break;
     case ROW_CYCLE:    ui_set(ENG_TANPURA, TANPURA_P_CYCLE, ui_get(ENG_TANPURA, TANPURA_P_CYCLE) + d); break;
     case ROW_TAN2:     ui_set(ENG_TANPURA2, TANPURA_P_ON, d > 0); break;
@@ -459,13 +454,12 @@ static void ui_sa_key(int k)
 {
     int32_t sa = ui_get(ENG_ALL, DSP_P_SA_CENTS), semi = (sa >= 0 ? sa + 50 : sa - 49) / 100;
     int32_t off = sa - 100 * semi, c = (k - 7) * 100;     /* key 7 = C4 */
-    while (c > 600)                                       /* the keys span G3 .. F#4: G is the low Sa (tanpura G2) */
+    while (c > 600)                                       /* the keys span G3 .. F#4 */
         c -= 1200;
     while (c < -500)
         c += 1200;
     c += off;
     ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_fold(c));
-    ui_set(ENG_TANPURA, TANPURA_P_REGISTER, c < -350);   /* from A3 up the tanpura plays at Sa, below it an octave under (still changeable by hand) */
 }
 
 /* the semitone of Sa (middle), nearest */
