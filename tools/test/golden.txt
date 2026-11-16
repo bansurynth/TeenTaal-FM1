@@ -12,8 +12,8 @@ render/ref_changes bca62885fe75784b
 render/tan_single_A2 64dab7a349e737cf
 render/tan2_phase0_Ma d6679af79a5659bb
 render/tan_A2_default aa895999e4af63cf
-render/tan_A2_Ma_high ca3f4eca46bca0bf
-render/tan_G4_Ma_high 0713198b8d3c379f
+render/tan_A2_Ma_high 96aef9fe873b7df7
+render/tan_G4_Ma_high 74dfbfa97448e6d7
 render/tan_Fs2_j0_Ma 9105bab4768c369b
 render/tan_G4_j100_Ni 3080bb176bba1f07
 render/tan_retune 04386746bdb2a487

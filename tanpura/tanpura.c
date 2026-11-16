@@ -68,7 +68,7 @@ static int32_t reg_offset(const tanpura_t *m)
 /* the string parameters for string j at the current settings */
 static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
 {
-    float cents = (float)(m->fine[j] + reg_offset(m)), r, rho, E;
+    float cents = (float)(m->fine[j] + reg_offset(m)), r, rho, E, k = 1.0f;
     if (j == 0)
         cents += 100.0f * (float)m->first - 1200.0f;   /* 12..17: the upper Sa .. Ma, above the player's Sa */
     else if (j == 3)
@@ -80,7 +80,10 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
         float t = fm_clampf(((float)(m->tuning.sa_cents + reg_offset(m)) + 1500.0f) * (1.0f / 1200.0f), 0.0f, 1.83f);
         p->L = 1.1f - 0.25f * t;
         if (j == 0 && m->first > SW_NI)          /* an upper note on the long string: it shortens in step with the pitch: the tension, and so the metallic buzz, stay as for the lower notes (measured: 2-6 kHz energy -8 dB without, -25 dB with) */
-            p->L *= fm_exp2f(-(float)(100 * m->first - 1200) * (1.0f / 1200.0f));
+        {
+            k = fm_exp2f(-(float)(100 * m->first - 1200) * (1.0f / 1200.0f));
+            p->L *= k;
+        }
         if (j == 3)
             r = (0.25f - 0.07f * t) * 1e-3f, rho = 8800.0f, E = 1.1e11f;   /* kharaj: bronze */
         else
@@ -89,7 +92,7 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
     p->rhoA = rho * FM_PI * r * r;
     p->EI = E * 0.25f * FM_PI * r * r * r * r;
     p->f1 = tuning_hz(&m->tuning, cents);
-    p->s0 = m->cfg.s0, p->s1 = 6.5e-3f, p->s3 = 5.0e-6f;     /* Table 1, s0 from step 2a */
+    p->s0 = m->cfg.s0, p->s1 = 6.5e-3f * k, p->s3 = 5.0e-6f * k * k * k;     /* Table 1, s0 from step 2a; on the shortened string (k < 1) the same damping at the same frequency, so the jawari lasts as long */
     p->xb = 10e-3f, p->wb = 2.0e-3f, p->kb = 4.39e8f;
     p->xc = 4e-3f + 4e-3f * (float)m->jawari * 0.01f, p->wc = 1.2e-3f, p->kc = 1.2e5f, p->rc = m->cfg.rc;
     p->xe = 0.35f * p->L, p->we = 0.02f;
