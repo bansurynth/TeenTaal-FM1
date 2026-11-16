@@ -79,6 +79,8 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
     {
         float t = fm_clampf(((float)(m->tuning.sa_cents + reg_offset(m)) + 1500.0f) * (1.0f / 1200.0f), 0.0f, 1.83f);
         p->L = 1.1f - 0.25f * t;
+        if (j == 0 && m->first > SW_NI)          /* an upper note on the long string: it shortens in step with the pitch: the tension, and so the metallic buzz, stay as for the lower notes (measured: 2-6 kHz energy -8 dB without, -25 dB with) */
+            p->L *= fm_exp2f(-(float)(100 * m->first - 1200) * (1.0f / 1200.0f));
         if (j == 3)
             r = (0.25f - 0.07f * t) * 1e-3f, rho = 8800.0f, E = 1.1e11f;   /* kharaj: bronze */
         else
