@@ -1,5 +1,18 @@
 # PROGRESS
 
+## Iterazione autorizzata (ElectroNick, 2026-11-12) — tanpura
+
+### Piano
+1. Anticipare il secondo pizzico e ridistribuire il ciclo a 4 s: attacchi nominali a 0, 0,8, 1,4 e 2,0 s.
+2. Aggiungere al tanpura un parametro Echo regolabile 0–100%, default 0, con ripetizioni in decadimento e ritardo fisso di 400 ms.
+3. Esporre Echo nella pagina EDIT, includerlo nelle impostazioni salvate e aggiornare la documentazione dei controlli.
+4. Verificare regressione hash e costo CPU, intervalli del ciclo, echo disattivato/attivo e simulatore host; ricostruire il firmware browser e provarlo nell’emulatore locale.
+
+### Verifica e STOP
+- `make test` e lo scenario del simulatore passano; misurare il render con echo al 100% contro il budget del secondo core.
+- In browser, controllare che il tanpura resti invariato a Echo 0 e che a Echo 100% le code si ripetano senza click né saturazione.
+- Al termine aggiornare qui risultati, misure e limiti, poi fermarsi in attesa dell’approvazione di ElectroNick.
+
 ## Step corrente: 8 — Integrazione — **completato** (ElectroNick, 2026-11-08: "everything is okay"); pubblicazione preparata
 
 ### Risposte di ElectroNick (2026-11-08) e pubblicazione

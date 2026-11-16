@@ -14,7 +14,7 @@ By **ElectroNick** — <https://github.com/ELENICK97>
 > unofficial firmware can leave an FM-1 unable to start. **Use it at your own risk.** Read the
 > [Disclaimer](#disclaimer) before installing.
 
-**Status: version 1.0, still to be fully tested.** Every feature works in the emulators; nothing has been checked on
+**Status: version 1.1, still to be fully tested.** Every feature works in the emulators; nothing has been checked on
 the device yet (CPU load, speaker sound, real flash timings). Updates are likely in the near future: watch the
 repository or check the [Releases](https://github.com/ELENICK97/TeenTaal-FM1/releases).
 
@@ -81,5 +81,5 @@ and the other sources: [CREDITS.md](CREDITS.md).
 - **Hearing.** Check the volume (MASTER) before you start, especially with headphones.
 - **Not affiliated** with M-VAVE. M-VAVE and FM-1 are trademarks of their owners. The tabla thekas follow published
   sources; schools differ, and nothing here is a teaching authority.
-- **Updates.** Version 1.0 is a first release. Expect fixes and changes; feedback from tests on real FM-1s is welcome
+- **Updates.** Version 1.1 follows the first release (1.0). Expect fixes and changes; feedback from tests on real FM-1s is welcome
   through the repository's Issues.

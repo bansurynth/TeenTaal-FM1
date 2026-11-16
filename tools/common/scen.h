@@ -7,6 +7,7 @@
  *   mix.tanpura= mix.tabla= mix.ref=   0..100
  *   master=0..4096       MASTER's gain as the platform passes it (default 4096)
  *   tan.on=1  tan.first=Pa (or 0..11)  tan.jawari=0..100  tan.cycle=25..80 (tenths of s)  tan.human=0..100
+ *   tan.echo=0..100 (400 ms feedback echo; default 0)
  *   tan.fine0..3=-50..50 (cents)  tan.vol0..3=0..100  tan.reg=0/1 (1: an octave under Sa, the default)
  *   tab.hit=Dha  tab.hit=Dha/60    a bol (data/tabla/bols.json), dynamic 0..127 (default 100)   tab.stop=1
  *   taal.on=1  taal.taal=Ektaal (or 0..9)  taal.mpm=20..600  taal.human=0..100

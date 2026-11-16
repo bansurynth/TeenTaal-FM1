@@ -134,7 +134,7 @@ void mod_render(mod_t *m, int32_t *out, int n_samples);  /* somma in out: mono, 
 ### Budget (aggiornato allo step 0; percentuali di un core a 360 MHz = 8160 cicli/campione)
 | Modulo | CPU max | Cicli/campione | Flash (codice+tabelle) | RAM |
 |---|---|---|---|---|
-| Tanpura | **secondo core**: max 85% del core 1 (deciso allo step 2b) | ~6940 | 64 KB | 64 KB |
+| Tanpura | **secondo core**: max 85% del core 1 (deciso allo step 2b) | ~6940 | 64 KB | 82 KB |
 | Tabla | 30% | ~2450 | 64 KB + **campioni registrati** nell'area dati, ~160 KB (deciso da ElectroNick allo step 4: vedi `DECISIONS.md`) | 48 KB |
 | Taal, reftone, mixer | 5% | ~410 | 32 KB | 8 KB |
 | UI e sistema | resto, con almeno il 20% di margine | | UI 100 KB; piattaforma ~79 KB | |
@@ -161,7 +161,7 @@ Le percentuali CPU sono stime finché non c'è una misura `plat_cpu_pct()` sul d
   - risposta passa-alto del corpo: dà la sensazione che il suono cresca nei primi ~500 ms; va realizzata con filtri IIR, non con i FIR del paper
   - smorzamento dipendente dalla frequenza (σ0, σ1, σ3)
 - Limiti noti del modello per il nostro target: costo proporzionale al numero di modi (fino a Nyquist nel paper), stabilità dimostrata solo in aritmetica esatta, eccesso di alte frequenze a 44.1 kHz senza sovracampionamento. Ogni riduzione (meno modi, virgola fissa, scalature) va documentata in `DECISIONS.md` con il suo effetto misurato rispetto al riferimento.
-- Parametri: quantità di jawari (posizione del filo), velocità del ciclo di pizzico, leggera irregolarità umana dei tempi e delle dinamiche, volume per corda.
+- Parametri: quantità di jawari (posizione del filo), velocità del ciclo di pizzico, leggera irregolarità umana dei tempi e delle dinamiche, volume per corda, echo 0–100% (ritardo fisso 400 ms, ripetizioni in decadimento, spento di default).
 - Ciclo di pizzico classico: prima corda, Sa, Sa, Sa grave, con pausa prima di ricominciare.
 
 ### Tabla

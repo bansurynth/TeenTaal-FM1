@@ -20,7 +20,7 @@ settings live on one separate page (EDIT).
 | ALGORITHM | jawari | jawari |
 | KNOB1 | tempo (SEL: ×10) | tempo |
 | KNOB2, KNOB3, KNOB4 | tanpura, tabla, tone volume | the same |
-| EDIT / HOME | to the EDIT page / back | |
+| EDIT / HOME | to the EDIT page / back | cycle, echo, first string, tuning, irregularity, and other settings |
 | SAVE | save the settings (fade, write, fade back) | the same |
 | FX, ENV, LFO, GLO, REC | not used | |
 

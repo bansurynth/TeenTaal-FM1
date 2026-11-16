@@ -49,6 +49,10 @@ Il Sa di default è **La3 (220 Hz)**, adatto a un bansuri in La (il Sa del flaut
 in Sol: **SEL + il primo tasto Sol a sinistra** (Sol3, 196 Hz). Il tanpura suona un'ottava sotto il tuo Sa (si può cambiare in EDIT → TANPURA
 REGISTER). Il dayan dei tabla si accorda da solo sul Sa.
 
+Il ciclo predefinito del tanpura pizzica la prima corda, Sa, Sa e la kharaj grave a 0, 0,8, 1,4 e 2,0 secondi
+del ciclo di 4 secondi, poi fa una pausa di 2 secondi. EDIT → TANPURA ECHO aggiunge ripetizioni in decadimento con
+ritardo fisso di 400 ms: 0% è spento, 100% è il livello massimo.
+
 ## Le impostazioni (EDIT)
 
 SELECT sceglie la riga, PRESETS cambia il valore, HOME torna alla schermata principale. I puntini in basso mostrano
@@ -60,6 +64,7 @@ dove sei nell'elenco.
 | FINE: 1ST STRING, SA (2ND), SA (3RD), KHARAJ | accordatura fine di ogni corda, ±50 cents |
 | TANPURA REGISTER | il tanpura un'ottava sotto il Sa, o sul Sa stesso |
 | PLUCK CYCLE | la durata del ciclo di pizzico (2,5–8 s) |
+| TANPURA ECHO | echo 0–100%, ritardo di 400 ms e ripetizioni in decadimento; spento di default |
 | TANPURA IRREG. | quanto il pizzico è irregolare, come una mano vera |
 | TABLA IRREG. | lo stesso per i tabla (tempi e forza dei colpi) |
 | TONE SWARA | lo swara del tono acceso con ARP |
@@ -75,7 +80,7 @@ ricompilare.
 ## Salvare
 
 **SAVE** salva: Sa, La di riferimento, il taal e il tempo, i tre volumi, jawari, prima corda, accordature fini,
-registro e ciclo del tanpura, le irregolarità, swara e ottava del tono. Non salva se le sorgenti sono accese:
+registro, ciclo ed echo del tanpura, le irregolarità, swara e ottava del tono. Non salva se le sorgenti sono accese:
 all'accensione l'FM-1 parte in silenzio. Durante il salvataggio il suono si abbassa per un istante (meno di un decimo di secondo): la scrittura nella
 memoria flash ferma l'audio per circa 12 ms, e il firmware sfuma prima e dopo per non fare un click.
 

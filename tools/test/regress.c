@@ -57,6 +57,7 @@ static scenario_t SC[] = {
                         "3.7:ref.on=1", "4.0:master=1000", "4.5:mix.ref=50", "5.0:ref.on=0"}, 0, 0, 5.1, 0, 0},
     /* the tanpura (step 2b) */
     {"tan_A2_default", 8, {"0:sa=A2", "0:tan.on=1"}, 0, 0, -1, 1, 0},
+    {"tan_echo_100", 8, {"0:sa=A2", "0:tan.human=0", "0:tan.echo=100", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_Fs2_j0_Ma", 6, {"0:sa=F#2", "0:tan.jawari=0", "0:tan.first=Ma", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_G4_j100_Ni", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.jawari=100", "0:tan.first=Ni", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_retune", 6, {"0:sa=A2", "0:tan.on=1", "1:sa=A2+30", "1.5:tan.jawari=10", "2:tan.first=Ma", "2.5:sa=D3",
@@ -98,7 +99,8 @@ static void tanpura_pct(const tanpura_t *t, double *lo, double *hi)
     for (j = 0; j < TANPURA_NSTR; j++)
         steps += t->str[j].c.M;
     steps /= TANPURA_OS;
-    instr = steps * 31.6 + (4 * 90 + 24 * 14) / (double)TANPURA_OS + 40;
+    instr = steps * 31.6 + (4 * 90 + 24 * 14) / (double)TANPURA_OS + 40
+            + (double)(DSP_BLOCK / TANPURA_OS) * (6 + (t->echo ? 5 : 0));
     *lo = instr * 1.0 / FM1_CYCLES_PER_SAMPLE * 100;
     *hi = instr * 1.3 / FM1_CYCLES_PER_SAMPLE * 100;
 }
@@ -111,6 +113,23 @@ static void check(const char *sc, const char *what, int ok, const char *detail)
     printf("  %-4s %-20s %-34s %s\n", ok ? "ok" : "FAIL", sc, what, detail ? detail : "");
     if (!ok)
         fails++;
+}
+
+static void tanpura_cycle_checks(void)
+{
+    tanpura_t t;
+    int32_t d01, d12, d23;
+    char buf[128];
+    tanpura_init(&t, 0);
+    tanpura_set_param(&t, TANPURA_P_HUMAN, 0);
+    tanpura_set_param(&t, TANPURA_P_ON, 1);
+    tanpura_take(&t);
+    d01 = t.due[1] - t.due[0];
+    d12 = t.due[2] - t.due[1];
+    d23 = t.due[3] - t.due[2];
+    snprintf(buf, sizeof buf, "%.3f, %.3f, %.3f s",
+             (double)d01 / TANPURA_FS, (double)d12 / TANPURA_FS, (double)d23 / TANPURA_FS);
+    check("tan_cycle", "pluck intervals", d01 == 17647 && d12 == 13235 && d23 == 13235, buf);
 }
 
 static uint64_t fnv1a(const int32_t *x, size_t n)
@@ -293,6 +312,7 @@ int main(int argc, char **argv)
     SC[7].f_max = SC[2].f_expect;                   /* Sa C#3 throughout */
     SC[8].f_max = ref_hz(440, -800, pow(2, 11 / 12.0), 1);   /* Ni, tar, Sa = E3: the highest the scenario reaches */
 
+    tanpura_cycle_checks();
     for (s = 0; s < NSC; s++) {
         static scen_run_t r;
         scen_ev_t ev[48];
@@ -408,6 +428,10 @@ int main(int argc, char **argv)
         }
         snprintf(buf, sizeof buf, "%u", r.eng.mixer.clips);
         check(sc->name, "no clipping", r.eng.mixer.clips == 0, buf);
+        if (!strcmp(sc->name, "tan_echo_100")) {
+            snprintf(buf, sizeof buf, "%u", r.eng.tanpura.echo_clips);
+            check(sc->name, "no echo saturation", r.eng.tanpura.echo_clips == 0, buf);
+        }
         (void)i;
         free(lr);
     }

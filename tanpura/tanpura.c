@@ -39,7 +39,7 @@ static float level_comp(const tanpura_t *m)
 #define PLUCK_AMP (-0.4f)          /* N, toward the bridge (the paper's) */
 #define PLUCK_TAU 0.05f            /* s */
 #define FADE_OUT_S 0.3f
-static const float CYCLE_AT[TANPURA_NSTR] = {0.0f, 0.30f, 0.45f, 0.60f};
+static const float CYCLE_AT[TANPURA_NSTR] = {0.0f, 0.20f, 0.35f, 0.50f};
 
 static int32_t clampi(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : v > hi ? hi : v; }
 
@@ -145,6 +145,7 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
         tanpura_default_config(&m->cfg);
     m->tuning = m->cfg.tuning;
     m->on = 0, m->first = SW_PA, m->jawari = 50, m->cycle = 40, m->human = 50, m->reg = 1, m->start_req = 0;
+    m->echo = 0, m->echo_gain = 0.0f, m->echo_pos = 0, m->echo_clips = 0;
     for (j = 0; j < TANPURA_NSTR; j++)
         m->fine[j] = 0, m->vol[j] = 100;
     m->rng = m->cfg.seed ? m->cfg.seed : 1u;
@@ -160,6 +161,8 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
     m->xd1 = m->xn1 = 0.0f;
     for (k = 0; k < (int)(sizeof m->up / sizeof m->up[0]); k++)
         m->up[k] = 0.0f;
+    for (k = 0; k < TANPURA_ECHO_SAMPLES; k++)
+        m->echo_buf[k] = 0;
     m->lp[0][0] = m->lp[0][1] = m->lp[1][0] = m->lp[1][1] = 0.0f;
     m->eqs[0] = m->eqs[1] = 0.0f;
     m->gain = 0.0f;
@@ -206,6 +209,7 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
         break;
     case TANPURA_P_CYCLE:  m->cycle = clampi(v, 25, 80); break;
     case TANPURA_P_HUMAN:  m->human = clampi(v, 0, 100); break;
+    case TANPURA_P_ECHO:   m->echo = clampi(v, 0, 100); break;
     default: break;
     }
 }
@@ -224,6 +228,7 @@ int32_t tanpura_get_param(const tanpura_t *m, int id)
     case TANPURA_P_HUMAN:  return m->human;
     case TANPURA_P_REGISTER: return m->reg;
     case TANPURA_P_SA_NOW: return m->tuning.sa_cents + reg_offset(m);
+    case TANPURA_P_ECHO:   return m->echo;
     default:               return 0;
     }
 }
@@ -244,6 +249,10 @@ void tanpura_take(tanpura_t *m)
                 m->stage_ready[j] = 0;
             }
     if (m->start_req) {
+        int k;
+        for (k = 0; k < TANPURA_ECHO_SAMPLES; k++)
+            m->echo_buf[k] = 0;
+        m->echo_pos = 0;
         start_cycle(m);
         m->active = 1;
         m->start_req = 0;
@@ -278,8 +287,10 @@ void tanpura_render(tanpura_t *m, int32_t *out, int n)
 {
     float g0 = m->gain, g1, dg, *x = m->up + 2 * UPS_K;   /* x[-2K..-1]: the history, x[0..ns-1]: this block */
     float c0 = m->comp, c1 = m->comp_target, dc;
+    float eg0 = m->echo_gain, eg1 = (float)m->echo * 0.0035f, deg;
     int i, j, k, ns = n / TANPURA_OS;
     dc = (c1 - c0) / (float)ns;
+    deg = (eg1 - eg0) / (float)ns;
     if (!m->active)
         return;
     for (i = 0; i < ns; i++)
@@ -309,9 +320,20 @@ void tanpura_render(tanpura_t *m, int32_t *out, int n)
             m->lp[k][1] = UPS_LP[k][2] * p - UPS_LP[k][4] * yv;
             p = yv;
         }
-        x[i] = p * TANPURA_LEVEL * (c0 + dc * (float)(i + 1));
+        {
+            float dry = p * TANPURA_LEVEL * (c0 + dc * (float)(i + 1));
+            float delayed = (float)m->echo_buf[m->echo_pos] * (1.0f / 32767.0f);
+            float eg = eg0 + deg * (float)(i + 1);
+            float y = dry + delayed * eg;
+            if (y > 1.0f || y < -1.0f)
+                m->echo_clips++;
+            m->echo_buf[m->echo_pos] = (int16_t)(fm_clampf(y, -1.0f, 1.0f) * 32767.0f);
+            if (++m->echo_pos == TANPURA_ECHO_SAMPLES)
+                m->echo_pos = 0;
+            x[i] = y;
+        }
     }
-    m->comp = c1;
+    m->comp = c1, m->echo_gain = eg1;
     /* up to the FM-1's rate (upsample_coefs.h), with the on/off fade */
     if (m->restart)                              /* a large retune: out in 20 ms */
         g1 = g0 - (float)n / (0.02f * DSP_FS) < 0.0f ? 0.0f : g0 - (float)n / (0.02f * DSP_FS);

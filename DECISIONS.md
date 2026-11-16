@@ -4,6 +4,13 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
+### 2026-11-12 — Nuova iterazione del tanpura: ciclo ed echo (approvata da ElectroNick)
+- **Ciclo**: attacchi nominali a 0, 20, 35 e 50% di un ciclo di 4 s: Pa, Sa, Sa, kharaj a 0, 0,8, 1,4 e 2,0 s; restano 2 s di pausa prima del ciclo seguente. Si conserva il ritardo interno di 20 ms e l'irregolarità già esistente.
+- **Echo**: impostazione 0–100%, default 0, ritardo fisso di 400 ms e ripetizioni in feedback. Il controllo regola il guadagno del feedback fino a 0,35: anche al massimo le ripetizioni decadono (ogni ripetizione al 35% della precedente).
+- Il delay lavora alla frequenza interna del tanpura (22.058,8 Hz): 8.824 campioni Q15, circa 17,6 KB, in un buffer statico nell'oggetto `engine_t` posto in `.pool`; nessuna allocazione nel render e nessuna pressione aggiuntiva su `.data+.bss`. Il buffer precede l'upsampling e segue il filtro del corpo.
+- La nuova impostazione viene salvata usando il precedente campo riservato del record settings, che valeva zero; la dimensione e la versione del record restano compatibili con le impostazioni già salvate.
+- **Scartate**: delay a frequenza piena (doppia memoria), durata del delay regolabile (più parametri e UI non richiesti), echo acceso di default.
+
 ### 2026-11-06 — Base: fm1-base (proposta, da confermare con ElectroNick)
 - **Decisione**: usare fm1-base (Charles Vestal, MPL-2.0) su felucca-bsp, fissata a un commit come submodule.
 - **Motivazione**: licenza permissiva file per file, progetto attivo, supporto delle due flash (Puya e UC25HQ80),

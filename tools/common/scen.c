@@ -77,6 +77,7 @@ int scen_parse(const char *s, scen_ev_t *ev)
     else if (!strcmp(name, "tan.jawari")) ev->target = ENG_TANPURA, ev->id = TANPURA_P_JAWARI;
     else if (!strcmp(name, "tan.cycle")) ev->target = ENG_TANPURA, ev->id = TANPURA_P_CYCLE;
     else if (!strcmp(name, "tan.human")) ev->target = ENG_TANPURA, ev->id = TANPURA_P_HUMAN;
+    else if (!strcmp(name, "tan.echo"))  ev->target = ENG_TANPURA, ev->id = TANPURA_P_ECHO;
     else if (!strcmp(name, "tan.reg"))   ev->target = ENG_TANPURA, ev->id = TANPURA_P_REGISTER;
     else if (!strncmp(name, "tan.fine", 8) && name[8] >= '0' && name[8] <= '3' && !name[9])
         ev->target = ENG_TANPURA, ev->id = TANPURA_P_FINE + (name[8] - '0');
