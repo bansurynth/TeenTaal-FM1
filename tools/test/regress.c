@@ -56,6 +56,8 @@ static scenario_t SC[] = {
                         "1.5:ref.swara=Ni", "2.0:ref.vol=30", "2.5:sa=E3", "3.0:ref.vol=100", "3.5:ref.on=0",
                         "3.7:ref.on=1", "4.0:master=1000", "4.5:mix.ref=50", "5.0:ref.on=0"}, 0, 0, 5.1, 0, 0},
     /* the tanpura (step 2b) */
+    {"tan_single_A2", 8, {"0:sa=A2", "0:tan2.on=0", "0:tan.on=1"}, 0, 0, -1, 1, 0},
+    {"tan2_phase0_Ma", 8, {"0:sa=A2", "0:tan2.phase=0", "0:tan2.first=Ma", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_A2_default", 8, {"0:sa=A2", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_Fs2_j0_Ma", 6, {"0:sa=F#2", "0:tan.jawari=0", "0:tan.first=Ma", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_G4_j100_Ni", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.jawari=100", "0:tan.first=Ni", "0:tan.on=1"}, 0, 0, -1, 1, 0},
@@ -127,7 +129,11 @@ static void tanpura_cycle_checks(void)
     d23 = t.due[3] - t.due[2];
     snprintf(buf, sizeof buf, "%.3f, %.3f, %.3f s",
              (double)d01 / TANPURA_FS, (double)d12 / TANPURA_FS, (double)d23 / TANPURA_FS);
-    check("tan_cycle", "pluck intervals", d01 == 17647 && d12 == 13235 && d23 == 13235, buf);
+    check("tan_cycle", "pluck intervals", d01 == 22058 && d12 == 16544 && d23 == 16545, buf);
+    tanpura_set_param(&t, TANPURA_P_PHASE, 50);   /* a running cycle follows the phase */
+    tanpura_take(&t);
+    snprintf(buf, sizeof buf, "first pluck in %d samples", (int)t.due[0]);
+    check("tan_phase", "cycle moved by half a cycle", t.due[0] == 441 + 55100, buf);
 }
 
 static uint64_t fnv1a(const int32_t *x, size_t n)

@@ -4,7 +4,7 @@
  * below, bronze). The instrument follows Sa: the large tanpura of step 2a (1.1 m, steel 0.16 mm, kharaj bronze
  * 0.25 mm) at Sa A2 and below, the smaller one (0.85 m, 0.13 / 0.18 mm) at A3, interpolated (0.7 m at G4).
  * Finger pluck at 35 % of the string, 2 cm wide.
- * Cycle: first string, Sa, Sa, kharaj at 0, 20, 35 and 50 % of the cycle, then a pause.
+ * Cycle: first string, Sa, Sa, kharaj at 0, 20, 35 and 50 % of the cycle (5 s: 0, 1, 1.75, 2.5 s), then a pause.
  * Rates (step 2b): the strings and the body run at half the FM-1's rate (22058.8 Hz; above 11 kHz the reference
  * holds -44 dB of its energy), then a half-band filter brings the output up to 44117.6 Hz.
  *
@@ -12,7 +12,8 @@
  *   TANPURA_P_ON        0 / 1      1 starts the cycle; 0 stops plucking and fades out in 0.3 s
  *   TANPURA_P_FIRST     0..11      the first string's swara (SW_PA default; SW_MA, SW_NI, SW_NI_K, any)
  *   TANPURA_P_JAWARI    0..100     the thread position: 0 = 4 mm (short jvari) .. 100 = 8 mm (long); 50 = 6 mm
- *   TANPURA_P_CYCLE     25..80     the cycle in tenths of a second (default 40: 4 s)
+ *   TANPURA_P_CYCLE     25..80     the cycle in tenths of a second (default 50: 5 s)
+ *   TANPURA_P_PHASE     0..100     the plucks' offset in % of the cycle (default 0; moves a running cycle too)
  *   TANPURA_P_HUMAN     0..100     irregularity: 100 = plucks +-50 ms and +-30 % (default 50)
  *   TANPURA_P_FINE + j  -50..50    string j's fine tuning in cents (j = 0..3)
  *   TANPURA_P_VOL + j   0..100     string j's volume (taken at its next pluck: the model is exactly linear in it)
@@ -44,6 +45,7 @@ enum {
     TANPURA_P_VOL = TANPURA_P_FINE + TANPURA_NSTR,   /* + string 0..3 */
     TANPURA_P_REGISTER = TANPURA_P_VOL + TANPURA_NSTR,
     TANPURA_P_SA_NOW,
+    TANPURA_P_PHASE,
     TANPURA_P_END
 };
 
@@ -59,7 +61,7 @@ typedef struct {
 typedef struct {
     tanpura_config_t cfg;
     tuning_t tuning;
-    int32_t on, first, jawari, cycle, human, reg, fine[TANPURA_NSTR], vol[TANPURA_NSTR];
+    int32_t on, first, jawari, cycle, human, reg, phase, phase_done, fine[TANPURA_NSTR], vol[TANPURA_NSTR];
     volatile int32_t start_req;                  /* switched on: tanpura_take starts the cycle */
     tstring_t str[TANPURA_NSTR];
     tstring_coefs_t stage[TANPURA_NSTR];         /* retunes prepared by set_param, taken by render */

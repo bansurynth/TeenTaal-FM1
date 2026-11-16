@@ -48,8 +48,10 @@ void tanpura_default_config(tanpura_config_t *cfg)
     int j;
     tuning_default(&cfg->tuning);
     cfg->fmax[0] = 6000.0f, cfg->fmax[1] = cfg->fmax[2] = 8000.0f, cfg->fmax[3] = 3000.0f;   /* step 2b: quality */
+    /* at most 250 modes in all (68 + 68 + 68 + 46): the second core's cost follows the modes, and a long string
+     * (Sa F#3 to A#3 an octave down) would need 250..284 */
     for (j = 0; j < TANPURA_NSTR; j++)
-        cfg->maxm[j] = TSTRING_MAXM;
+        cfg->maxm[j] = j == TANPURA_NSTR - 1 ? 46 : 68;
     cfg->s0 = 0.4f;
     cfg->rc = 0.8f;
     cfg->seed = 0x2545F491u;
@@ -130,8 +132,10 @@ static int32_t cycle_samples(const tanpura_t *m) { return (int32_t)((float)m->cy
 static void start_cycle(tanpura_t *m)
 {
     int j;
+    m->phase_done = m->phase;
     for (j = 0; j < TANPURA_NSTR; j++) {
-        m->nominal[j] = (int32_t)(CYCLE_AT[j] * (float)cycle_samples(m)) + (int32_t)(0.02f * TANPURA_FS);
+        m->nominal[j] = (int32_t)(CYCLE_AT[j] * (float)cycle_samples(m)) + (int32_t)(0.02f * TANPURA_FS)
+                        + cycle_samples(m) / 100 * m->phase;
         m->due[j] = m->nominal[j] + jitter(m);
     }
 }
@@ -144,7 +148,8 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
     else
         tanpura_default_config(&m->cfg);
     m->tuning = m->cfg.tuning;
-    m->on = 0, m->first = SW_PA, m->jawari = 50, m->cycle = 40, m->human = 50, m->reg = 1, m->start_req = 0;
+    m->on = 0, m->first = SW_PA, m->jawari = 50, m->cycle = 50, m->human = 50, m->reg = 1, m->start_req = 0;
+    m->phase = m->phase_done = 0;
     for (j = 0; j < TANPURA_NSTR; j++)
         m->fine[j] = 0, m->vol[j] = 100;
     m->rng = m->cfg.seed ? m->cfg.seed : 1u;
@@ -206,6 +211,7 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
         break;
     case TANPURA_P_CYCLE:  m->cycle = clampi(v, 25, 80); break;
     case TANPURA_P_HUMAN:  m->human = clampi(v, 0, 100); break;
+    case TANPURA_P_PHASE:  m->phase = clampi(v, 0, 100); break;
     default: break;
     }
 }
@@ -224,6 +230,7 @@ int32_t tanpura_get_param(const tanpura_t *m, int id)
     case TANPURA_P_HUMAN:  return m->human;
     case TANPURA_P_REGISTER: return m->reg;
     case TANPURA_P_SA_NOW: return m->tuning.sa_cents + reg_offset(m);
+    case TANPURA_P_PHASE:  return m->phase;
     default:               return 0;
     }
 }
@@ -243,6 +250,12 @@ void tanpura_take(tanpura_t *m)
                 tstring_take(&m->str[j], &m->stage[j]);
                 m->stage_ready[j] = 0;
             }
+    if (m->phase != m->phase_done) {             /* a running cycle follows the new offset */
+        int32_t d = cycle_samples(m) / 100 * (m->phase - m->phase_done);
+        for (j = 0; j < TANPURA_NSTR; j++)
+            m->nominal[j] += d, m->due[j] += d;
+        m->phase_done = m->phase;
+    }
     if (m->start_req) {
         start_cycle(m);
         m->active = 1;

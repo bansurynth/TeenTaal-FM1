@@ -95,7 +95,7 @@ expect taal_now 1
 shot main_ektaal.png
 # the tabla's irregularity: EDIT, the last row
 tap EDIT
-turn SELECT 3
+turn SELECT 6
 turn PRESET -2
 wait 200
 expect tabla_human 20
@@ -129,7 +129,7 @@ expect octave 1
 expect kt_key -1
 # the first string's fine tuning (EDIT, row 1), then SAVE, a change, and a power cycle: the saved values come back
 tap EDIT
-turn SELECT -7
+turn SELECT -10
 turn PRESET 7
 wait 100
 expect fine0 7

@@ -1,6 +1,8 @@
 /* app.c — glue between fm1-base and the project: the audio path (mixer/engine) on two cores, and the UI (ui/).
  * No DSP here: the engine is the same code the host tools run. Compiled inside fm1-base's unity build.
  *
+ * Two tanpuras, one per core: the first tanpura on the second core as below, the second tanpura on the first core
+ * (engine_tanpura2_render, in this block, while the second core renders the next).
  * Two cores (step 3, DECISIONS.md): the second core renders the tanpura's NEXT block while the first plays this one,
  * so the first core never waits for it (one block of latency, 5.8 ms, for a drone). In each render, the first core:
  *   1. collects the job handed over in the last render (long done: the 8 ms timeout counts from this wait),
@@ -9,6 +11,7 @@
  *   4. renders the rest and mixes this block's tanpura (rendered during the last block).
  * Without the second core (it failed: cpu2_fallback), the first core renders the tanpura itself, and the screen says so. */
 #include "mixer/engine.h"
+#include "plat.h"
 
 /* the second core's calls, or "not there" in a build without it (fm1.toml cpu2, or FM1B_CPU2=0: one core) */
 #if defined(PLAT_HOST) || FM1B_CPU2
@@ -27,7 +30,8 @@ static int app_cpu2_barred(void) { return 0; }
 static int app_cpu2_gave_up(void) { return 0; }
 #endif
 
-static engine_t eng;
+static engine_t eng PLAT_POOL;             /* ~70 KB with two tanpuras: in the pool, not in .data+.bss */
+static int32_t tan2buf[ENGINE_MAXN];       /* the second tanpura's block: the first core renders it itself, now */
 static int32_t tanbuf[2][ENGINE_MAXN];     /* the tanpura's blocks: one played, one being rendered */
 static uint32_t tan_ready;                 /* the buffer holding this block's tanpura */
 static int job_out;                        /* a job was handed over and not yet collected */
@@ -35,6 +39,7 @@ static int cpu2_started;
 static volatile int app_hush;              /* 1: MASTER to silence (the mixer's 20 ms ramp), before a flash write */
 /* the measurement (step 3): the tanpura job's time, in 24 MHz ticks, on whichever core ran it */
 static volatile uint32_t job_ticks, job_ticks_max, jobs_done, jobs_inline, renders;
+static volatile uint32_t t2_ticks, t2_ticks_max;   /* the second tanpura's render, on the first core */
 #ifdef PLAT_HOST
 static volatile int32_t host_peak;         /* the simulator's checks only: the loudest sample of the last ~0.5 s */
 static int32_t host_pk[88];                /* (each block's: 88 blocks = 0.51 s) */
@@ -93,7 +98,15 @@ void app_render(int32_t *lr, uint32_t n, uint32_t master_q12)
         jobs_inline++;
         tan_ready = next;
     }
-    engine_render_with(&eng, lr, n, master_q12, tanbuf[tan_ready]);
+    {
+        uint32_t t0 = plat_ticks24(), d;
+        engine_tanpura2_render(&eng, tan2buf, APP_BLOCK);
+        d = plat_ticks24() - t0;
+        t2_ticks = d;
+        if (d > t2_ticks_max)
+            t2_ticks_max = d;
+    }
+    engine_render_with(&eng, lr, n, master_q12, tanbuf[tan_ready], tan2buf);
 #ifdef PLAT_HOST
     {
         uint32_t i;
@@ -126,6 +139,9 @@ int app_expect(const char *what, int *got)
     else if (!strcmp(what, "sa_cents")) *got = (int)engine_get_param(&eng, ENG_ALL, DSP_P_SA_CENTS);
     else if (!strcmp(what, "a4_dhz")) *got = (int)engine_get_param(&eng, ENG_ALL, DSP_P_A4_DHZ);
     else if (!strcmp(what, "tan_on")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_ON);
+    else if (!strcmp(what, "tan2_on")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_ON);
+    else if (!strcmp(what, "tan2_first")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_FIRST);
+    else if (!strcmp(what, "tan2_phase")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_PHASE);
     else if (!strcmp(what, "tan_sa")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_SA_NOW);
     else if (!strcmp(what, "jawari")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_JAWARI);
     else if (!strcmp(what, "first")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_FIRST);

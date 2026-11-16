@@ -15,17 +15,26 @@
 #define ENGINE_MAXN 256                /* frames in one engine_render at most (the platform's block) */
 
 /* where a parameter goes */
-enum { ENG_ALL, ENG_TANPURA, ENG_TABLA, ENG_REFTONE, ENG_MIXER, ENG_TAAL };
+enum { ENG_ALL, ENG_TANPURA, ENG_TABLA, ENG_REFTONE, ENG_MIXER, ENG_TAAL, ENG_TANPURA2 };
+
+/* The second tanpura follows the first in everything (Sa, jawari, cycle, register, irregularity, fine tuning, volumes,
+ * on/off), except what ENG_TANPURA2 sets on its own: TANPURA_P_FIRST (default Ni), TANPURA_P_PHASE (its plucks'
+ * offset, % of the cycle; default 50) and TANPURA_P_ON (enabled at all; default 1). Both are summed into the mixer's
+ * tanpura source at 0.75 each. */
+#define ENGINE_TAN2_FIRST SW_NI
+#define ENGINE_TAN2_PHASE 50
 
 typedef struct {
     tanpura_t tanpura;
+    tanpura_t tanpura2;
+    volatile int32_t tan_on, tan2_on;   /* the user's switches: tanpura2 plays when both are 1 */
     tabla_t tabla;
     taal_t taal;                       /* its events go to the tabla, sub-block by sub-block */
     reftone_t reftone;
     mixer_t mixer;
     volatile int32_t muted;        /* engine_panic: silence at once */
     int32_t buf[MIX_NSRC][DSP_BLOCK];
-    int32_t tan[ENGINE_MAXN];          /* engine_render's own tanpura block */
+    int32_t tan[ENGINE_MAXN], tan2[ENGINE_MAXN];   /* engine_render's own tanpura blocks */
 } engine_t;
 
 void engine_init(engine_t *e);
@@ -38,8 +47,9 @@ void engine_render(engine_t *e, int32_t *lr, uint32_t n, uint32_t master_q12);
 
 /* The same, split for two cores (step 3). The first core: engine_tanpura_take while the second core is idle, then
  * engine_render_with with a tanpura buffer the second core rendered earlier. The second core's job:
- * engine_tanpura_render (mono Q23, n frames, overwritten). engine_render is exactly these three in a row. */
+ * engine_tanpura_render (mono Q23, n frames, overwritten). engine_render is exactly these in a row. */
 void engine_tanpura_take(engine_t *e);
 void engine_tanpura_render(engine_t *e, int32_t *tan, uint32_t n);
-void engine_render_with(engine_t *e, int32_t *lr, uint32_t n, uint32_t master_q12, const int32_t *tan);
+void engine_tanpura2_render(engine_t *e, int32_t *tan2, uint32_t n);   /* the second tanpura: the first core's own job */
+void engine_render_with(engine_t *e, int32_t *lr, uint32_t n, uint32_t master_q12, const int32_t *tan, const int32_t *tan2);
 void engine_panic(engine_t *e);    /* silence now (before a flash write): until engine_init */

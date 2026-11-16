@@ -49,8 +49,8 @@ Il Sa di default è **La3 (220 Hz)**, adatto a un bansuri in La (il Sa del flaut
 in Sol: **SEL + il primo tasto Sol a sinistra** (Sol3, 196 Hz). Il tanpura suona un'ottava sotto il tuo Sa (si può cambiare in EDIT → TANPURA
 REGISTER). Il dayan dei tabla si accorda da solo sul Sa.
 
-Il ciclo predefinito del tanpura pizzica la prima corda, Sa, Sa e la kharaj grave a 0, 0,8, 1,4 e 2,0 secondi
-del ciclo di 4 secondi, poi fa una pausa di 2 secondi.
+Il ciclo predefinito del tanpura (5 secondi) pizzica la prima corda, Sa, Sa e la kharaj grave a 0, 1,0, 1,75 e 2,5 secondi,
+poi fa una pausa. Un secondo tanpura (EDIT: 2ND TANPURA, attivo, prima corda NI, fase 50%) suona in parallelo, sfasato della fase scelta.
 
 ## Le impostazioni (EDIT)
 
