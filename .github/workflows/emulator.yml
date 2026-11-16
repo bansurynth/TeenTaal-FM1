@@ -22,6 +22,11 @@ jobs:
       - uses: mymindstorm/setup-emsdk@v14
         with:
           version: 3.1.64
+      - name: Install font tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libraqm0 fonts-dejavu-core
+          pip install pillow numpy
       - name: Build the WebAssembly emulator
         working-directory: platform/fm1-base
         run: python3 tools/build.py ../.. --web
