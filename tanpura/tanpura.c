@@ -80,7 +80,7 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
         float t = fm_clampf(((float)(m->tuning.sa_cents + reg_offset(m)) + 1500.0f) * (1.0f / 1200.0f), 0.0f, 1.83f);
         p->L = 1.1f - 0.25f * t;
         if (j == 0 && m->first > SW_NI)          /* an upper note on the long string: it shortens in step with the pitch: the tension, and so the metallic buzz, stay as for the lower notes (measured: 2-6 kHz energy -8 dB without, -25 dB with) */
-        {
+        {                                        /* (the thread moves out by 1/k too: measured, the same jawari and highs as the lower notes; at the old distance the highs were 10 dB up and the jawari short) */
             k = fm_exp2f(-(float)(100 * m->first - 1200) * (1.0f / 1200.0f));
             p->L *= k;
         }
@@ -92,9 +92,10 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
     p->rhoA = rho * FM_PI * r * r;
     p->EI = E * 0.25f * FM_PI * r * r * r * r;
     p->f1 = tuning_hz(&m->tuning, cents);
-    p->s0 = m->cfg.s0, p->s1 = 6.5e-3f * k, p->s3 = 5.0e-6f * k * k * k;     /* Table 1, s0 from step 2a; on the shortened string (k < 1) the same damping at the same frequency, so the jawari lasts as long */
+    p->s0 = m->cfg.s0, p->s1 = 6.5e-3f, p->s3 = 5.0e-6f;     /* Table 1, s0 from step 2a */
     p->xb = 10e-3f, p->wb = 2.0e-3f, p->kb = 4.39e8f;
-    p->xc = 4e-3f + 4e-3f * (float)m->jawari * 0.01f, p->wc = 1.2e-3f, p->kc = 1.2e5f, p->rc = m->cfg.rc;
+    p->xc = (4e-3f + 4e-3f * (float)m->jawari * 0.01f) / k, p->wc = 1.2e-3f, p->kc = 1.2e5f, p->rc = m->cfg.rc;
+    if (p->xc > 8.5e-3f) p->xc = 8.5e-3f;          /* (the thread stays short of the bridge's own 10 mm) */
     p->xe = 0.35f * p->L, p->we = 0.02f;
     p->fmax = m->cfg.fmax[j];
     p->maxm = m->cfg.maxm[j];
