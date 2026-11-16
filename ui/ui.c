@@ -459,7 +459,9 @@ static void ui_sa_key(int k)
 {
     int32_t sa = ui_get(ENG_ALL, DSP_P_SA_CENTS), semi = (sa >= 0 ? sa + 50 : sa - 49) / 100;
     int32_t off = sa - 100 * semi, c = (k - 7) * 100 + off;     /* key 7 = C4 */
-    ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_fold(c));
+    c = ui_sa_fold(c);
+    ui_set(ENG_ALL, DSP_P_SA_CENTS, c);
+    ui_set(ENG_TANPURA, TANPURA_P_REGISTER, c < -350);   /* from A3 up the tanpura plays at Sa, below it an octave under (still changeable by hand) */
 }
 
 /* the semitone of Sa (middle), nearest */

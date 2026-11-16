@@ -61,7 +61,7 @@ SELECT picks the row, PRESETS changes the value, HOME goes back. The dots at the
 |---|---|
 | FIRST STRING | the tanpura's first string: Pa (default), Ma, Ni or any swara |
 | FINE: 1ST STRING, SA (2ND), SA (3RD), KHARAJ | fine tuning of each string, ±50 cents |
-| TANPURA REGISTER | the tanpura an octave under Sa, or at Sa |
+| TANPURA REGISTER | the tanpura an octave under Sa, or at Sa (a Sa key sets it by itself: at Sa from A3 up, an octave under below) |
 | PLUCK CYCLE | the length of the plucking cycle (2.5–8 s) |
 | TANPURA IRREG. | how irregular the plucking is, like a real hand |
 | TABLA IRREG. | the same for the tabla (timing and strength of the strokes) |
