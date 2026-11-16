@@ -24,13 +24,19 @@ int bv_hdr(const uint8_t *p, uint32_t n, uint32_t *label, uint32_t *msg, uint32_
 
 uint32_t bv_pick_sink(const uint8_t *p, uint32_t n)
 {
-    uint32_t at;
+    uint8_t seid;
+    return bv_list_sinks(p, n, &seid, 1u) ? seid : 0;
+}
+
+uint32_t bv_list_sinks(const uint8_t *p, uint32_t n, uint8_t *seids, uint32_t max)
+{
+    uint32_t at, count = 0;
     for (at = 2; at + 1u < n; at += 2) {           /* per endpoint: SEID << 2 | in use << 1; media type << 4 | TSEP << 3 */
         uint32_t seid = p[at] >> 2, inuse = (p[at] >> 1) & 1u, media = p[at + 1] >> 4, tsep = (p[at + 1] >> 3) & 1u;
-        if (!inuse && media == 0 && tsep == 1u && seid)
-            return seid;
+        if (!inuse && media == 0 && tsep == 1u && seid && seid < 63u && count < max)
+            seids[count++] = (uint8_t)seid;
     }
-    return 0;
+    return count;
 }
 
 int bv_caps_sbc(const uint8_t *p, uint32_t n, uint8_t sbc[4])

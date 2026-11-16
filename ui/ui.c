@@ -394,7 +394,16 @@ static void ui_bt_state(char *t)
 {
     static const char *const S[] = {"OFF", "SCANNING", "FOUND", "NONE FOUND", "CONNECTING", "LINKED", "SETUP", "STREAMING",
                                     "REFUSED", "NO LAST", "FAILED", "READY"};
-    int s = plat_bta_state();
+    static const char *const W[] = {"", "LINK", "PAIRING", "ENCRYPTION", "SETUP", "STREAM", "REFUSED"};
+    static int lost;
+    int s = plat_bta_state(), w = plat_bta_lost();
+    if (w != PLAT_BTA_LOST_NONE)
+        lost = w;                                /* (said once by the platform: kept to show what ended the last try) */
+    if (s == PLAT_BTA_REFUSED || s == PLAT_BTA_FAILED) {
+        ui_cat(t, plat_bta_timed_out() ? "TIMEOUT " : "NO ");
+        ui_cat(t, lost > 0 && lost < 7 ? W[lost] : "?");
+        return;
+    }
     ui_cat(t, s >= 0 && s < (int)(sizeof S / sizeof S[0]) ? S[s] : "?");
 }
 

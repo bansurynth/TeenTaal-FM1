@@ -32,6 +32,9 @@ static struct {
     uint32_t rxn, rxneed;                          /* bytes of the frame so far, its whole length */
     struct ba_ch ch[BA_NCH];
     uint8_t stage, id, label, cont[17], contn, acp, conf[4];
+    uint8_t failure, failure_stage, last_av_command, caps[4];
+    uint8_t sinks[62], sink_count, sink_next;
+    uint32_t failure_a, failure_b;
     uint32_t t0;                                   /* fm1_ms: the set-up's start (BA_SETUP_MS: given up) */
     uint32_t sdps_ms;                              /* fm1_ms: the device's last SDP request to us */
     uint32_t auth_ms;                              /* fm1_ms: our authentication done, the device's awaited (BA_AUTH_WAIT_MS) */
@@ -50,6 +53,17 @@ static struct {
 
 enum { BA_IDLE, BA_SDP, BA_SDP_DONE, BA_AV_SIG, BA_AV_DISC, BA_AV_CAPS, BA_AV_CONF, BA_AV_OPEN, BA_AV_MEDIA,
        BA_AV_START, BA_AV_READY, BA_FAILED };
+enum { BA_FAIL_NONE, BA_FAIL_SDP, BA_FAIL_AVDTP, BA_FAIL_SBC, BA_FAIL_L2CAP, BA_FAIL_TIMEOUT, BA_FAIL_PAIRING };
+
+static void ba_fail(uint8_t reason, uint32_t a, uint32_t b)
+{
+    ba.failure = reason;
+    ba.failure_stage = ba.stage;
+    ba.failure_a = a;
+    ba.failure_b = b;
+    ba.gave_up = reason == BA_FAIL_TIMEOUT;
+    ba.stage = BA_FAILED;
+}
 
 static void ba_reset(void)
 {
@@ -62,6 +76,11 @@ static void ba_reset(void)
     ba.contn = 0;
     ba.paused = 0;
     ba.gave_up = 0;
+    ba.failure = ba.failure_stage = ba.last_av_command = 0;
+    ba.failure_a = ba.failure_b = 0;
+    ba.sink_count = ba.sink_next = 0;
+    for (i = 0; i < 4u; i++)
+        ba.caps[i] = ba.conf[i] = 0;
     ba.sdps_ms = 0;
     ba.fresh = 0;
     ba.rejoin = 0;
@@ -180,7 +199,7 @@ static void ba_sdp_in(const uint8_t *p, uint32_t n)   /* an SDP PDU on our chann
         return;
     if (p[0] != 0x07u) {                           /* not a ServiceSearchAttributeResponse */
         ba_line("SDP PDU (id, length)", p[0], n);
-        ba.stage = BA_FAILED;
+        ba_fail(BA_FAIL_SDP, p[0], n);
         return;
     }
     bytes = (uint32_t)p[5] << 8 | p[6];            /* AttributeListsByteCount */
@@ -229,17 +248,20 @@ static void ba_av_in(const uint8_t *p, uint32_t n)
         return;
     }
     if (msg == BV_CMD) {
+        ba.last_av_command = (uint8_t)sig;
         ba_line("AVDTP command from the device (signal, label): rejected", sig, label);
         ba_av_reject(label, sig);
         return;
     }
     if (msg != BV_ACCEPT) {
-        ba_line("AVDTP rejected (signal, error)", sig, n > 2u ? p[2] : 0);
-        ba.stage = BA_FAILED;
+        ba_line("AVDTP rejected (signal, error)", sig, n > 2u ? p[n - 1u] : 0);
+        ba_fail(BA_FAIL_AVDTP, sig, n > 2u ? p[n - 1u] : 0);
         return;
     }
     if (sig == BV_DISCOVER) {
-        ba.acp = (uint8_t)bv_pick_sink(p, n);
+        ba.sink_count = (uint8_t)bv_list_sinks(p, n, ba.sinks, sizeof ba.sinks);
+        ba.sink_next = 0;
+        ba.acp = ba.sink_count ? ba.sinks[ba.sink_next++] : 0;
         ba_line("AVDTP DISCOVER accepted (endpoints, the free audio sink's SEID)", (n - 2u) / 2u, ba.acp);
         if (!ba.acp)
             return;
@@ -247,9 +269,19 @@ static void ba_av_in(const uint8_t *p, uint32_t n)
         ba_av_cmd(BV_GET_CAPS, par, 1);
         ba.stage = BA_AV_CAPS;
     } else if (sig == BV_GET_CAPS) {
-        if (!bv_caps_sbc(p, n, cap) || !bv_sbc_choose(cap, ba.conf)) {
+        int caps_ok = bv_caps_sbc(p, n, cap);
+        if (caps_ok)
+            ble_cpy(ba.caps, cap, 4u);
+        if (!caps_ok || !bv_sbc_choose(cap, ba.conf)) {
             ba_line("AVDTP GET_CAPABILITIES: no SBC we can use (bytes, 0)", n, 0);
-            ba.stage = BA_FAILED;
+            if (ba.sink_next < ba.sink_count) {
+                ba.acp = ba.sinks[ba.sink_next++];
+                ble_zero(ba.caps, sizeof ba.caps);
+                par[0] = (uint8_t)(ba.acp << 2);
+                ba_av_cmd(BV_GET_CAPS, par, 1);
+                return;
+            }
+            ba_fail(BA_FAIL_SBC, (uint32_t)caps_ok, n);
             return;
         }
         ba_line("AVDTP SBC capabilities (freq|mode block|sub|alloc, bitpool min|max)", cap[0] << 8 | cap[1],
@@ -517,7 +549,7 @@ static void ba_sig_in(const uint8_t *p, uint32_t n)   /* one or more signalling 
                  * Google to Apple: developer.apple.com/forums/thread/816622. Kept waiting) */
             } else if (res != 1u) {
                 ba.ch[c].state = 0;
-                ba.stage = BA_FAILED;
+                ba_fail(BA_FAIL_L2CAP, res, ba.ch[c].psm);
             }
         } else if (code == BL_CONF_REQ && len >= 4u && (c = ba_chan(ba_le16(d))) >= 0) {
             ba_line("L2CAP configuration request from the device (our CID, flags): accepted", ba_le16(d), ba_le16(d + 2));
@@ -603,8 +635,7 @@ static void ba_poll(void)
                                                     * pass. 2026-10-20: SETTING UP for minutes; the device a Mac, "L..O",
                                                     * whose user was asked to confirm the pairing) */
         ba_line("set-up given up (stage, pairing state)", ba.stage, bp_ssp.st);
-        ba.stage = BA_FAILED;
-        ba.gave_up = 1;
+        ba_fail(BA_FAIL_TIMEOUT, ba.stage, bp_ssp.st);
         bp_leave();                                /* (and the link let go: the device free for the next try) */
         return;
     }
@@ -634,7 +665,7 @@ static void ba_poll(void)
         }
         if (bp_ssp.st == BTP_FAILED) {
             ba_line("pairing failed (reason, 0)", bp_ssp.reason, 0);
-            ba.stage = BA_FAILED;
+            ba_fail(BA_FAIL_PAIRING, bp_ssp.reason, bp_ssp.st);
             return;
         }
         if (bp_ssp.st != BTP_ENCRYPTED)

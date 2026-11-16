@@ -15,6 +15,7 @@ uint32_t bv_cmd(uint8_t *out, uint32_t label, uint32_t sig, const uint8_t *par, 
 int bv_hdr(const uint8_t *p, uint32_t n, uint32_t *label, uint32_t *msg, uint32_t *sig);
 /* the first audio sink endpoint not in use in a DISCOVER answer -> its SEID (0: none) */
 uint32_t bv_pick_sink(const uint8_t *p, uint32_t n);
+uint32_t bv_list_sinks(const uint8_t *p, uint32_t n, uint8_t *seids, uint32_t max);
 /* the SBC codec information (4 bytes) in a GET_CAPABILITIES answer -> 1 found */
 int bv_caps_sbc(const uint8_t *p, uint32_t n, uint8_t sbc[4]);
 /* our SBC configuration from the sink's capabilities: 44.1 kHz else 48, joint stereo else stereo, 16 blocks, 8
