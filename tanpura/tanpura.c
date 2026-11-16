@@ -59,10 +59,11 @@ void tanpura_default_config(tanpura_config_t *cfg)
 }
 
 /* the register (step 3): the tanpura an octave under the player's Sa (1, "large": the default) when that stays in
- * the range the strings cover (Sa F#2 and up), else at the Sa itself */
+ * the range the strings cover (Sa F#2 and up) and the Sa is G3 or lower; from A3 up (A3, B3 ..) it plays at the Sa itself:
+ * measured, the low long string (98..110 Hz) put a steady 2.5 kHz shimmer that whistled and beat with the other strings */
 static int32_t reg_offset(const tanpura_t *m)
 {
-    return m->reg && m->tuning.sa_cents - 1200 >= TUNING_SA_MIN ? -1200 : 0;
+    return m->reg && m->tuning.sa_cents - 1200 >= TUNING_SA_MIN && m->tuning.sa_cents <= -500 ? -1200 : 0;
 }
 
 /* the string parameters for string j at the current settings */

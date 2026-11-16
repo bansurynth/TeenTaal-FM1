@@ -47,7 +47,7 @@ keyboard shows where the swaras are for the Sa you chose.
 ## Sa
 
 The default Sa is **A3 (220 Hz)**, for a bansuri in A (the flute's Sa is an octave higher). For a bansuri in G: **SEL
-+ the leftmost G key** (G3, 196 Hz). Sa can go from F#2 to G4. The tanpura plays an octave under your Sa (EDIT →
++ the leftmost G key** (G3, 196 Hz). Sa can go from F#2 to G4. The tanpura plays an octave under your Sa up to G3, and at Sa itself from A3 up (EDIT →
 TANPURA REGISTER changes it). The dayan of the tabla tunes itself to Sa (to the octave between 190 and 380 Hz).
 
 The default tanpura cycle (5 seconds) plucks its first string, Sa, Sa and the lower kharaj at 0, 1.0, 1.75 and 2.5 seconds,
@@ -61,7 +61,7 @@ SELECT picks the row, PRESETS changes the value, HOME goes back. The dots at the
 |---|---|
 | FIRST STRING | the tanpura's first string: Pa (default), Ma, Ni or any swara |
 | FINE: 1ST STRING, SA (2ND), SA (3RD), KHARAJ | fine tuning of each string, ±50 cents |
-| TANPURA REGISTER | the tanpura an octave under Sa, or at Sa |
+| TANPURA REGISTER | the tanpura an octave under Sa (up to G3; from A3 at Sa), or at Sa |
 | PLUCK CYCLE | the length of the plucking cycle (2.5–8 s) |
 | TANPURA IRREG. | how irregular the plucking is, like a real hand |
 | TABLA IRREG. | the same for the tabla (timing and strength of the strokes) |
