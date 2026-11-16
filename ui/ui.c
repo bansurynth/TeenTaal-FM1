@@ -449,14 +449,14 @@ static void ui_edit_step(int row, int32_t d)
     }
 }
 
-/* SEL + key: Sa = the key's note (key 0 = F3), the cents above the semitone kept, inside Sa's range */
+/* SEL + key: Sa = the key's note (C3 .. B3), the cents above the semitone kept, inside Sa's range */
 static void ui_sa_key(int k)
 {
     int32_t sa = ui_get(ENG_ALL, DSP_P_SA_CENTS), semi = (sa >= 0 ? sa + 50 : sa - 49) / 100;
     int32_t off = sa - 100 * semi, c = (k - 7) * 100;     /* key 7 = C4 */
-    while (c > 600)                                       /* the keys span G3 .. F#4 */
+    while (c > -100)                                      /* the keys span C3 .. B3: going down from A3 it is G3, F3, E3 ... */
         c -= 1200;
-    while (c < -500)
+    while (c < -1200)
         c += 1200;
     c += off;
     ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_fold(c));
