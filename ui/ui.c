@@ -458,9 +458,13 @@ static void ui_edit_step(int row, int32_t d)
 static void ui_sa_key(int k)
 {
     int32_t sa = ui_get(ENG_ALL, DSP_P_SA_CENTS), semi = (sa >= 0 ? sa + 50 : sa - 49) / 100;
-    int32_t off = sa - 100 * semi, c = (k - 7) * 100 + off;     /* key 7 = C4 */
-    c = ui_sa_fold(c);
-    ui_set(ENG_ALL, DSP_P_SA_CENTS, c);
+    int32_t off = sa - 100 * semi, c = (k - 7) * 100;     /* key 7 = C4 */
+    while (c > 600)                                       /* the keys span G3 .. F#4: G is the low Sa (tanpura G2) */
+        c -= 1200;
+    while (c < -500)
+        c += 1200;
+    c += off;
+    ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_fold(c));
     ui_set(ENG_TANPURA, TANPURA_P_REGISTER, c < -350);   /* from A3 up the tanpura plays at Sa, below it an octave under (still changeable by hand) */
 }
 
