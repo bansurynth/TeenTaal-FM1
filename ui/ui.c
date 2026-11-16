@@ -89,11 +89,10 @@ static void ui_settings_now(ui_settings_t *p)
     p->vol_tone = (uint8_t)ui_get(ENG_REFTONE, REFTONE_P_VOLUME);
 }
 
-/* Sa on the device: the central octave, C4 .. B4 (the tanpura an octave under it, C3 .. B3), default A4; the engine
- * itself accepts any Sa in tuning.h's range */
-#define UI_SA_MIN 0
-#define UI_SA_MAX 1100
-#define UI_SA_DEFAULT 900
+/* Sa on the device: the engine's whole range (tuning.h: F#2 .. G4, default A3; the tanpura an octave under it) */
+#define UI_SA_MIN TUNING_SA_MIN
+#define UI_SA_MAX TUNING_SA_MAX
+#define UI_SA_DEFAULT TUNING_SA_DEFAULT
 static int32_t ui_sa_fold(int32_t c)
 {
     while (c > UI_SA_MAX)
