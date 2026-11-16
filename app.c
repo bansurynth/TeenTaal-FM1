@@ -154,6 +154,8 @@ int app_expect(const char *what, int *got)
     else if (!strcmp(what, "matra")) *got = (int)engine_get_param(&eng, ENG_TAAL, TAAL_P_MATRA);
     else if (!strcmp(what, "tabla_human")) *got = (int)engine_get_param(&eng, ENG_TAAL, TAAL_P_HUMAN);
     else if (!strcmp(what, "tab_vol")) *got = (int)engine_get_param(&eng, ENG_MIXER, MIX_P_LEVEL + MIX_TABLA);
+    else if (!strcmp(what, "bta")) *got = plat_bta_state();
+    else if (!strcmp(what, "bta_out")) *got = plat_bta_out_device();
     else if (!strcmp(what, "unsaved")) *got = ui_unsaved;
     else if (!strcmp(what, "loaded")) *got = ui_loaded;
     else if (!strcmp(what, "fine0")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_FINE);

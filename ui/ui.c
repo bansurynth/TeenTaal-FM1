@@ -24,11 +24,11 @@ static const char *const UI_SWARA[TANPURA_FIRST_MAX + 1] = {"SA", "RE KOMAL", "R
                                            "DHA KOMAL", "DHA", "NI KOMAL", "NI", "SA'", "RE KOMAL'", "RE'",
                                            "GA KOMAL'", "GA'", "MA'"};
 enum { ROW_FIRST, ROW_FINE0, ROW_FINE1, ROW_FINE2, ROW_FINE3, ROW_CYCLE, ROW_TAN2, ROW_TAN2_FIRST,
-       ROW_TAN2_PHASE, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, NROWS };
+       ROW_TAN2_PHASE, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, ROW_BT, ROW_BT_DEV, ROW_BT_LINK, ROW_BT_OUT, NROWS };
 static const char *const ROW_NAME[NROWS] = {"FIRST STRING", "FINE: 1ST STRING", "FINE: SA (2ND)", "FINE: SA (3RD)",
                                             "FINE: KHARAJ", "PLUCK CYCLE", "2ND TANPURA", "2ND: FIRST STRING",
                                             "2ND: PHASE", "TANPURA IRREG.", "TABLA IRREG.", "TONE SWARA",
-                                            "A REFERENCE"};
+                                            "A REFERENCE", "BLUETOOTH", "BT SPEAKER", "BT LINK", "BT OUTPUT"};
 #define UI_ROWS_SHOWN 7
 /* the taal's colours: sam and khali must read at a glance, whatever the theme */
 #define UI_C_SAM RGB(255, 96, 64)
@@ -363,6 +363,76 @@ static void ui_main(void)
     cv_blit(0, 210);
 }
 
+/* Bluetooth audio (the platform's A2DP source): ui_bt_on, the picked speaker (the remembered ones first, then the ones
+ * found: ui_bt_dev counts through both), and what the radio says */
+static int ui_bt_on, ui_bt_dev;
+static int ui_bt_count(int *known)
+{
+    char nm[17];
+    int nk = 0, nf = 0;
+    while (nk < 4 && plat_bta_known(nk, nm))
+        nk++;
+    while (nf < 8 && plat_bta_found(nf, nm))
+        nf++;
+    *known = nk;
+    return nk + nf;
+}
+
+static void ui_bt_name(char *t, int i)
+{
+    char nm[17];
+    int nk, n = ui_bt_count(&nk);
+    if (i >= n)
+        ui_cat(t, "NONE");
+    else if (i < nk && plat_bta_known(i, nm))
+        ui_cat(t, nm);
+    else if (plat_bta_found(i - nk, nm))
+        ui_cat(t, nm);
+}
+
+static void ui_bt_state(char *t)
+{
+    static const char *const S[] = {"OFF", "SCANNING", "FOUND", "NONE FOUND", "CONNECTING", "LINKED", "SETUP", "STREAMING",
+                                    "REFUSED", "NO LAST", "FAILED", "READY"};
+    int s = plat_bta_state();
+    ui_cat(t, s >= 0 && s < (int)(sizeof S / sizeof S[0]) ? S[s] : "?");
+}
+
+static void ui_bt_step(int row, int32_t d)
+{
+    int nk, n;
+    switch (row) {
+    case ROW_BT:
+        if (d > 0) {
+            plat_bta_on(1);
+            plat_bta_scan(ui_bt_on ? 2 : 1);     /* (on already: look again, the list kept) */
+            ui_bt_on = 1;
+        } else {
+            plat_bta_hangup();
+            plat_bta_scan(0);
+            plat_bta_on(0);
+            ui_bt_on = 0;
+        }
+        break;
+    case ROW_BT_DEV:
+        n = ui_bt_count(&nk);
+        ui_bt_dev = clamp(ui_bt_dev + d, 0, n > 0 ? n - 1 : 0);
+        break;
+    case ROW_BT_LINK:
+        if (d > 0 && ui_bt_on) {
+            n = ui_bt_count(&nk);
+            if (ui_bt_dev < nk)
+                (void)plat_bta_reconnect(ui_bt_dev);
+            else if (ui_bt_dev < n)
+                plat_bta_pick(ui_bt_dev - nk);
+        } else if (d < 0)
+            plat_bta_hangup();
+        break;
+    case ROW_BT_OUT: plat_bta_output(d > 0); break;
+    default: break;
+    }
+}
+
 static void ui_row_value(char *t, int row)
 {
     char u[16];
@@ -376,6 +446,10 @@ static void ui_row_value(char *t, int row)
     case ROW_TAN2_PHASE: ui_num(u, ui_get(ENG_TANPURA2, TANPURA_P_PHASE), 0); ui_cat(t, u); ui_cat(t, " %"); break;
     case ROW_HUMAN:    ui_num(u, ui_get(ENG_TANPURA, TANPURA_P_HUMAN), 0); ui_cat(t, u); ui_cat(t, " %"); break;
     case ROW_TONE:     ui_cat(t, UI_SWARA[ui_get(ENG_REFTONE, REFTONE_P_SWARA)]); break;
+    case ROW_BT:       ui_cat(t, ui_bt_on ? "ON" : "OFF"); break;
+    case ROW_BT_DEV:   ui_bt_name(t, ui_bt_dev); break;
+    case ROW_BT_LINK:  ui_bt_state(t); break;
+    case ROW_BT_OUT:   ui_cat(t, plat_bta_out_device() ? "SPEAKER" : "FM-1"); break;
     case ROW_TABLA_HUMAN: ui_num(u, ui_get(ENG_TAAL, TAAL_P_HUMAN), 0); ui_cat(t, u); ui_cat(t, " %"); break;
     case ROW_FINE0: case ROW_FINE1: case ROW_FINE2: case ROW_FINE3:
         ui_num(u, ui_get(ENG_TANPURA, TANPURA_P_FINE + row - ROW_FINE0), 1); ui_cat(t, u); ui_cat(t, " CENTS"); break;
@@ -442,6 +516,7 @@ static void ui_edit_step(int row, int32_t d)
         ui_set(ENG_REFTONE, REFTONE_P_SWARA, clamp(ui_get(ENG_REFTONE, REFTONE_P_SWARA) + d, 0, SW_N - 1));
         break;
     case ROW_TABLA_HUMAN: ui_set(ENG_TAAL, TAAL_P_HUMAN, ui_get(ENG_TAAL, TAAL_P_HUMAN) + 5 * d); break;
+    case ROW_BT: case ROW_BT_DEV: case ROW_BT_LINK: case ROW_BT_OUT: ui_bt_step(row, d); break;
     case ROW_FINE0: case ROW_FINE1: case ROW_FINE2: case ROW_FINE3:
         ui_set(ENG_TANPURA, TANPURA_P_FINE + row - ROW_FINE0, clamp(ui_get(ENG_TANPURA, TANPURA_P_FINE + row - ROW_FINE0) + d, -50, 50));
         break;

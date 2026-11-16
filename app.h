@@ -11,8 +11,8 @@
 
 /* the store (step 8): the settings SAVE keeps (ui/ui.c), and the platform's panel calibration; each object a pair of
  * sectors (A/B) in the app's data area (plat.h PLAT_DATA_LO..HI): 0xDA000/0xDB000 and 0xDC000/0xDD000 */
-enum { OBJ_SETTINGS, OBJ_PANEL, OBJ_NOBJ };
-#define APP_STORE_MAP {0xDA000u, 0xDC000u}
+enum { OBJ_SETTINGS, OBJ_PANEL, OBJ_BLE, OBJ_NOBJ };   /* OBJ_BLE: the radio's address and the remembered Bluetooth speakers */
+#define APP_STORE_MAP {0xDA000u, 0xDC000u, 0xDE000u}
 
 void app_init(void);
 void app_render(int32_t *lr, uint32_t n, uint32_t master_q12);

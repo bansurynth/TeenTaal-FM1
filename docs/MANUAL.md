@@ -65,6 +65,10 @@ SELECT picks the row, PRESETS changes the value, HOME goes back. The dots at the
 | TABLA IRREG. | the same for the tabla (timing and strength of the strokes) |
 | TONE SWARA | the swara of the tone switched on with ARP |
 | A REFERENCE | the reference A, 415–466 Hz (default 440) |
+| BLUETOOTH | ON: the radio is up and looks for speakers or headphones (turn right again: look again); OFF |
+| BT SPEAKER | the speaker to connect: the remembered ones first (four are kept), then the ones just found |
+| BT LINK | its state; turn right to connect the picked speaker (pairing if it is new), left to disconnect |
+| BT OUTPUT | SPEAKER (the sound goes to Bluetooth) or FM-1 (its own output, the link kept) |
 
 ## The taals
 
