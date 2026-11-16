@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "plat.h"
 
-#define APP_NAME "TEENTAAL"
+#define APP_NAME "TEENTAAL 1.1"
 #define APP_SPLASH_RGB RGB(232, 150, 60)
 #define APP_BLOCK 256u                   /* platform block (DECISIONS.md); the modules run 4 sub-blocks of 64 */
 #define APP_CPU_KHZ                      /* plat_cpu_khz, shown on the provisional screen */
