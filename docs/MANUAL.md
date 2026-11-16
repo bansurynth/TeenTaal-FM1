@@ -11,7 +11,7 @@ silent; the saved settings come back as you left them.
 
 ```
  TEENTAAL                    UNSAVED     <- name; UNSAVED when there are changes not saved yet
- SA A3         TANPURA A2                <- your Sa; the tanpura's Sa
+ SA A4         TANPURA A3                <- your Sa; the tanpura's Sa
  Teentaal > Ektaal          120 /MIN     <- the taal (and the next one, when you changed it); the tempo
  9 /16         KHALI                     <- the matra playing now: red on sam, blue in khali
  X       2       0       3               <- the cycle: a cell for each matra, grouped by vibhag
@@ -46,12 +46,10 @@ keyboard shows where the swaras are for the Sa you chose.
 
 ## Sa
 
-The default Sa is **A3 (220 Hz)**, for a bansuri in A (the flute's Sa is an octave higher). For a bansuri in G: **SEL
-+ the leftmost G key** (G3, 196 Hz). Sa can go from F#2 to G4. The tanpura plays an octave under your Sa (EDIT →
-TANPURA REGISTER changes it). The dayan of the tabla tunes itself to Sa (to the octave between 190 and 380 Hz).
+The default Sa is **A4 (440 Hz)**, for a bansuri in A. Sa goes from C4 to B4 (**SEL + a key** of the central octave). The tanpura plays an octave under your Sa, C3 to B3 (EDIT → TANPURA REGISTER changes it). The dayan of the tabla tunes itself to Sa (to the octave between 190 and 380 Hz).
 
 The default tanpura cycle (5 seconds) plucks its first string, Sa, Sa and the lower kharaj at 0, 1.0, 1.75 and 2.5 seconds,
-then pauses. A second tanpura (EDIT: 2ND TANPURA, default on, first string NI, phase 50%) plays in parallel, shifted by the chosen phase.
+then pauses. A second tanpura (EDIT: 2ND TANPURA, default on, first string NI, phase 20%) plays in parallel, shifted by the chosen phase.
 
 ## Settings (EDIT)
 

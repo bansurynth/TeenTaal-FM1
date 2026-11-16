@@ -89,6 +89,21 @@ static void ui_settings_now(ui_settings_t *p)
     p->vol_tone = (uint8_t)ui_get(ENG_REFTONE, REFTONE_P_VOLUME);
 }
 
+/* Sa on the device: the central octave, C4 .. B4 (the tanpura an octave under it, C3 .. B3), default A4; the engine
+ * itself accepts any Sa in tuning.h's range */
+#define UI_SA_MIN 0
+#define UI_SA_MAX 1100
+#define UI_SA_DEFAULT 900
+static int32_t ui_sa_fold(int32_t c)
+{
+    while (c > UI_SA_MAX)
+        c -= 1200;
+    while (c < UI_SA_MIN)
+        c += 1200;
+    return c;
+}
+static int32_t ui_sa_clamp(int32_t c) { return c < UI_SA_MIN ? UI_SA_MIN : c > UI_SA_MAX ? UI_SA_MAX : c; }
+
 /* a loaded record: every field inside its range, or the record is not used (defaults) */
 static int ui_settings_valid(const ui_settings_t *p)
 {
@@ -114,7 +129,7 @@ static void ui_settings_apply(const ui_settings_t *p)
 {
     int j;
     engine_set_param(ui_eng, ENG_ALL, DSP_P_A4_DHZ, p->a4_dhz);
-    engine_set_param(ui_eng, ENG_ALL, DSP_P_SA_CENTS, p->sa_cents);
+    engine_set_param(ui_eng, ENG_ALL, DSP_P_SA_CENTS, ui_sa_fold(p->sa_cents));   /* (an older record: the same note, in the central octave) */
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_FIRST, p->first);
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_REGISTER, p->reg);
     for (j = 0; j < TANPURA_NSTR; j++)
@@ -154,7 +169,7 @@ static void ui_init_state(engine_t *e)
     ui_settings_t s;
     ui_eng = e;
     engine_set_param(e, ENG_ALL, DSP_P_A4_DHZ, TUNING_A4_DHZ_DEFAULT);
-    engine_set_param(e, ENG_ALL, DSP_P_SA_CENTS, TUNING_SA_DEFAULT);
+    engine_set_param(e, ENG_ALL, DSP_P_SA_CENTS, UI_SA_DEFAULT);
     if (plat_store_load(OBJ_SETTINGS, &s, sizeof s) == (int)sizeof s && ui_settings_valid(&s)) {
         ui_settings_apply(&s);
         ui_loaded = 1;
@@ -445,9 +460,7 @@ static void ui_sa_key(int k)
 {
     int32_t sa = ui_get(ENG_ALL, DSP_P_SA_CENTS), semi = (sa >= 0 ? sa + 50 : sa - 49) / 100;
     int32_t off = sa - 100 * semi, c = (k - 7) * 100 + off;     /* key 7 = C4 */
-    while (c > TUNING_SA_MAX)
-        c -= 1200;
-    ui_set(ENG_ALL, DSP_P_SA_CENTS, c);
+    ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_fold(c));
 }
 
 /* the semitone of Sa (middle), nearest */
@@ -546,13 +559,13 @@ static void ui_frame(void)
         ui_set(ENG_REFTONE, REFTONE_P_ON, !ui_get(ENG_REFTONE, REFTONE_P_ON));
     if (pressed & (1u << B_OCTDN)) {
         if (sel)
-            ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_get(ENG_ALL, DSP_P_SA_CENTS) - 1200);
+            ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_clamp(ui_get(ENG_ALL, DSP_P_SA_CENTS) - 1200));
         else
             ui_set(ENG_REFTONE, REFTONE_P_OCTAVE, ui_get(ENG_REFTONE, REFTONE_P_OCTAVE) - 1);
     }
     if (pressed & (1u << B_OCTUP)) {
         if (sel)
-            ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_get(ENG_ALL, DSP_P_SA_CENTS) + 1200);
+            ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_clamp(ui_get(ENG_ALL, DSP_P_SA_CENTS) + 1200));
         else
             ui_set(ENG_REFTONE, REFTONE_P_OCTAVE, ui_get(ENG_REFTONE, REFTONE_P_OCTAVE) + 1);
     }
@@ -584,7 +597,7 @@ static void ui_frame(void)
         if ((d = plat_enc(EN_SELECT)) != 0)     /* the taal, round the list */
             ui_set(ENG_TAAL, TAAL_P_TAAL, ((ui_get(ENG_TAAL, TAAL_P_TAAL) + d) % taal_count() + taal_count()) % taal_count());
         if ((d = plat_enc(EN_PRESET)) != 0)
-            ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_get(ENG_ALL, DSP_P_SA_CENTS) + d);
+            ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_clamp(ui_get(ENG_ALL, DSP_P_SA_CENTS) + d));
     }
     if ((d = plat_enc(EN_ALGO)) != 0)
         ui_set(ENG_TANPURA, TANPURA_P_JAWARI, ui_get(ENG_TANPURA, TANPURA_P_JAWARI) + 2 * d);

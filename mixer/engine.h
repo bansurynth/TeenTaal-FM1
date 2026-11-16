@@ -19,10 +19,10 @@ enum { ENG_ALL, ENG_TANPURA, ENG_TABLA, ENG_REFTONE, ENG_MIXER, ENG_TAAL, ENG_TA
 
 /* The second tanpura follows the first in everything (Sa, jawari, cycle, register, irregularity, fine tuning, volumes,
  * on/off), except what ENG_TANPURA2 sets on its own: TANPURA_P_FIRST (default Ni), TANPURA_P_PHASE (its plucks'
- * offset, % of the cycle; default 50) and TANPURA_P_ON (enabled at all; default 1). Both are summed into the mixer's
+ * offset, % of the cycle; default 20) and TANPURA_P_ON (enabled at all; default 1). Both are summed into the mixer's
  * tanpura source at 0.75 each. */
 #define ENGINE_TAN2_FIRST SW_NI
-#define ENGINE_TAN2_PHASE 50
+#define ENGINE_TAN2_PHASE 20
 
 typedef struct {
     tanpura_t tanpura;
