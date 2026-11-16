@@ -57,7 +57,6 @@ static scenario_t SC[] = {
                         "3.7:ref.on=1", "4.0:master=1000", "4.5:mix.ref=50", "5.0:ref.on=0"}, 0, 0, 5.1, 0, 0},
     /* the tanpura (step 2b) */
     {"tan_A2_default", 8, {"0:sa=A2", "0:tan.on=1"}, 0, 0, -1, 1, 0},
-    {"tan_echo_100", 8, {"0:sa=A2", "0:tan.human=0", "0:tan.echo=100", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_Fs2_j0_Ma", 6, {"0:sa=F#2", "0:tan.jawari=0", "0:tan.first=Ma", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_G4_j100_Ni", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.jawari=100", "0:tan.first=Ni", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_retune", 6, {"0:sa=A2", "0:tan.on=1", "1:sa=A2+30", "1.5:tan.jawari=10", "2:tan.first=Ma", "2.5:sa=D3",
@@ -99,8 +98,7 @@ static void tanpura_pct(const tanpura_t *t, double *lo, double *hi)
     for (j = 0; j < TANPURA_NSTR; j++)
         steps += t->str[j].c.M;
     steps /= TANPURA_OS;
-    instr = steps * 31.6 + (4 * 90 + 24 * 14) / (double)TANPURA_OS + 40
-            + (double)(DSP_BLOCK / TANPURA_OS) * (6 + (t->echo ? 5 : 0));
+    instr = steps * 31.6 + (4 * 90 + 24 * 14) / (double)TANPURA_OS + 40;
     *lo = instr * 1.0 / FM1_CYCLES_PER_SAMPLE * 100;
     *hi = instr * 1.3 / FM1_CYCLES_PER_SAMPLE * 100;
 }
@@ -428,10 +426,6 @@ int main(int argc, char **argv)
         }
         snprintf(buf, sizeof buf, "%u", r.eng.mixer.clips);
         check(sc->name, "no clipping", r.eng.mixer.clips == 0, buf);
-        if (!strcmp(sc->name, "tan_echo_100")) {
-            snprintf(buf, sizeof buf, "%u", r.eng.tanpura.echo_clips);
-            check(sc->name, "no echo saturation", r.eng.tanpura.echo_clips == 0, buf);
-        }
         (void)i;
         free(lr);
     }

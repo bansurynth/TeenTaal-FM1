@@ -161,7 +161,7 @@ Le percentuali CPU sono stime finché non c'è una misura `plat_cpu_pct()` sul d
   - risposta passa-alto del corpo: dà la sensazione che il suono cresca nei primi ~500 ms; va realizzata con filtri IIR, non con i FIR del paper
   - smorzamento dipendente dalla frequenza (σ0, σ1, σ3)
 - Limiti noti del modello per il nostro target: costo proporzionale al numero di modi (fino a Nyquist nel paper), stabilità dimostrata solo in aritmetica esatta, eccesso di alte frequenze a 44.1 kHz senza sovracampionamento. Ogni riduzione (meno modi, virgola fissa, scalature) va documentata in `DECISIONS.md` con il suo effetto misurato rispetto al riferimento.
-- Parametri: quantità di jawari (posizione del filo), velocità del ciclo di pizzico, leggera irregolarità umana dei tempi e delle dinamiche, volume per corda, echo 0–100% (ritardo fisso 400 ms, ripetizioni in decadimento, spento di default).
+- Parametri: quantità di jawari (posizione del filo), velocità del ciclo di pizzico, leggera irregolarità umana dei tempi e delle dinamiche, volume per corda.
 - Ciclo di pizzico classico: prima corda, Sa, Sa, Sa grave, con pausa prima di ricominciare.
 
 ### Tabla

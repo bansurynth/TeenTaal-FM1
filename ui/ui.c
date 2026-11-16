@@ -22,11 +22,11 @@
 
 static const char *const UI_SWARA[SW_N] = {"SA", "RE KOMAL", "RE", "GA KOMAL", "GA", "MA", "MA TIVRA", "PA",
                                            "DHA KOMAL", "DHA", "NI KOMAL", "NI"};
-enum { ROW_FIRST, ROW_FINE0, ROW_FINE1, ROW_FINE2, ROW_FINE3, ROW_REGISTER, ROW_CYCLE, ROW_ECHO, ROW_HUMAN,
-       ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, NROWS };
+enum { ROW_FIRST, ROW_FINE0, ROW_FINE1, ROW_FINE2, ROW_FINE3, ROW_REGISTER, ROW_CYCLE, ROW_HUMAN, ROW_TABLA_HUMAN,
+       ROW_TONE, ROW_A4, NROWS };
 static const char *const ROW_NAME[NROWS] = {"FIRST STRING", "FINE: 1ST STRING", "FINE: SA (2ND)", "FINE: SA (3RD)",
-                                            "FINE: KHARAJ", "TANPURA REGISTER", "PLUCK CYCLE", "TANPURA ECHO",
-                                            "TANPURA IRREG.", "TABLA IRREG.", "TONE SWARA", "A REFERENCE"};
+                                            "FINE: KHARAJ", "TANPURA REGISTER", "PLUCK CYCLE", "TANPURA IRREG.",
+                                            "TABLA IRREG.", "TONE SWARA", "A REFERENCE"};
 #define UI_ROWS_SHOWN 7
 /* the taal's colours: sam and khali must read at a glance, whatever the theme */
 #define UI_C_SAM RGB(255, 96, 64)
@@ -52,7 +52,7 @@ typedef struct {
     int32_t a4_dhz, sa_cents;
     int8_t first, reg, tone_swara, tone_oct, fine[TANPURA_NSTR];
     uint8_t jawari, cycle, tan_human, tabla_human, taal, vol_tanpura, vol_tabla, vol_tone;
-    int16_t mpm, echo;
+    int16_t mpm, pad;
 } ui_settings_t;
 static ui_settings_t ui_kept;               /* as loaded or last saved */
 static int ui_unsaved, ui_kt_key = -1;      /* the key whose tone sounds (-1 none) */
@@ -73,7 +73,6 @@ static void ui_settings_now(ui_settings_t *p)
     p->jawari = (uint8_t)ui_get(ENG_TANPURA, TANPURA_P_JAWARI);
     p->cycle = (uint8_t)ui_get(ENG_TANPURA, TANPURA_P_CYCLE);
     p->tan_human = (uint8_t)ui_get(ENG_TANPURA, TANPURA_P_HUMAN);
-    p->echo = (int16_t)ui_get(ENG_TANPURA, TANPURA_P_ECHO);
     p->tabla_human = (uint8_t)ui_get(ENG_TAAL, TAAL_P_HUMAN);
     p->taal = (uint8_t)ui_get(ENG_TAAL, TAAL_P_TAAL);
     p->mpm = (int16_t)ui_get(ENG_TAAL, TAAL_P_MPM);
@@ -97,7 +96,7 @@ static int ui_settings_valid(const ui_settings_t *p)
         || p->jawari > 100 || p->cycle < 25 || p->cycle > 80 || p->tan_human > 100 || p->tabla_human > 100
         || p->taal >= taal_count() || p->mpm < TAAL_MPM_MIN || p->mpm > TAAL_MPM_MAX || p->tone_swara < 0
         || p->tone_swara >= SW_N || p->tone_oct < -1 || p->tone_oct > 1 || p->vol_tanpura > 100 || p->vol_tabla > 100
-        || p->vol_tone > 100 || p->echo < 0 || p->echo > 100)
+        || p->vol_tone > 100)
         return 0;
     for (j = 0; j < TANPURA_NSTR; j++)
         if (p->fine[j] < -50 || p->fine[j] > 50)
@@ -117,7 +116,6 @@ static void ui_settings_apply(const ui_settings_t *p)
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_JAWARI, p->jawari);
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_CYCLE, p->cycle);
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_HUMAN, p->tan_human);
-    engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_ECHO, p->echo);
     engine_set_param(ui_eng, ENG_TAAL, TAAL_P_HUMAN, p->tabla_human);
     engine_set_param(ui_eng, ENG_TAAL, TAAL_P_TAAL, p->taal);
     engine_set_param(ui_eng, ENG_TAAL, TAAL_P_MPM, p->mpm);
@@ -343,7 +341,6 @@ static void ui_row_value(char *t, int row)
     case ROW_REGISTER: ui_cat(t, ui_get(ENG_TANPURA, TANPURA_P_REGISTER) ? "OCTAVE BELOW" : "AT SA"); break;
     case ROW_A4:       ui_dec1(t, ui_get(ENG_ALL, DSP_P_A4_DHZ)); ui_cat(t, " HZ"); break;
     case ROW_CYCLE:    ui_dec1(t, ui_get(ENG_TANPURA, TANPURA_P_CYCLE)); ui_cat(t, " S"); break;
-    case ROW_ECHO:     ui_num(u, ui_get(ENG_TANPURA, TANPURA_P_ECHO), 0); ui_cat(t, u); ui_cat(t, " %"); break;
     case ROW_HUMAN:    ui_num(u, ui_get(ENG_TANPURA, TANPURA_P_HUMAN), 0); ui_cat(t, u); ui_cat(t, " %"); break;
     case ROW_TONE:     ui_cat(t, UI_SWARA[ui_get(ENG_REFTONE, REFTONE_P_SWARA)]); break;
     case ROW_TABLA_HUMAN: ui_num(u, ui_get(ENG_TAAL, TAAL_P_HUMAN), 0); ui_cat(t, u); ui_cat(t, " %"); break;
@@ -403,7 +400,6 @@ static void ui_edit_step(int row, int32_t d)
     case ROW_REGISTER: ui_set(ENG_TANPURA, TANPURA_P_REGISTER, d > 0); break;
     case ROW_A4:       ui_set(ENG_ALL, DSP_P_A4_DHZ, ui_get(ENG_ALL, DSP_P_A4_DHZ) + d); break;
     case ROW_CYCLE:    ui_set(ENG_TANPURA, TANPURA_P_CYCLE, ui_get(ENG_TANPURA, TANPURA_P_CYCLE) + d); break;
-    case ROW_ECHO:     ui_set(ENG_TANPURA, TANPURA_P_ECHO, ui_get(ENG_TANPURA, TANPURA_P_ECHO) + 5 * d); break;
     case ROW_HUMAN:    ui_set(ENG_TANPURA, TANPURA_P_HUMAN, ui_get(ENG_TANPURA, TANPURA_P_HUMAN) + 5 * d); break;
     case ROW_TONE:
         ui_set(ENG_REFTONE, REFTONE_P_SWARA, clamp(ui_get(ENG_REFTONE, REFTONE_P_SWARA) + d, 0, SW_N - 1));

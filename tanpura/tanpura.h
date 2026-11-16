@@ -14,7 +14,6 @@
  *   TANPURA_P_JAWARI    0..100     the thread position: 0 = 4 mm (short jvari) .. 100 = 8 mm (long); 50 = 6 mm
  *   TANPURA_P_CYCLE     25..80     the cycle in tenths of a second (default 40: 4 s)
  *   TANPURA_P_HUMAN     0..100     irregularity: 100 = plucks +-50 ms and +-30 % (default 50)
- *   TANPURA_P_ECHO      0..100     feedback echo, 400 ms delay, off by default
  *   TANPURA_P_FINE + j  -50..50    string j's fine tuning in cents (j = 0..3)
  *   TANPURA_P_VOL + j   0..100     string j's volume (taken at its next pluck: the model is exactly linear in it)
  *   TANPURA_P_REGISTER  0 / 1      1 (default): the tanpura an octave under the player's Sa ("large"), when that stays
@@ -34,7 +33,6 @@
 #define TANPURA_NSTR 4
 #define TANPURA_OS 2                             /* the strings run at DSP_FS / TANPURA_OS */
 #define TANPURA_FS (DSP_FS / (float)TANPURA_OS)
-#define TANPURA_ECHO_SAMPLES 8824                 /* 400 ms at TANPURA_FS (rounded) */
 
 enum {
     TANPURA_P_ON = DSP_P_MODULE,
@@ -46,7 +44,6 @@ enum {
     TANPURA_P_VOL = TANPURA_P_FINE + TANPURA_NSTR,   /* + string 0..3 */
     TANPURA_P_REGISTER = TANPURA_P_VOL + TANPURA_NSTR,
     TANPURA_P_SA_NOW,
-    TANPURA_P_ECHO,
     TANPURA_P_END
 };
 
@@ -62,7 +59,7 @@ typedef struct {
 typedef struct {
     tanpura_config_t cfg;
     tuning_t tuning;
-    int32_t on, first, jawari, cycle, human, reg, echo, fine[TANPURA_NSTR], vol[TANPURA_NSTR];
+    int32_t on, first, jawari, cycle, human, reg, fine[TANPURA_NSTR], vol[TANPURA_NSTR];
     volatile int32_t start_req;                  /* switched on: tanpura_take starts the cycle */
     tstring_t str[TANPURA_NSTR];
     tstring_coefs_t stage[TANPURA_NSTR];         /* retunes prepared by set_param, taken by render */
@@ -79,9 +76,6 @@ typedef struct {
     float up[DSP_BLOCK / TANPURA_OS + 64];       /* the upsampler's input: its history, then this block's */
     float lp[2][2];                              /* the 8.5 kHz low-pass's state (UPS_LP_N = 2 biquads) */
     float eqs[2];                                /* the brightness correction's state */
-    int16_t echo_buf[TANPURA_ECHO_SAMPLES];       /* half-rate feedback delay; engine_t lives in .pool on target */
-    uint32_t echo_pos, echo_clips;
-    float echo_gain;
 } tanpura_t;
 
 void tanpura_default_config(tanpura_config_t *cfg);

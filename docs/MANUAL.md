@@ -51,8 +51,7 @@ The default Sa is **A3 (220 Hz)**, for a bansuri in A (the flute's Sa is an octa
 TANPURA REGISTER changes it). The dayan of the tabla tunes itself to Sa (to the octave between 190 and 380 Hz).
 
 The default tanpura cycle plucks its first string, Sa, Sa and the lower kharaj at 0, 0.8, 1.4 and 2.0 seconds of
-the 4-second cycle, then pauses for 2 seconds. EDIT → TANPURA ECHO adds decaying repeats at a fixed 400 ms delay;
-0% is off and 100% is the strongest setting.
+the 4-second cycle, then pauses for 2 seconds.
 
 ## Settings (EDIT)
 
@@ -64,7 +63,6 @@ SELECT picks the row, PRESETS changes the value, HOME goes back. The dots at the
 | FINE: 1ST STRING, SA (2ND), SA (3RD), KHARAJ | fine tuning of each string, ±50 cents |
 | TANPURA REGISTER | the tanpura an octave under Sa, or at Sa |
 | PLUCK CYCLE | the length of the plucking cycle (2.5–8 s) |
-| TANPURA ECHO | echo level, 0–100%; 400 ms delay, decaying repeats, off by default |
 | TANPURA IRREG. | how irregular the plucking is, like a real hand |
 | TABLA IRREG. | the same for the tabla (timing and strength of the strokes) |
 | TONE SWARA | the swara of the tone switched on with ARP |
@@ -92,7 +90,7 @@ new file there (format: [data/taal/FORMAT.md](../data/taal/FORMAT.md)) and rebui
 ## Saving
 
 **SAVE** keeps: Sa, the reference A, the taal and tempo, the three volumes, jawari, first string, the strings' fine
-tuning, the tanpura's register, cycle and echo, both irregularities, the tone's swara and octave. Which sounds are on is not
+tuning, the tanpura's register and cycle, both irregularities, the tone's swara and octave. Which sounds are on is not
 saved: the FM-1 always starts silent. While it saves, the sound dips for a moment (under a tenth of a second): writing
 the flash stops the audio for about 12 ms, and the firmware fades out and in around it to avoid a click.
 

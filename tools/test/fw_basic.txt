@@ -48,14 +48,10 @@ tap EDIT
 wait 100
 expect page 1
 turn PRESET -2
-turn SELECT 7
-turn PRESET 12
-wait 100
-expect first 5
-expect echo 60
-turn SELECT -2
+turn SELECT 5
 turn PRESET -1
 wait 300
+expect first 5
 expect register 0
 shot edit.png
 tap HOME
@@ -97,9 +93,9 @@ shot main_next_taal.png
 wait 6500
 expect taal_now 1
 shot main_ektaal.png
-# the tabla's irregularity: EDIT
+# the tabla's irregularity: EDIT, the last row
 tap EDIT
-turn SELECT 4
+turn SELECT 3
 turn PRESET -2
 wait 200
 expect tabla_human 20
@@ -133,7 +129,7 @@ expect octave 1
 expect kt_key -1
 # the first string's fine tuning (EDIT, row 1), then SAVE, a change, and a power cycle: the saved values come back
 tap EDIT
-turn SELECT -8
+turn SELECT -7
 turn PRESET 7
 wait 100
 expect fine0 7
@@ -154,7 +150,6 @@ expect mpm 155
 expect fine0 7
 expect first 5
 expect tab_vol 90
-expect echo 60
 expect sa_cents 700
 expect tan_on 0
 expect taal_on 0
