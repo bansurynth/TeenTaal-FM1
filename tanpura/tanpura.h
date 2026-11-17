@@ -57,7 +57,7 @@ enum {
 
 typedef struct {
     tuning_t tuning;
-    float fmax[TANPURA_NSTR];                    /* each string's mode truncation, Hz (step 2b's cost knob) */
+    float fmax[TANPURA_NSTR];                    /* base cutoff, scaled from 1x at C4 to 2x at G4 */
     int maxm[TANPURA_NSTR];                      /* and at most this many modes per string */
     float s0, rc;                                /* damping (step 2a final: 0.4 s^-1, 0.8 kg/s) */
     uint32_t seed;                               /* the irregularity's random sequence */

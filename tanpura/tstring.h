@@ -13,7 +13,7 @@
 #include <stdint.h>
 
 #ifndef TSTRING_MAXM
-#define TSTRING_MAXM 96              /* modes per string at most: step 2b quality needs <= ~80 (Sa F#2) */
+#define TSTRING_MAXM 96              /* maximum modes per string */
 #endif
 
 typedef struct {

@@ -4,6 +4,11 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
+### 2026-11-17 — Più modi sulle note alte del tanpura
+- Il limite statico resta a 96 modi per corda: nei render ad alta Sa non era quello il limite, ma il taglio `fmax`.
+- Il taglio per corda cresce da 1x a Sa C4 fino a 2x a G4; sotto C4 resta invariato. A G4 i modi attivi sulle quattro corde standard passano da 151 a 238.
+- La regressione include G4 con corda extra e stima il picco CPU al 78,93%, sotto il budget dell'85%. Il default jivari non cambia.
+
 ### 2026-11-16 — Tanpura: nuovo ciclo; Echo tolto (richiesta di ElectroNick)
 - **Ciclo**: attacchi nominali a 0, 20, 35 e 50% di un ciclo di 4 s: Pa, Sa, Sa, kharaj a 0, 0,8, 1,4 e 2,0 s; restano 2 s di pausa prima del ciclo seguente. Si conserva il ritardo interno di 20 ms e l'irregolarità già esistente.
 - **Echo**: introdotto il 2026-11-12 (ritardo 400 ms in feedback, impostazione 0–100%) e tolto il 2026-11-16 perché non serve; l'impostazione salvata torna al campo riservato (`pad`), il buffer di 17,6 KB e `PLAT_POOL` su `engine_t` non servono più.

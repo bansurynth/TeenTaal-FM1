@@ -54,8 +54,7 @@ void tanpura_default_config(tanpura_config_t *cfg)
     tuning_default(&cfg->tuning);
     cfg->fmax[0] = cfg->fmax[4] = 6000.0f, cfg->fmax[1] = cfg->fmax[2] = 8000.0f, cfg->fmax[3] = 3000.0f;   /* step 2b */
     for (j = 0; j < TANPURA_NSTR; j++)
-        cfg->maxm[j] = 68;
-    cfg->maxm[3] = 46;
+        cfg->maxm[j] = TSTRING_MAXM;
     cfg->s0 = 0.4f;
     cfg->rc = 0.8f;
     cfg->seed = 0x2545F491u;
@@ -74,6 +73,7 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
 {
     int32_t fine = j < TANPURA_NFINE ? m->fine[j] : 0;
     float cents = (float)(fine + reg_offset(m)), r, rho, E, k = 1.0f;
+    float high_sa = fm_clampf((float)m->tuning.sa_cents * (1.0f / 700.0f), 0.0f, 1.0f);
     if (j == 0 || j == TANPURA_NSTR - 1) {
         int swara = j == 0 ? m->first : m->extra >= 0 ? m->extra : SW_NI;
         cents += 100.0f * (float)swara - 1200.0f;      /* 12..17: the upper Sa .. Ma, above the player's Sa */
@@ -107,7 +107,7 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
     p->xc = (4e-3f + 4e-3f * (float)m->jawari * 0.01f) / k, p->wc = 1.2e-3f, p->kc = 1.2e5f, p->rc = m->cfg.rc;
     if (p->xc > 8.5e-3f) p->xc = 8.5e-3f;          /* (the thread stays short of the bridge's own 10 mm) */
     p->xe = 0.35f * p->L, p->we = 0.02f;
-    p->fmax = m->cfg.fmax[j];
+    p->fmax = m->cfg.fmax[j] * (1.0f + high_sa);
     p->maxm = m->cfg.maxm[j];
 }
 

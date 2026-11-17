@@ -65,6 +65,8 @@ static scenario_t SC[] = {
     {"tan_A3_Ga_alto_sustain", 6, {"0:sa=A3", "0:tan.reg=0", "0:tan.first=Ga^", "0:tan.vol1=0", "0:tan.vol2=0",
                                    "0:tan.vol3=0", "0:tan2.on=0", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_G4_Ma_high", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.first=Ma^", "0:tan.on=1"}, 0, 0, -1, 1, 0},
+    {"tan_G4_extra", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.first=Ma^", "0:tan.extra=Ni", "0:tan.on=1"},
+                     0, 0, -1, 1, 0},
     {"tan_Fs2_j0_Ma", 6, {"0:sa=F#2", "0:tan.jawari=0", "0:tan.first=Ma", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_G4_j100_Ni", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.jawari=100", "0:tan.first=Ni", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_retune", 6, {"0:sa=A2", "0:tan.on=1", "1:sa=A2+30", "1.5:tan.jawari=10", "2:tan.first=Ma", "2.5:sa=D3",
@@ -105,7 +107,8 @@ static void tanpura_pct(const tanpura_t *t, double *lo, double *hi)
     int contact_strings = TANPURA_NSTR - 1 + (t->extra >= 0);
     int j;
     for (j = 0; j < TANPURA_NSTR; j++)
-        steps += t->str[j].c.M;
+        if (j != TANPURA_NSTR - 1 || t->extra >= 0)
+            steps += t->str[j].c.M;
     steps /= TANPURA_OS;
     instr = steps * 31.6 + (contact_strings * 90 + 24 * 14) / (double)TANPURA_OS + 40;
     *lo = instr * 1.0 / FM1_CYCLES_PER_SAMPLE * 100;
@@ -141,6 +144,17 @@ static void tanpura_cycle_checks(void)
     tanpura_take(&t);
     snprintf(buf, sizeof buf, "first pluck in %d samples", (int)t.due[0]);
     check("tan_phase", "cycle moved by half a cycle", t.due[0] == 441 + 55100, buf);
+
+    tanpura_init(&t, 0);
+    tanpura_set_param(&t, DSP_P_SA_CENTS, 700);
+    tanpura_take(&t);
+    {
+        int j, modes = 0;
+        for (j = 0; j < TANPURA_NSTR - 1; j++)
+            modes += t.str[j].c.M;
+        snprintf(buf, sizeof buf, "%d modes across the four standard strings", modes);
+        check("tan_G4_modes", "high-Sa mode count", modes >= 220, buf);
+    }
 }
 
 static uint64_t fnv1a(const int32_t *x, size_t n)
@@ -365,6 +379,24 @@ int main(int argc, char **argv)
             check(sc->name, "golden hash", gv[0] && strtoull(gv, 0, 16) == h, buf);
         }
 
+        if (sc->tanpura) {
+            double lo, hi;
+            tanpura_pct(&r.eng.tanpura, &lo, &hi);
+            snprintf(buf, sizeof buf, "est. %.0f-%.0f %% of the second core (budget %.0f %%)", lo, hi,
+                     BUDGET_TANPURA_PCT);
+            check(sc->name, "tanpura cpu vs budget", hi <= BUDGET_TANPURA_PCT, buf);
+            if (hi > worst_pct)
+                worst_pct = hi;
+            if (r.eng.tanpura2.active) {
+                tanpura_pct(&r.eng.tanpura2, &lo, &hi);
+                snprintf(buf, sizeof buf, "est. %.0f-%.0f %% of the first core (budget %.0f %%)", lo, hi,
+                         BUDGET_TANPURA_PCT);
+                check(sc->name, "tanpura2 cpu vs budget", hi <= BUDGET_TANPURA_PCT, buf);
+                if (hi > worst_pct)
+                    worst_pct = hi;
+            }
+        }
+
         /* cpu */
         if (fd >= 0 && instr > 0) {
             double ips = (double)instr / frames, base, pct = ips * TARGET_CYCLES_PER_HOST_INSTR / FM1_CYCLES_PER_SAMPLE * 100;
@@ -375,19 +407,13 @@ int main(int argc, char **argv)
             snprintf(buf, sizeof buf, "%.1f instr/sample (baseline %.1f), FM-1 est. %.2f %%", ips, base, pct);
             if (!bout)
                 check(sc->name, "cpu vs baseline +25 %", base > 0 && ips <= base * 1.25, buf);
-            if (sc->tanpura) {
-                double lo, hi;
-                tanpura_pct(&r.eng.tanpura, &lo, &hi);
-                snprintf(buf, sizeof buf, "est. %.0f-%.0f %% of the second core (budget %.0f %%)", lo, hi,
-                         BUDGET_TANPURA_PCT);
-                check(sc->name, "tanpura cpu vs budget", hi <= BUDGET_TANPURA_PCT, buf);
-            } else if (sc->tabla) {
+            if (sc->tabla) {
                 snprintf(buf, sizeof buf, "est. %.2f %% of a core with the mixer (budget %.0f + %.0f %%)", pct,
                          BUDGET_TABLA_PCT, BUDGET_TAAL_REFTONE_MIXER_PCT);
                 check(sc->name, "tabla cpu vs budget", pct <= BUDGET_TABLA_PCT + BUDGET_TAAL_REFTONE_MIXER_PCT, buf);
                 if (r.eng.tabla.dropped)
                     check(sc->name, "no hits dropped", 0, 0);
-            } else {
+            } else if (!sc->tanpura) {
                 snprintf(buf, sizeof buf, "est. %.2f %% of a core (budget %.0f %%)", pct, BUDGET_TAAL_REFTONE_MIXER_PCT);
                 check(sc->name, "cpu vs budget", pct <= BUDGET_TAAL_REFTONE_MIXER_PCT, buf);
                 if (pct > worst_pct)
