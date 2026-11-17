@@ -60,6 +60,8 @@ static scenario_t SC[] = {
     {"tan2_phase0_Ma", 8, {"0:sa=A2", "0:tan2.phase=0", "0:tan2.first=Ma", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_A2_default", 8, {"0:sa=A2", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_A2_Ma_high", 6, {"0:sa=A2", "0:tan.first=Ma^", "0:tan.on=1"}, 0, 0, -1, 1, 0},
+    {"tan_A3_Ga_alto_sustain", 6, {"0:sa=A3", "0:tan.reg=0", "0:tan.first=Ga^", "0:tan.vol1=0", "0:tan.vol2=0",
+                                   "0:tan.vol3=0", "0:tan2.on=0", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_G4_Ma_high", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.first=Ma^", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_Fs2_j0_Ma", 6, {"0:sa=F#2", "0:tan.jawari=0", "0:tan.first=Ma", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_G4_j100_Ni", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.jawari=100", "0:tan.first=Ni", "0:tan.on=1"}, 0, 0, -1, 1, 0},

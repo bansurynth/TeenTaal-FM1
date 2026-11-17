@@ -93,6 +93,8 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
     p->EI = E * 0.25f * FM_PI * r * r * r * r;
     p->f1 = tuning_hz(&m->tuning, cents);
     p->s0 = m->cfg.s0, p->s1 = 6.5e-3f, p->s3 = 5.0e-6f;     /* Table 1, s0 from step 2a */
+    if (j == 0 && m->first > SW_NI)
+        p->s0 = 0.20f;                          /* reduce decay only for the shortened first string's upper notes */
     p->xb = 10e-3f, p->wb = 2.0e-3f, p->kb = 4.39e8f;
     p->xc = (4e-3f + 4e-3f * (float)m->jawari * 0.01f) / k, p->wc = 1.2e-3f, p->kc = 1.2e5f, p->rc = m->cfg.rc;
     if (p->xc > 8.5e-3f) p->xc = 8.5e-3f;          /* (the thread stays short of the bridge's own 10 mm) */
