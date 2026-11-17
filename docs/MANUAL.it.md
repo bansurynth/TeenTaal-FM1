@@ -50,7 +50,9 @@ in Sol: **SEL + il primo tasto Sol a sinistra** (Sol3, 196 Hz). Il tanpura suona
 REGISTER). Il dayan dei tabla si accorda da solo sul Sa.
 
 Il ciclo predefinito del tanpura (5 secondi) pizzica la prima corda, Sa, Sa e la kharaj grave a 0, 1,0, 1,75 e 2,5 secondi,
-poi fa una pausa. Un secondo tanpura (EDIT: 2ND TANPURA, attivo, prima corda NI, fase 50%) suona in parallelo, sfasato della fase scelta.
+poi fa una pausa. Con EXTRA STRING attiva, la corda aggiuntiva viene pizzicata dopo la prima; le due corde Sa e la kharaj
+seguono a 1,75, 2,5 e 3,25 secondi. Il secondo tanpura (EDIT: 2ND TANPURA, attivo, prima corda NI, fase 50%) può avere
+la propria corda aggiuntiva e suona in parallelo, sfasato della fase scelta.
 
 ## Le impostazioni (EDIT)
 
@@ -60,8 +62,9 @@ dove sei nell'elenco.
 | Riga | Cosa regola |
 |---|---|
 | FIRST STRING | la prima corda del tanpura: Pa (default), Ma, Ni o qualsiasi swara |
-| FINE: 1ST STRING, SA (2ND), SA (3RD), KHARAJ | accordatura fine di ogni corda, ±50 cents |
-| TANPURA REGISTER | il tanpura un'ottava sotto il Sa, o sul Sa stesso |
+| EXTRA STRING | OFF di default; scegli uno swara per aggiungere una corda dopo la prima e prima delle due corde Sa e del kharaj |
+| 2ND: EXTRA STRING | corda aggiuntiva indipendente del secondo tanpura, OFF di default |
+| FINE: 1ST STRING, SA (2ND), SA (3RD), KHARAJ | accordatura fine delle corde, ±50 cents |
 | PLUCK CYCLE | la durata del ciclo di pizzico (2,5–8 s) |
 | TANPURA IRREG. | quanto il pizzico è irregolare, come una mano vera |
 | TABLA IRREG. | lo stesso per i tabla (tempi e forza dei colpi) |

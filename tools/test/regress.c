@@ -60,6 +60,8 @@ static scenario_t SC[] = {
     {"tan2_phase0_Ma", 8, {"0:sa=A2", "0:tan2.phase=0", "0:tan2.first=Ma", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_A2_default", 8, {"0:sa=A2", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_A2_Ma_high", 6, {"0:sa=A2", "0:tan.first=Ma^", "0:tan.on=1"}, 0, 0, -1, 1, 0},
+    {"tan_extra_strings", 8, {"0:sa=A3", "0:tan.reg=0", "0:tan.extra=Ni", "0:tan2.extra=Ga^",
+                              "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_A3_Ga_alto_sustain", 6, {"0:sa=A3", "0:tan.reg=0", "0:tan.first=Ga^", "0:tan.vol1=0", "0:tan.vol2=0",
                                    "0:tan.vol3=0", "0:tan2.on=0", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan_G4_Ma_high", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.first=Ma^", "0:tan.on=1"}, 0, 0, -1, 1, 0},
@@ -100,11 +102,12 @@ static scenario_t SC[] = {
 static void tanpura_pct(const tanpura_t *t, double *lo, double *hi)
 {
     double steps = 0, instr;
+    int contact_strings = TANPURA_NSTR - 1 + (t->extra >= 0);
     int j;
     for (j = 0; j < TANPURA_NSTR; j++)
         steps += t->str[j].c.M;
     steps /= TANPURA_OS;
-    instr = steps * 31.6 + (4 * 90 + 24 * 14) / (double)TANPURA_OS + 40;
+    instr = steps * 31.6 + (contact_strings * 90 + 24 * 14) / (double)TANPURA_OS + 40;
     *lo = instr * 1.0 / FM1_CYCLES_PER_SAMPLE * 100;
     *hi = instr * 1.3 / FM1_CYCLES_PER_SAMPLE * 100;
 }

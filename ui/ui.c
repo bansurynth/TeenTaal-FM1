@@ -7,7 +7,7 @@
  *   SEQ        tanpura on / off                   PRESETS    its value
  *   ARP        reference tone on / off            HOME       back to the main page
  *   SELECT     the taal (while playing: from the  rows: first string, register, A reference, cycle, tanpura
- *              end of the cycle; ElectroNick, step 6)        irregularity, tone swara, tabla irregularity
+ *              end of the cycle; ElectroNick, step 6)        irregularity, tone swara, tabla irregularity, extra strings
  *   KNOB1      tempo, 1 matra/min a step (SEL+KNOB1: 10)
  *   key        the reference tone on that key's swara while held (like an harmonium; ElectroNick, step 1)
  *   SEL + key  Sa = that key's note (cents kept)
@@ -19,16 +19,19 @@
  *   EDIT       the EDIT page
  *   SAVE       keep the settings (UNSAVED on the screen while they differ from the kept ones)
  * The keys light from Sa up: Sa and Pa bright, the other shuddha swaras dim. */
+#include <stddef.h>
 
 static const char *const UI_SWARA[TANPURA_FIRST_MAX + 1] = {"SA", "RE KOMAL", "RE", "GA KOMAL", "GA", "MA", "MA TIVRA", "PA",
                                            "DHA KOMAL", "DHA", "NI KOMAL", "NI", "SA'", "RE KOMAL'", "RE'",
                                            "GA KOMAL'", "GA'", "MA'"};
 enum { ROW_FIRST, ROW_FINE0, ROW_FINE1, ROW_FINE2, ROW_FINE3, ROW_CYCLE, ROW_TAN2, ROW_TAN2_FIRST,
-       ROW_TAN2_PHASE, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, ROW_BT, ROW_BT_DEV, ROW_BT_LINK, ROW_BT_OUT, NROWS };
+       ROW_TAN2_PHASE, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, ROW_BT, ROW_BT_DEV, ROW_BT_LINK, ROW_BT_OUT,
+       ROW_EXTRA, ROW_TAN2_EXTRA, NROWS };
 static const char *const ROW_NAME[NROWS] = {"FIRST STRING", "FINE: 1ST STRING", "FINE: SA (2ND)", "FINE: SA (3RD)",
                                             "FINE: KHARAJ", "PLUCK CYCLE", "2ND TANPURA", "2ND: FIRST STRING",
                                             "2ND: PHASE", "TANPURA IRREG.", "TABLA IRREG.", "TONE SWARA",
-                                            "A REFERENCE", "BLUETOOTH", "BT SPEAKER", "BT LINK", "BT OUTPUT"};
+                                            "A REFERENCE", "BLUETOOTH", "BT SPEAKER", "BT LINK", "BT OUTPUT",
+                                            "EXTRA STRING", "2ND: EXTRA STRING"};
 #define UI_ROWS_SHOWN 7
 /* the taal's colours: sam and khali must read at a glance, whatever the theme */
 #define UI_C_SAM RGB(255, 96, 64)
@@ -52,9 +55,10 @@ typedef struct {
     uint32_t magic;
     uint16_t version, size;
     int32_t a4_dhz, sa_cents;
-    int8_t first, reg, tone_swara, tone_oct, fine[TANPURA_NSTR];
+    int8_t first, reg, tone_swara, tone_oct, fine[TANPURA_NFINE];
     uint8_t jawari, cycle, tan_human, tabla_human, taal, vol_tanpura, vol_tabla, vol_tone;
     int16_t mpm, tan2;                      /* tan2: bit 15 set = valid; bit 14 = the cycle is a 1.1 setting; bit 12 on, bits 7..11 first string, bits 0..6 phase */
+    int8_t extra, extra2;
 } ui_settings_t;
 static ui_settings_t ui_kept;               /* as loaded or last saved */
 static int ui_unsaved, ui_kt_key = -1;      /* the key whose tone sounds (-1 none) */
@@ -65,12 +69,12 @@ static void ui_settings_now(ui_settings_t *p)
     int j;
     for (j = 0; j < (int)sizeof *p; j++)
         ((uint8_t *)p)[j] = 0;
-    p->magic = UI_SET_MAGIC, p->version = 1, p->size = (uint16_t)sizeof *p;
+    p->magic = UI_SET_MAGIC, p->version = 2, p->size = (uint16_t)sizeof *p;
     p->a4_dhz = ui_get(ENG_ALL, DSP_P_A4_DHZ);
     p->sa_cents = ui_get(ENG_ALL, DSP_P_SA_CENTS);
     p->first = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_FIRST);
     p->reg = 0;                     /* (the tanpura plays at the note shown: no register) */
-    for (j = 0; j < TANPURA_NSTR; j++)
+    for (j = 0; j < TANPURA_NFINE; j++)
         p->fine[j] = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_FINE + j);
     p->jawari = (uint8_t)ui_get(ENG_TANPURA, TANPURA_P_JAWARI);
     p->cycle = (uint8_t)ui_get(ENG_TANPURA, TANPURA_P_CYCLE);
@@ -87,6 +91,8 @@ static void ui_settings_now(ui_settings_t *p)
     p->vol_tanpura = (uint8_t)ui_get(ENG_MIXER, MIX_P_LEVEL + MIX_TANPURA);
     p->vol_tabla = (uint8_t)ui_get(ENG_MIXER, MIX_P_LEVEL + MIX_TABLA);
     p->vol_tone = (uint8_t)ui_get(ENG_REFTONE, REFTONE_P_VOLUME);
+    p->extra = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_EXTRA);
+    p->extra2 = (int8_t)ui_get(ENG_TANPURA2, TANPURA_P_EXTRA);
 }
 
 /* Sa on the device: the engine's whole range (tuning.h: F#2 .. G4, default A3): the tanpura plays at the note shown */
@@ -107,7 +113,9 @@ static int32_t ui_sa_clamp(int32_t c) { return c < UI_SA_MIN ? UI_SA_MIN : c > U
 static int ui_settings_valid(const ui_settings_t *p)
 {
     int j;
-    if (p->magic != UI_SET_MAGIC || p->version != 1 || p->size != sizeof *p)
+    if (p->magic != UI_SET_MAGIC
+        || !((p->version == 1 && p->size == offsetof(ui_settings_t, extra))
+             || (p->version == 2 && p->size == sizeof *p)))
         return 0;
     if (p->a4_dhz < TUNING_A4_DHZ_MIN || p->a4_dhz > TUNING_A4_DHZ_MAX || p->sa_cents < TUNING_SA_MIN
         || p->sa_cents > TUNING_SA_MAX || p->first < 0 || p->first > TANPURA_FIRST_MAX || p->reg < 0 || p->reg > 1
@@ -118,9 +126,11 @@ static int ui_settings_valid(const ui_settings_t *p)
         return 0;
     if ((p->tan2 & 0x8000) && (((p->tan2 >> 7) & 31) > TANPURA_FIRST_MAX || (p->tan2 & 127) > 100))
         return 0;
-    for (j = 0; j < TANPURA_NSTR; j++)
+    for (j = 0; j < TANPURA_NFINE; j++)
         if (p->fine[j] < -50 || p->fine[j] > 50)
             return 0;
+    if (p->version == 2 && (p->extra < -1 || p->extra > TANPURA_FIRST_MAX || p->extra2 < -1 || p->extra2 > TANPURA_FIRST_MAX))
+        return 0;
     return 1;
 }
 
@@ -130,7 +140,7 @@ static void ui_settings_apply(const ui_settings_t *p)
     engine_set_param(ui_eng, ENG_ALL, DSP_P_A4_DHZ, p->a4_dhz);
     engine_set_param(ui_eng, ENG_ALL, DSP_P_SA_CENTS, ui_sa_fold(p->sa_cents));   /* (an older record: the same note, in the central octave) */
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_FIRST, p->first);
-    for (j = 0; j < TANPURA_NSTR; j++)
+    for (j = 0; j < TANPURA_NFINE; j++)
         engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_FINE + j, p->fine[j]);
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_JAWARI, p->jawari);
     if ((p->tan2 & 0x8000) && (p->tan2 & 0x4000))   /* (an older record keeps the 5 s default) */
@@ -140,6 +150,10 @@ static void ui_settings_apply(const ui_settings_t *p)
         engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_ON, (p->tan2 >> 12) & 1);
         engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_FIRST, (p->tan2 >> 7) & 31);
         engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_PHASE, p->tan2 & 127);
+    }
+    if (p->version == 2) {
+        engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_EXTRA, p->extra);
+        engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_EXTRA, p->extra2);
     }
     engine_set_param(ui_eng, ENG_TAAL, TAAL_P_HUMAN, p->tabla_human);
     engine_set_param(ui_eng, ENG_TAAL, TAAL_P_TAAL, p->taal);
@@ -164,12 +178,16 @@ static int ui_same(const ui_settings_t *a, const ui_settings_t *b)
 static int ui_loaded;                       /* 1: the settings came from the flash; 0: defaults (none, or bad) */
 static void ui_init_state(engine_t *e)
 {
-    ui_settings_t s;
+    ui_settings_t s = {0};
+    int n;
     ui_eng = e;
     engine_set_param(e, ENG_ALL, DSP_P_A4_DHZ, TUNING_A4_DHZ_DEFAULT);
     engine_set_param(e, ENG_ALL, DSP_P_SA_CENTS, UI_SA_DEFAULT);
     engine_set_param(e, ENG_TANPURA, TANPURA_P_REGISTER, 0);
-    if (plat_store_load(OBJ_SETTINGS, &s, sizeof s) == (int)sizeof s && ui_settings_valid(&s)) {
+    n = plat_store_load(OBJ_SETTINGS, &s, sizeof s);
+    if ((n == (int)sizeof s || n == (int)offsetof(ui_settings_t, extra)) && ui_settings_valid(&s)) {
+        if (n == (int)offsetof(ui_settings_t, extra))
+            s.extra = s.extra2 = -1;
         ui_settings_apply(&s);
         ui_loaded = 1;
     }
@@ -459,6 +477,11 @@ static void ui_row_value(char *t, int row)
     case ROW_BT_DEV:   ui_bt_name(t, ui_bt_dev); break;
     case ROW_BT_LINK:  ui_bt_state(t); break;
     case ROW_BT_OUT:   ui_cat(t, plat_bta_out_device() ? "SPEAKER" : "FM-1"); break;
+    case ROW_EXTRA: case ROW_TAN2_EXTRA: {
+        int32_t swara = ui_get(row == ROW_EXTRA ? ENG_TANPURA : ENG_TANPURA2, TANPURA_P_EXTRA);
+        ui_cat(t, swara < 0 ? "OFF" : UI_SWARA[swara]);
+        break;
+    }
     case ROW_TABLA_HUMAN: ui_num(u, ui_get(ENG_TAAL, TAAL_P_HUMAN), 0); ui_cat(t, u); ui_cat(t, " %"); break;
     case ROW_FINE0: case ROW_FINE1: case ROW_FINE2: case ROW_FINE3:
         ui_num(u, ui_get(ENG_TANPURA, TANPURA_P_FINE + row - ROW_FINE0), 1); ui_cat(t, u); ui_cat(t, " CENTS"); break;
@@ -526,6 +549,14 @@ static void ui_edit_step(int row, int32_t d)
         break;
     case ROW_TABLA_HUMAN: ui_set(ENG_TAAL, TAAL_P_HUMAN, ui_get(ENG_TAAL, TAAL_P_HUMAN) + 5 * d); break;
     case ROW_BT: case ROW_BT_DEV: case ROW_BT_LINK: case ROW_BT_OUT: ui_bt_step(row, d); break;
+    case ROW_EXTRA:
+        ui_set(ENG_TANPURA, TANPURA_P_EXTRA,
+               clamp(ui_get(ENG_TANPURA, TANPURA_P_EXTRA) + d, -1, TANPURA_FIRST_MAX));
+        break;
+    case ROW_TAN2_EXTRA:
+        ui_set(ENG_TANPURA2, TANPURA_P_EXTRA,
+               clamp(ui_get(ENG_TANPURA2, TANPURA_P_EXTRA) + d, -1, TANPURA_FIRST_MAX));
+        break;
     case ROW_FINE0: case ROW_FINE1: case ROW_FINE2: case ROW_FINE3:
         ui_set(ENG_TANPURA, TANPURA_P_FINE + row - ROW_FINE0, clamp(ui_get(ENG_TANPURA, TANPURA_P_FINE + row - ROW_FINE0) + d, -50, 50));
         break;

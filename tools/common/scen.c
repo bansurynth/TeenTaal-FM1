@@ -131,6 +131,16 @@ int scen_parse(const char *s, scen_ev_t *ev)
         if (swara_index(val, &ev->v) == 0)
             return 0;
     }
+    else if (!strcmp(name, "tan.extra") || !strcmp(name, "tan2.extra")) {
+        ev->target = !strcmp(name, "tan2.extra") ? ENG_TANPURA2 : ENG_TANPURA;
+        ev->id = TANPURA_P_EXTRA;
+        if (!strcmp(val, "off")) {
+            ev->v = -1;
+            return 0;
+        }
+        if (swara_index(val, &ev->v) == 0)
+            return 0;
+    }
     else
         goto bad;
     ev->v = (int32_t)strtol(val, &end, 10);

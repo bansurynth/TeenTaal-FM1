@@ -39,7 +39,12 @@ static float level_comp(const tanpura_t *m)
 #define PLUCK_AMP (-0.4f)          /* N, toward the bridge (the paper's) */
 #define PLUCK_TAU 0.05f            /* s */
 #define FADE_OUT_S 0.3f
-static const float CYCLE_AT[TANPURA_NSTR] = {0.0f, 0.20f, 0.35f, 0.50f};
+static float cycle_at(const tanpura_t *m, int j)
+{
+    if (m->extra < 0)
+        return j == 0 ? 0.0f : j == 1 ? 0.20f : j == 2 ? 0.35f : j == 3 ? 0.50f : 0.65f;
+    return j == 0 ? 0.0f : j == 4 ? 0.20f : j == 1 ? 0.35f : j == 2 ? 0.50f : 0.65f;
+}
 
 static int32_t clampi(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : v > hi ? hi : v; }
 
@@ -47,11 +52,10 @@ void tanpura_default_config(tanpura_config_t *cfg)
 {
     int j;
     tuning_default(&cfg->tuning);
-    cfg->fmax[0] = 6000.0f, cfg->fmax[1] = cfg->fmax[2] = 8000.0f, cfg->fmax[3] = 3000.0f;   /* step 2b: quality */
-    /* at most 250 modes in all (68 + 68 + 68 + 46): the second core's cost follows the modes, and a long string
-     * (Sa F#3 to A#3 an octave down) would need 250..284 */
+    cfg->fmax[0] = cfg->fmax[4] = 6000.0f, cfg->fmax[1] = cfg->fmax[2] = 8000.0f, cfg->fmax[3] = 3000.0f;   /* step 2b */
     for (j = 0; j < TANPURA_NSTR; j++)
-        cfg->maxm[j] = j == TANPURA_NSTR - 1 ? 46 : 68;
+        cfg->maxm[j] = 68;
+    cfg->maxm[3] = 46;
     cfg->s0 = 0.4f;
     cfg->rc = 0.8f;
     cfg->seed = 0x2545F491u;
@@ -68,10 +72,15 @@ static int32_t reg_offset(const tanpura_t *m)
 /* the string parameters for string j at the current settings */
 static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
 {
-    float cents = (float)(m->fine[j] + reg_offset(m)), r, rho, E, k = 1.0f;
-    if (j == 0)
-        cents += 100.0f * (float)m->first - 1200.0f;   /* 12..17: the upper Sa .. Ma, above the player's Sa */
-    else if (j == 3)
+    int32_t fine = j < TANPURA_NFINE ? m->fine[j] : 0;
+    float cents = (float)(fine + reg_offset(m)), r, rho, E, k = 1.0f;
+    if (j == 0 || j == TANPURA_NSTR - 1) {
+        int swara = j == 0 ? m->first : m->extra >= 0 ? m->extra : SW_NI;
+        cents += 100.0f * (float)swara - 1200.0f;      /* 12..17: the upper Sa .. Ma, above the player's Sa */
+        if (swara > SW_NI)
+            k = fm_exp2f(-(float)(100 * swara - 1200) * (1.0f / 1200.0f));
+    }
+    if (j == 3)
         cents -= 1200.0f;
     /* the instrument follows Sa (step 2b): the large tanpura (1.1 m, steel 0.16 mm, kharaj bronze 0.25 mm) at Sa A2
      * and below, the smaller one (0.85 m, 0.13 / 0.18 mm) at Sa A3, both heard and liked by ElectroNick at step 2a;
@@ -79,9 +88,8 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
     {
         float t = fm_clampf(((float)(m->tuning.sa_cents + reg_offset(m)) + 1500.0f) * (1.0f / 1200.0f), 0.0f, 1.83f);
         p->L = 1.1f - 0.25f * t;
-        if (j == 0 && m->first > SW_NI)          /* an upper note on the long string: it shortens in step with the pitch: the tension, and so the metallic buzz, stay as for the lower notes (measured: 2-6 kHz energy -8 dB without, -25 dB with) */
+        if (k < 1.0f)                             /* an upper swara note shortens in step with the pitch */
         {                                        /* (the thread moves out by 1/k too: measured, the same jawari and highs as the lower notes; at the old distance the highs were 10 dB up and the jawari short) */
-            k = fm_exp2f(-(float)(100 * m->first - 1200) * (1.0f / 1200.0f));
             p->L *= k;
         }
         if (j == 3)
@@ -93,8 +101,8 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
     p->EI = E * 0.25f * FM_PI * r * r * r * r;
     p->f1 = tuning_hz(&m->tuning, cents);
     p->s0 = m->cfg.s0, p->s1 = 6.5e-3f, p->s3 = 5.0e-6f;     /* Table 1, s0 from step 2a */
-    if (j == 0 && m->first > SW_NI)
-        p->s0 = 0.20f;                          /* reduce decay only for the shortened first string's upper notes */
+    if (k < 1.0f)
+        p->s0 = 0.20f;                          /* reduce decay for shortened upper swara strings */
     p->xb = 10e-3f, p->wb = 2.0e-3f, p->kb = 4.39e8f;
     p->xc = (4e-3f + 4e-3f * (float)m->jawari * 0.01f) / k, p->wc = 1.2e-3f, p->kc = 1.2e5f, p->rc = m->cfg.rc;
     if (p->xc > 8.5e-3f) p->xc = 8.5e-3f;          /* (the thread stays short of the bridge's own 10 mm) */
@@ -142,9 +150,9 @@ static void start_cycle(tanpura_t *m)
     int j;
     m->phase_done = m->phase;
     for (j = 0; j < TANPURA_NSTR; j++) {
-        m->nominal[j] = (int32_t)(CYCLE_AT[j] * (float)cycle_samples(m)) + (int32_t)(0.02f * TANPURA_FS)
+        m->nominal[j] = (int32_t)(cycle_at(m, j) * (float)cycle_samples(m)) + (int32_t)(0.02f * TANPURA_FS)
                         + cycle_samples(m) / 100 * m->phase;
-        m->due[j] = m->nominal[j] + jitter(m);
+        m->due[j] = m->nominal[j] + (j == TANPURA_NSTR - 1 && m->extra < 0 ? 0 : jitter(m));
     }
 }
 
@@ -156,10 +164,13 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
     else
         tanpura_default_config(&m->cfg);
     m->tuning = m->cfg.tuning;
-    m->on = 0, m->first = SW_PA, m->jawari = 50, m->cycle = 50, m->human = 50, m->reg = 1, m->start_req = 0;
+    m->on = 0, m->first = SW_PA, m->extra = -1, m->jawari = 50, m->cycle = 50, m->human = 50, m->reg = 1;
+    m->start_req = m->extra_silence_req = 0;
     m->phase = m->phase_done = 0;
+    for (j = 0; j < TANPURA_NFINE; j++)
+        m->fine[j] = 0;
     for (j = 0; j < TANPURA_NSTR; j++)
-        m->fine[j] = 0, m->vol[j] = 100;
+        m->vol[j] = 100;
     m->rng = m->cfg.seed ? m->cfg.seed : 1u;
     for (j = 0; j < TANPURA_NSTR; j++)
         m->f1_now[j] = 0.0f;
@@ -190,7 +201,7 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
             stage(m, j);
         return;
     }
-    if (id >= TANPURA_P_FINE && id < TANPURA_P_FINE + TANPURA_NSTR) {
+    if (id >= TANPURA_P_FINE && id < TANPURA_P_FINE + TANPURA_NFINE) {
         m->fine[id - TANPURA_P_FINE] = clampi(v, -50, 50);
         stage(m, id - TANPURA_P_FINE);
         return;
@@ -220,6 +231,15 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
     case TANPURA_P_CYCLE:  m->cycle = clampi(v, 25, 80); break;
     case TANPURA_P_HUMAN:  m->human = clampi(v, 0, 100); break;
     case TANPURA_P_PHASE:  m->phase = clampi(v, 0, 100); break;
+    case TANPURA_P_EXTRA:
+        v = clampi(v, -1, TANPURA_FIRST_MAX);
+        if (v != m->extra) {
+            m->extra = v;
+            stage(m, TANPURA_NSTR - 1);
+            m->extra_silence_req = v < 0;
+            m->start_req = 1;
+        }
+        break;
     default: break;
     }
 }
@@ -228,7 +248,7 @@ int32_t tanpura_get_param(const tanpura_t *m, int id)
 {
     if (id == DSP_P_A4_DHZ) return m->tuning.a4_dhz;
     if (id == DSP_P_SA_CENTS) return m->tuning.sa_cents;
-    if (id >= TANPURA_P_FINE && id < TANPURA_P_FINE + TANPURA_NSTR) return m->fine[id - TANPURA_P_FINE];
+    if (id >= TANPURA_P_FINE && id < TANPURA_P_FINE + TANPURA_NFINE) return m->fine[id - TANPURA_P_FINE];
     if (id >= TANPURA_P_VOL && id < TANPURA_P_VOL + TANPURA_NSTR) return m->vol[id - TANPURA_P_VOL];
     switch (id) {
     case TANPURA_P_ON:     return m->on;
@@ -239,6 +259,7 @@ int32_t tanpura_get_param(const tanpura_t *m, int id)
     case TANPURA_P_REGISTER: return m->reg;
     case TANPURA_P_SA_NOW: return m->tuning.sa_cents + reg_offset(m);
     case TANPURA_P_PHASE:  return m->phase;
+    case TANPURA_P_EXTRA:  return m->extra;
     default:               return 0;
     }
 }
@@ -258,6 +279,10 @@ void tanpura_take(tanpura_t *m)
                 tstring_take(&m->str[j], &m->stage[j]);
                 m->stage_ready[j] = 0;
             }
+    if (m->extra_silence_req) {
+        tstring_silence(&m->str[TANPURA_NSTR - 1]);
+        m->extra_silence_req = 0;
+    }
     if (m->phase != m->phase_done) {             /* a running cycle follows the new offset */
         int32_t d = cycle_samples(m) / 100 * (m->phase - m->phase_done);
         for (j = 0; j < TANPURA_NSTR; j++)
@@ -306,7 +331,8 @@ void tanpura_render(tanpura_t *m, int32_t *out, int n)
     for (i = 0; i < ns; i++)
         m->fd[i] = m->fn[i] = 0.0f;
     for (j = 0; j < TANPURA_NSTR; j++)
-        run_string(m, j, ns);
+        if (j != TANPURA_NSTR - 1 || m->extra >= 0)
+            run_string(m, j, ns);
     /* the body at the strings' rate: parallel sections with shared poles, the bridge and nut forces in */
     for (i = 0; i < ns; i++) {
         float xd = m->fd[i], xn = m->fn[i], p = BODY_D_BRIDGE * xd + BODY_D_NUT * xn;

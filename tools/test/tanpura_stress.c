@@ -1,11 +1,12 @@
 /* tanpura_stress — step 2b robustness of the float tanpura (tanpura/), host:
  *   1. every Sa from F#2 to G4 (6 values) x jawari 0, 50, 100 x first string Pa, Ma, Ni: 40 s each, the output finite,
  *      no clipping, the loudness steady (the last 10 s within 2x the peak of the first 10 s: nothing grows)
- *   2. one string, one pluck, 60 s, at both ends of the Sa range and of the thread: the modal energy sampled every
+ *   2. every swara for the extra string at low, middle and high Sa: finite, no clipping, stable loudness
+ *   3. one string, one pluck, 60 s, at both ends of the Sa range and of the thread: the modal energy sampled every
  *      0.1 s after the pluck never rises (beyond float noise) and ends below 1e-6 of its start
- *   3. retuning while it sounds (Sa, the first string, the thread, the fine tuning, every 0.4 s): finite, no clipping,
+ *   4. retuning while it sounds (Sa, the first string, the thread, the fine tuning, every 0.4 s): finite, no clipping,
  *      no jump between samples larger than half full scale
- *   4. ten minutes at the defaults: finite, no clipping, the peak of the last minute within 2x of the first
+ *   5. ten minutes at the defaults: finite, no clipping, the peak of the last minute within 2x of the first
  * Exit 0 when everything passes.   build-host/tanpura_stress [quick] */
 #include <math.h>
 #include <stdio.h>
@@ -102,7 +103,32 @@ int main(int argc, char **argv)
                 }
             }
     /* 2 */
-    printf("2. one string, one pluck, 60 s: the energy never rises\n");
+    printf("2. every extra-string swara at low, middle and high Sa, %d s each\n", quick ? 6 : 20);
+    {
+        static const int sa_idx[] = {0, 3, 5};
+        static const char *const sa_name[] = {"F#2", "A3", "G4"};
+        int i, sw;
+        double secs = quick ? 6 : 20;
+        for (i = 0; i < 3; i++)
+            for (sw = 0; sw < 18; sw++) {
+                tanpura_init(&t, NULL);
+                tanpura_set_param(&t, DSP_P_SA_CENTS, SA[sa_idx[i]]);
+                tanpura_set_param(&t, TANPURA_P_EXTRA, sw);
+                tanpura_set_param(&t, TANPURA_P_ON, 1);
+                run(&t, secs, secs / 4, secs * 3 / 4, &st, NULL, 1);
+                snprintf(buf, sizeof buf, "peak %.1f dBFS first, %.1f dBFS last; %ld clipped, %ld non-finite",
+                         20 * log10(st.peak_first / DSP_Q23_MAX + 1e-12),
+                         20 * log10(st.peak_last / DSP_Q23_MAX + 1e-12), st.clipped, st.nonfinite);
+                {
+                    char w[96];
+                    snprintf(w, sizeof w, "Sa %s, extra %s", sa_name[i], tuning_swara_name(sw));
+                    check(w, st.clipped == 0 && st.nonfinite == 0 && st.peak_last < 2 * st.peak_first &&
+                          st.peak_first > 0, buf);
+                }
+            }
+    }
+    /* 3 */
+    printf("3. one string, one pluck, 60 s: the energy never rises\n");
     for (a = 0; a < 6; a += 5)
         for (b = 0; b < 3; b += 2) {
             static tstring_t s;
@@ -143,8 +169,8 @@ int main(int argc, char **argv)
                 check(w, isfinite(last) && worst < 1e-4 && last / e0 < 1e-6, buf);
             }
         }
-    /* 3 */
-    printf("3. retuning every 0.4 s while it sounds\n");
+    /* 4 */
+    printf("4. retuning every 0.4 s while it sounds\n");
     tanpura_init(&t, NULL);
     tanpura_set_param(&t, TANPURA_P_ON, 1);
     retune_step = 0;
@@ -152,9 +178,9 @@ int main(int argc, char **argv)
     snprintf(buf, sizeof buf, "%d retunes; %ld clipped, %ld non-finite; largest step %.2f of full scale",
              retune_step, st.clipped, st.nonfinite, st.maxstep / DSP_Q23_MAX);
     check("retune", st.clipped == 0 && st.nonfinite == 0 && st.maxstep < 0.5 * DSP_Q23_MAX, buf);
-    /* 4 */
+    /* 5 */
     if (!quick) {
-        printf("4. ten minutes at the defaults (Sa A2)\n");
+        printf("5. ten minutes at the defaults (Sa A2)\n");
         tanpura_init(&t, NULL);
         tanpura_set_param(&t, DSP_P_SA_CENTS, -1500);
         tanpura_set_param(&t, TANPURA_P_ON, 1);

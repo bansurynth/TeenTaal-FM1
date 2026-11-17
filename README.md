@@ -20,8 +20,9 @@ repository or check the [Releases](https://github.com/ELENICK97/TeenTaal-FM1/rel
 
 ## What it does
 
-- **Tanpura** — a physical model of the instrument (after van Walstijn, Bridges and Mehes, DAFx-16): four strings
-  (first string on Pa, Ma, Ni or any swara; two Sa; kharaj), the **jawari** buzz modelled from the string's contact
+- **Tanpura** — a physical model of the instrument (after van Walstijn, Bridges and Mehes, DAFx-16): four standard strings
+  (first string on Pa, Ma, Ni or any swara; two Sa; kharaj) plus an optional, independently tuned fifth string on each tanpura,
+  the **jawari** buzz modelled from the string's contact
   with the bridge, the slow swell of the body, a plucking cycle with a human irregularity. Sa tunable in cents, A
   reference 415–466 Hz, fine tuning of every string.
 - **Tabla** — recorded strokes (dayan tuned to your Sa, bayan at its own pitch), played by a **taal engine** with ten

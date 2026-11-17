@@ -145,6 +145,8 @@ int app_expect(const char *what, int *got)
     else if (!strcmp(what, "tan_sa")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_SA_NOW);
     else if (!strcmp(what, "jawari")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_JAWARI);
     else if (!strcmp(what, "first")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_FIRST);
+    else if (!strcmp(what, "extra")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_EXTRA);
+    else if (!strcmp(what, "tan2_extra")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_EXTRA);
     else if (!strcmp(what, "register")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_REGISTER);
     else if (!strcmp(what, "tan_vol")) *got = (int)engine_get_param(&eng, ENG_MIXER, MIX_P_LEVEL + MIX_TANPURA);
     else if (!strcmp(what, "taal_on")) *got = (int)engine_get_param(&eng, ENG_TAAL, TAAL_P_ON);

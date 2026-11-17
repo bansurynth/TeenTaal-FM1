@@ -119,7 +119,16 @@ turn SELECT -3
 turn PRESET -1
 wait 50
 expect bta 0
-turn SELECT -3
+# both tanpuras' optional extra string: OFF by default; the row cycles through every swara and its upper octave
+turn SELECT 4
+expect extra -1
+turn PRESET 12
+expect extra 11
+turn SELECT 1
+expect tan2_extra -1
+turn PRESET 17
+expect tan2_extra 16
+turn SELECT -8
 tap HOME
 # off: PLAY; the strokes ring out
 tap PLAY
@@ -169,6 +178,8 @@ expect loaded 1
 expect mpm 155
 expect fine0 7
 expect first 5
+expect extra 11
+expect tan2_extra 16
 expect tab_vol 90
 expect sa_cents 700
 expect tan_on 0

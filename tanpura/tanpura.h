@@ -1,10 +1,12 @@
 /* tanpura.h — the tanpura: four strings (DAFx-16 model, tanpura/tstring.c), the plucking cycle, the body.
  *
- * Strings: 0 the first string (a swara in the mandra octave: Pa by default), 1 and 2 Sa, 3 kharaj (Sa an octave
- * below, bronze). The instrument follows Sa: the large tanpura of step 2a (1.1 m, steel 0.16 mm, kharaj bronze
+ * Strings: 0 the first string (a swara in the mandra octave: Pa by default), 4 the optional extra swara, 1 and 2 Sa,
+ * 3 kharaj (Sa an octave below, bronze). The extra is silent by default. The instrument follows Sa: the large
+ * tanpura of step 2a (1.1 m, steel 0.16 mm, kharaj bronze
  * 0.25 mm) at Sa A2 and below, the smaller one (0.85 m, 0.13 / 0.18 mm) at A3, interpolated (0.7 m at G4).
  * Finger pluck at 35 % of the string, 2 cm wide.
- * Cycle: first string, Sa, Sa, kharaj at 0, 20, 35 and 50 % of the cycle (5 s: 0, 1, 1.75, 2.5 s), then a pause.
+ * Cycle: first string, optional extra, Sa, Sa, kharaj; with the extra off, the original 0, 20, 35 and 50 % timing
+ * remains; with it on, the extra plucks after the first string, then Sa, Sa, kharaj.
  * Rates (step 2b): the strings and the body run at half the FM-1's rate (22058.8 Hz; above 11 kHz the reference
  * holds -44 dB of its energy), then a half-band filter brings the output up to 44117.6 Hz.
  *
@@ -14,8 +16,9 @@
  *   TANPURA_P_JAWARI    0..100     the thread position: 0 = 4 mm (short jvari) .. 100 = 8 mm (long); 50 = 6 mm
  *   TANPURA_P_CYCLE     25..80     the cycle in tenths of a second (default 50: 5 s)
  *   TANPURA_P_PHASE     0..100     the plucks' offset in % of the cycle (default 0; moves a running cycle too)
+ *   TANPURA_P_EXTRA     -1..17     optional extra string: -1 off, otherwise SW_SA..SW_NI and upper Sa..Ma (default off)
  *   TANPURA_P_HUMAN     0..100     irregularity: 100 = plucks +-50 ms and +-30 % (default 50)
- *   TANPURA_P_FINE + j  -50..50    string j's fine tuning in cents (j = 0..3)
+ *   TANPURA_P_FINE + j  -50..50    strings 0..3 fine tuning in cents
  *   TANPURA_P_VOL + j   0..100     string j's volume (taken at its next pluck: the model is exactly linear in it)
  *   TANPURA_P_REGISTER  0 / 1      1 (default): the tanpura an octave under the player's Sa ("large"), when that stays
  *                                  in its range (Sa F#3 and up); 0: at the Sa itself
@@ -31,7 +34,8 @@
 #include "dsp/tuning.h"
 #include "tanpura/tstring.h"
 
-#define TANPURA_NSTR 4
+#define TANPURA_NSTR 5
+#define TANPURA_NFINE 4
 #define TANPURA_FIRST_MAX 17                     /* the first string: SW_SA..SW_NI, then the upper Sa .. Ma shuddha */
 #define TANPURA_OS 2                             /* the strings run at DSP_FS / TANPURA_OS */
 #define TANPURA_FS (DSP_FS / (float)TANPURA_OS)
@@ -43,10 +47,11 @@ enum {
     TANPURA_P_CYCLE,
     TANPURA_P_HUMAN,
     TANPURA_P_FINE,                              /* + string 0..3 */
-    TANPURA_P_VOL = TANPURA_P_FINE + TANPURA_NSTR,   /* + string 0..3 */
+    TANPURA_P_VOL = TANPURA_P_FINE + TANPURA_NFINE,   /* + string 0..4 */
     TANPURA_P_REGISTER = TANPURA_P_VOL + TANPURA_NSTR,
     TANPURA_P_SA_NOW,
     TANPURA_P_PHASE,
+    TANPURA_P_EXTRA,
     TANPURA_P_END
 };
 
@@ -62,8 +67,8 @@ typedef struct {
 typedef struct {
     tanpura_config_t cfg;
     tuning_t tuning;
-    int32_t on, first, jawari, cycle, human, reg, phase, phase_done, fine[TANPURA_NSTR], vol[TANPURA_NSTR];
-    volatile int32_t start_req;                  /* switched on: tanpura_take starts the cycle */
+    int32_t on, first, extra, jawari, cycle, human, reg, phase, phase_done, fine[TANPURA_NFINE], vol[TANPURA_NSTR];
+    volatile int32_t start_req, extra_silence_req; /* main-loop changes taken between render blocks */
     tstring_t str[TANPURA_NSTR];
     tstring_coefs_t stage[TANPURA_NSTR];         /* retunes prepared by set_param, taken by render */
     volatile int32_t stage_ready[TANPURA_NSTR];
