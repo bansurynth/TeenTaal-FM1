@@ -51,8 +51,9 @@ REGISTER). Il dayan dei tabla si accorda da solo sul Sa.
 
 Il ciclo predefinito del tanpura (5 secondi) pizzica la prima corda, Sa, Sa e la kharaj grave a 0, 1,0, 1,75 e 2,5 secondi,
 poi fa una pausa. Con EXTRA STRING attiva, la corda aggiuntiva viene pizzicata dopo la prima; le due corde Sa e la kharaj
-seguono a 1,75, 2,5 e 3,25 secondi. Il secondo tanpura (EDIT: 2ND TANPURA, attivo, prima corda NI, fase 50%) può avere
-la propria corda aggiuntiva e suona in parallelo, sfasato della fase scelta.
+seguono a 1,75, 2,5 e 3,25 secondi. Entrambi i tanpura sono spenti all'avvio. Premi SEQ una volta per attivare il primo,
+una seconda volta per aggiungere il secondo e una terza volta per spegnerli entrambi. Il secondo tanpura ha la propria
+prima corda (NI di default), fase (20%) e corda aggiuntiva opzionale; l'indicatore ON appare solo quando entrambi sono attivi.
 
 ## Le impostazioni (EDIT)
 

@@ -5,11 +5,13 @@ expect sa_cents -300
 expect tan_sa -300
 expect register 0
 expect tan_on 0
+expect tan2_on 0
 expect peak 0
 # the tanpura on: SEQ
 tap SEQ
 wait 3000
 expect tan_on 1
+expect tan2_on 0
 expect peak >200000
 expect jobs >400
 shot main_tanpura_on.png
@@ -56,11 +58,17 @@ tap HOME
 wait 100
 expect page 0
 shot back_to_main.png
-# off: SEQ, ARP
+# the second SEQ adds T2; the third turns both tanpuras off
 tap SEQ
-tap ARP
+wait 100
+expect tan_on 1
+expect tan2_on 1
+tap SEQ
 wait 1500
 expect tan_on 0
+expect tan2_on 0
+tap ARP
+wait 1500
 expect ref_on 0
 expect peak 0
 # the tabla (step 7): PLAY, Teentaal at 120 from the sam
@@ -91,9 +99,9 @@ shot main_next_taal.png
 wait 6500
 expect taal_now 1
 shot main_ektaal.png
-# the tabla's irregularity: EDIT, the last row
+# the tabla's irregularity: EDIT
 tap EDIT
-turn SELECT 10
+turn SELECT 9
 turn PRESET -2
 wait 200
 expect tabla_human 20
@@ -158,7 +166,7 @@ expect octave 1
 expect kt_key -1
 # the first string's fine tuning (EDIT, row 1), then SAVE, a change, and a power cycle: the saved values come back
 tap EDIT
-turn SELECT -9
+turn SELECT -8
 turn PRESET 7
 wait 100
 expect fine0 7
@@ -168,6 +176,20 @@ tap SAVE
 wait 300
 expect unsaved 0
 shot saved.png
+# SEQ's runtime cycle does not dirty saved settings
+tap SEQ
+expect tan_on 1
+expect tan2_on 0
+expect unsaved 0
+tap SEQ
+expect tan_on 1
+expect tan2_on 1
+expect unsaved 0
+tap SEQ
+wait 1500
+expect tan_on 0
+expect tan2_on 0
+expect unsaved 0
 turn K1 3
 wait 100
 expect mpm 158
@@ -180,6 +202,7 @@ expect fine0 7
 expect first 5
 expect extra 11
 expect tan2_extra 16
+expect tan2_on 0
 expect tab_vol 90
 expect sa_cents 700
 expect tan_on 0

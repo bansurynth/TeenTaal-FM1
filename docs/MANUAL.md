@@ -51,8 +51,9 @@ The default Sa is **A3 (220 Hz)**, for a bansuri in A (the flute's Sa is an octa
 
 The default tanpura cycle (5 seconds) plucks its first string, Sa, Sa and the lower kharaj at 0, 1.0, 1.75 and 2.5 seconds,
 then pauses. With EXTRA STRING enabled, it plucks after the first string; the two Sa strings and kharaj follow at 1.75,
-2.5 and 3.25 seconds. The second tanpura (EDIT: 2ND TANPURA, default on, first string NI, phase 20%) can have its own
-extra string and plays in parallel, shifted by the chosen phase.
+2.5 and 3.25 seconds. Both tanpuras start off. Press SEQ once for the first tanpura, a second time to add the second,
+and a third time to turn both off. The second tanpura has its own first string (NI by default), phase (20%), and optional
+extra string; its ON indicator appears only while both tanpuras are active.
 
 ## Settings (EDIT)
 
