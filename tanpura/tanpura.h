@@ -17,6 +17,7 @@
  *   TANPURA_P_CYCLE     25..80     the cycle in tenths of a second (default 50: 5 s)
  *   TANPURA_P_PHASE     0..100     the plucks' offset in % of the cycle (default 0; moves a running cycle too)
  *   TANPURA_P_EXTRA     -1..17     optional extra string: -1 off, otherwise SW_SA..SW_NI and upper Sa..Ma (default off)
+ *   TANPURA_P_FILTER    2000..8500 shared low-pass cutoff in Hz (default 8500)
  *   TANPURA_P_HUMAN     0..100     irregularity: 100 = plucks +-50 ms and +-30 % (default 50)
  *   TANPURA_P_FINE + j  -50..50    strings 0..3 fine tuning in cents
  *   TANPURA_P_VOL + j   0..100     string j's volume (taken at its next pluck: the model is exactly linear in it)
@@ -39,6 +40,8 @@
 #define TANPURA_FIRST_MAX 17                     /* the first string: SW_SA..SW_NI, then the upper Sa .. Ma shuddha */
 #define TANPURA_OS 2                             /* the strings run at DSP_FS / TANPURA_OS */
 #define TANPURA_FS (DSP_FS / (float)TANPURA_OS)
+#define TANPURA_FILTER_MIN_HZ 2000
+#define TANPURA_FILTER_MAX_HZ 8500
 
 enum {
     TANPURA_P_ON = DSP_P_MODULE,
@@ -52,6 +55,7 @@ enum {
     TANPURA_P_SA_NOW,
     TANPURA_P_PHASE,
     TANPURA_P_EXTRA,
+    TANPURA_P_FILTER,
     TANPURA_P_END
 };
 
@@ -67,7 +71,8 @@ typedef struct {
 typedef struct {
     tanpura_config_t cfg;
     tuning_t tuning;
-    int32_t on, first, extra, jawari, cycle, human, reg, phase, phase_done, fine[TANPURA_NFINE], vol[TANPURA_NSTR];
+    int32_t on, first, extra, jawari, cycle, human, reg, phase, phase_done, filter_hz;
+    int32_t fine[TANPURA_NFINE], vol[TANPURA_NSTR];
     volatile int32_t start_req, extra_silence_req; /* main-loop changes taken between render blocks */
     tstring_t str[TANPURA_NSTR];
     tstring_coefs_t stage[TANPURA_NSTR];         /* retunes prepared by set_param, taken by render */
@@ -82,7 +87,8 @@ typedef struct {
     float bw1[32], bw2[32], xd1, xn1;            /* body filter state (BODY_NSEC <= 32) */
     float fd[DSP_BLOCK / TANPURA_OS], fn[DSP_BLOCK / TANPURA_OS];
     float up[DSP_BLOCK / TANPURA_OS + 64];       /* the upsampler's input: its history, then this block's */
-    float lp[2][2];                              /* the 8.5 kHz low-pass's state (UPS_LP_N = 2 biquads) */
+    float lp[2][2], lp_coef[2][5], lp_stage[2][5];
+    volatile int32_t lp_stage_ready;
     float eqs[2];                                /* the brightness correction's state */
 } tanpura_t;
 

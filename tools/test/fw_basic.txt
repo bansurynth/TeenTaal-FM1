@@ -170,7 +170,12 @@ turn SELECT -8
 turn PRESET 7
 wait 100
 expect fine0 7
-shot edit_fine.png
+turn SELECT 100
+turn PRESET -35
+wait 100
+expect tan_filter 5000
+expect tan2_filter 5000
+shot edit_filter.png
 tap HOME
 tap SAVE
 wait 300
@@ -199,6 +204,8 @@ wait 2500
 expect loaded 1
 expect mpm 155
 expect fine0 7
+expect tan_filter 5000
+expect tan2_filter 5000
 expect first 5
 expect extra 11
 expect tan2_extra 16

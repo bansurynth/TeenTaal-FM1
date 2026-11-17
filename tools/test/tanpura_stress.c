@@ -71,6 +71,21 @@ static void retune(tanpura_t *t, long k)
     retune_step++;
 }
 
+static double lowpass_response(const float c[2][5], double hz)
+{
+    double w = 6.283185307179586 * hz / TANPURA_FS, c1 = cos(w), s1 = sin(w);
+    double c2 = cos(2.0 * w), s2 = sin(2.0 * w), gain = 1.0;
+    int k;
+    for (k = 0; k < 2; k++) {
+        double nr = c[k][0] + c[k][1] * c1 + c[k][2] * c2;
+        double ni = -c[k][1] * s1 - c[k][2] * s2;
+        double dr = 1.0 + c[k][3] * c1 + c[k][4] * c2;
+        double di = -c[k][3] * s1 - c[k][4] * s2;
+        gain *= sqrt((nr * nr + ni * ni) / (dr * dr + di * di));
+    }
+    return gain;
+}
+
 int main(int argc, char **argv)
 {
     static tanpura_t t;
@@ -179,8 +194,21 @@ int main(int argc, char **argv)
              retune_step, st.clipped, st.nonfinite, st.maxstep / DSP_Q23_MAX);
     check("retune", st.clipped == 0 && st.nonfinite == 0 && st.maxstep < 0.5 * DSP_Q23_MAX, buf);
     /* 5 */
+    {
+        double open_gain, cut_gain;
+        tanpura_init(&t, NULL);
+        open_gain = lowpass_response(t.lp_coef, 6000.0);
+        tanpura_set_param(&t, TANPURA_P_FILTER, TANPURA_FILTER_MIN_HZ);
+        tanpura_take(&t);
+        cut_gain = lowpass_response(t.lp_coef, 6000.0);
+        snprintf(buf, sizeof buf, "6 kHz gain %.4f -> %.4f; cutoff %d Hz",
+                 open_gain, cut_gain, (int)tanpura_get_param(&t, TANPURA_P_FILTER));
+        check("adjustable high-frequency cutoff",
+              tanpura_get_param(&t, TANPURA_P_FILTER) == TANPURA_FILTER_MIN_HZ && cut_gain < 0.05 * open_gain, buf);
+    }
+    /* 6 */
     if (!quick) {
-        printf("5. ten minutes at the defaults (Sa A2)\n");
+        printf("6. ten minutes at the defaults (Sa A2)\n");
         tanpura_init(&t, NULL);
         tanpura_set_param(&t, DSP_P_SA_CENTS, -1500);
         tanpura_set_param(&t, TANPURA_P_ON, 1);

@@ -48,6 +48,31 @@ static float cycle_at(const tanpura_t *m, int j)
 
 static int32_t clampi(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : v > hi ? hi : v; }
 
+static void lowpass_coefficients(float c[2][5], int32_t cutoff)
+{
+    static const float q[2] = {0.5411961f, 1.3065630f};
+    float w, cw, sw;
+    int k;
+    if (cutoff >= TANPURA_FILTER_MAX_HZ) {
+        for (k = 0; k < 2; k++) {
+            int j;
+            for (j = 0; j < 5; j++)
+                c[k][j] = UPS_LP[k][j];
+        }
+        return;
+    }
+    w = 2.0f * FM_PI * (float)cutoff / TANPURA_FS;
+    cw = fm_cosf(w), sw = fm_sinf(w);
+    for (k = 0; k < 2; k++) {
+        float alpha = sw / (2.0f * q[k]), a0 = 1.0f + alpha;
+        c[k][0] = (1.0f - cw) / (2.0f * a0);
+        c[k][1] = (1.0f - cw) / a0;
+        c[k][2] = c[k][0];
+        c[k][3] = -2.0f * cw / a0;
+        c[k][4] = (1.0f - alpha) / a0;
+    }
+}
+
 void tanpura_default_config(tanpura_config_t *cfg)
 {
     int j;
@@ -165,6 +190,8 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
         tanpura_default_config(&m->cfg);
     m->tuning = m->cfg.tuning;
     m->on = 0, m->first = SW_PA, m->extra = -1, m->jawari = 50, m->cycle = 50, m->human = 50, m->reg = 1;
+    m->filter_hz = TANPURA_FILTER_MAX_HZ, m->lp_stage_ready = 0;
+    lowpass_coefficients(m->lp_coef, m->filter_hz);
     m->start_req = m->extra_silence_req = 0;
     m->phase = m->phase_done = 0;
     for (j = 0; j < TANPURA_NFINE; j++)
@@ -240,6 +267,14 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
             m->start_req = 1;
         }
         break;
+    case TANPURA_P_FILTER:
+        v = clampi(v, TANPURA_FILTER_MIN_HZ, TANPURA_FILTER_MAX_HZ);
+        if (v != m->filter_hz) {
+            m->filter_hz = v;
+            lowpass_coefficients(m->lp_stage, v);
+            m->lp_stage_ready = 1;
+        }
+        break;
     default: break;
     }
 }
@@ -260,6 +295,7 @@ int32_t tanpura_get_param(const tanpura_t *m, int id)
     case TANPURA_P_SA_NOW: return m->tuning.sa_cents + reg_offset(m);
     case TANPURA_P_PHASE:  return m->phase;
     case TANPURA_P_EXTRA:  return m->extra;
+    case TANPURA_P_FILTER: return m->filter_hz;
     default:               return 0;
     }
 }
@@ -267,6 +303,13 @@ int32_t tanpura_get_param(const tanpura_t *m, int id)
 void tanpura_take(tanpura_t *m)
 {
     int j;
+    if (m->lp_stage_ready) {
+        int k, i;
+        for (k = 0; k < 2; k++)
+            for (i = 0; i < 5; i++)
+                m->lp_coef[k][i] = m->lp_stage[k][i];
+        m->lp_stage_ready = 0;
+    }
     if (m->restart && (m->gain == 0.0f || !m->active)) {   /* a large retune, faded out (or silent): afresh */
         for (j = 0; j < TANPURA_NSTR; j++)
             tstring_silence(&m->str[j]);
@@ -350,10 +393,10 @@ void tanpura_render(tanpura_t *m, int32_t *out, int n)
             m->eqs[1] = UPS_EQ[2] * p - UPS_EQ[4] * yv;
             p = yv;
         }
-        for (k = 0; k < UPS_LP_N; k++) {          /* the low-pass at 8.5 kHz (upsample_coefs.h) */
-            float yv = UPS_LP[k][0] * p + m->lp[k][0];
-            m->lp[k][0] = UPS_LP[k][1] * p - UPS_LP[k][3] * yv + m->lp[k][1];
-            m->lp[k][1] = UPS_LP[k][2] * p - UPS_LP[k][4] * yv;
+        for (k = 0; k < UPS_LP_N; k++) {
+            float yv = m->lp_coef[k][0] * p + m->lp[k][0];
+            m->lp[k][0] = m->lp_coef[k][1] * p - m->lp_coef[k][3] * yv + m->lp[k][1];
+            m->lp[k][1] = m->lp_coef[k][2] * p - m->lp_coef[k][4] * yv;
             p = yv;
         }
         x[i] = p * TANPURA_LEVEL * (c0 + dc * (float)(i + 1));
