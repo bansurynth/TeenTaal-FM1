@@ -4,7 +4,7 @@
  *
  * Main page                                     EDIT page (rarely used settings)
  *   PLAY       tabla (the taal) on / off          SELECT     the row
- *   SEQ        tanpura on / off                   PRESETS    its value
+ *   SEQ        both, T1, T2, off                  PRESETS    its value
  *   ARP        reference tone on / off            HOME       back to the main page
  *   SELECT     the taal (while playing: from the  rows: first string, register, A reference, cycle, tanpura
  *              end of the cycle; ElectroNick, step 6)        irregularity, tone swara, tabla irregularity, extra strings
@@ -17,7 +17,7 @@
  *   KNOB2      tanpura volume, KNOB3 tabla volume, KNOB4 tone volume
  *   OCT- / OCT+  the tone's octave
  *   EDIT       the EDIT page
- *   SAVE       keep the settings (UNSAVED on the screen while they differ from the kept ones)
+ *   SAVE       keep settings; SEL + SAVE (2 s, HOME) restores defaults
  * The keys light from Sa up: Sa and Pa bright, the other shuddha swaras dim. */
 #include <stddef.h>
 
@@ -101,6 +101,23 @@ static void ui_settings_now(ui_settings_t *p)
 #define UI_SA_MIN TUNING_SA_MIN
 #define UI_SA_MAX TUNING_SA_MAX
 #define UI_SA_DEFAULT TUNING_SA_DEFAULT
+static void ui_settings_defaults(ui_settings_t *p)
+{
+    int j;
+    for (j = 0; j < (int)sizeof *p; j++)
+        ((uint8_t *)p)[j] = 0;
+    p->magic = UI_SET_MAGIC, p->version = 3, p->size = (uint16_t)sizeof *p;
+    p->a4_dhz = TUNING_A4_DHZ_DEFAULT, p->sa_cents = UI_SA_DEFAULT;
+    p->first = SW_PA, p->reg = 0;
+    p->jawari = 50, p->cycle = 50, p->tan_human = 50, p->tabla_human = 30;
+    p->tan2 = (int16_t)(0x8000u | 0x4000u | ((uint32_t)ENGINE_TAN2_FIRST << 7) | ENGINE_TAN2_PHASE);
+    p->taal = 0, p->mpm = 120;
+    p->tone_swara = SW_SA, p->tone_oct = 0;
+    p->vol_tanpura = 100, p->vol_tabla = 100, p->vol_tone = 70;
+    p->extra = p->extra2 = -1;
+    p->tan_filter_hz = TANPURA_FILTER_MAX_HZ;
+}
+
 static int32_t ui_sa_fold(int32_t c)
 {
     while (c > UI_SA_MAX)
@@ -363,7 +380,7 @@ static void ui_main(void)
     ui_cat(t, "  V"); ui_num(u, ui_get(ENG_MIXER, MIX_P_LEVEL + MIX_TANPURA), 0); ui_cat(t, u);
     cv_text(120, 0, &FONT_XS, t, C_WHITE);
     cv_text(10, 15, &FONT_XS, "TANPURA 2", C_GRAY);
-    ton = ui_get(ENG_TANPURA, TANPURA_P_ON) && ui_get(ENG_TANPURA2, TANPURA_P_ON);
+    ton = ui_get(ENG_TANPURA2, TANPURA_P_ON);
     cv_text(84, 15, &FONT_XS, ton ? "ON" : "OFF", ton ? C_HI : C_DIM);
     t[0] = 0;
     ui_cat(t, UI_SWARA[ui_get(ENG_TANPURA2, TANPURA_P_FIRST)]);
@@ -642,12 +659,24 @@ static void ui_lights(uint32_t buttons, uint32_t held)
 /* SAVE: the sound fades out first (the flash write stops it for ~12 ms: a click otherwise), then the write, then
  * the sound fades back in */
 static uint32_t ui_save_at;                 /* when the fade has ended: write then (0: no save pending) */
+static uint32_t ui_reset_hold_at;
+static int ui_reset_pending, ui_reset_fired;
 static void ui_save_request(void)
 {
     app_hush = 1;
     ui_save_at = plat_ms() + 30u;
     if (!ui_save_at)
         ui_save_at = 1;
+}
+
+static void ui_reset_request(void)
+{
+    app_hush = 1;
+    ui_reset_pending = 1;
+    ui_save_at = plat_ms() + 30u;
+    if (!ui_save_at)
+        ui_save_at = 1;
+    ui_say("RESET", "SAVING");
 }
 
 static void ui_save(void)
@@ -664,10 +693,36 @@ static void ui_save(void)
     app_hush = 0;
 }
 
+static void ui_reset(void)
+{
+    ui_settings_t defaults;
+    ui_save_at = 0;
+    ui_reset_pending = 0;
+    ui_settings_defaults(&defaults);
+    if (plat_store_save(OBJ_SETTINGS, &defaults, sizeof defaults) == 0) {
+        engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_ON, 0);
+        engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_ON, 0);
+        engine_set_param(ui_eng, ENG_TAAL, TAAL_P_ON, 0);
+        engine_set_param(ui_eng, ENG_TABLA, TABLA_P_STOP, 0);
+        engine_set_param(ui_eng, ENG_REFTONE, REFTONE_P_ON, 0);
+        ui_kt_key = -1;
+        ui_settings_apply(&defaults);
+        engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_REGISTER, 0);
+        ui_kept = defaults;
+        ui_unsaved = 0;
+        ui_say("DEFAULTS", "RESTORED");
+    } else {
+        ui_say("RESET", "FAILED");
+    }
+    app_hush = 0;
+    ui_dirty = 1;
+}
+
 static void ui_frame(void)
 {
     uint32_t btn = plat_buttons(), pressed = btn & ~ui_btn_was, keys = plat_keys(), kp = keys & ~ui_keys_was;
     int sel = (btn >> B_SEL) & 1u, k;
+    int reset_combo;
     int32_t d;
     ui_btn_was = btn;
     ui_keys_was = keys;
@@ -676,23 +731,47 @@ static void ui_frame(void)
         ui_page = 1, ui_dirty = 1;
     if (pressed & (1u << B_HOME))
         ui_page = 0, ui_dirty = 1;
-    if ((pressed & (1u << B_SAVE)) && !ui_save_at)
+    reset_combo = !ui_page && (btn & ((1u << B_SEL) | (1u << B_SAVE))) == ((1u << B_SEL) | (1u << B_SAVE));
+    if (reset_combo) {
+        if (!ui_reset_hold_at) {
+            ui_reset_hold_at = plat_ms();
+            if (!ui_reset_hold_at)
+                ui_reset_hold_at = 1u;
+            ui_say("HOLD", "TO RESET");
+        } else if (!ui_reset_fired && (int32_t)(plat_ms() - ui_reset_hold_at) >= 2000) {
+            ui_reset_fired = 1;
+            ui_reset_request();
+        }
+        if (ui_save_at && !ui_reset_pending)
+            ui_save_at = 0, app_hush = 0;
+    } else {
+        if (ui_reset_hold_at && !ui_reset_fired)
+            ui_say("RESET", "CANCELLED");
+        ui_reset_hold_at = 0, ui_reset_fired = 0;
+    }
+    if ((pressed & (1u << B_SAVE)) && !ui_save_at && !reset_combo)
         ui_save_request();
-    if (ui_save_at && (int32_t)(plat_ms() - ui_save_at) >= 0)
-        ui_save();
+    if (ui_save_at && (int32_t)(plat_ms() - ui_save_at) >= 0) {
+        if (ui_reset_pending)
+            ui_reset();
+        else
+            ui_save();
+    }
     if (pressed & (1u << B_PLAY))
         ui_set(ENG_TAAL, TAAL_P_ON, !ui_get(ENG_TAAL, TAAL_P_ON));
     if (pressed & (1u << B_SEQ)) {
         int32_t tan_on = ui_get(ENG_TANPURA, TANPURA_P_ON);
         int32_t tan2_on = ui_get(ENG_TANPURA2, TANPURA_P_ON);
-        if (!tan_on) {
-            ui_set(ENG_TANPURA2, TANPURA_P_ON, 0);
+        if (!tan_on && !tan2_on) {
             ui_set(ENG_TANPURA, TANPURA_P_ON, 1);
-        } else if (!tan2_on) {
             ui_set(ENG_TANPURA2, TANPURA_P_ON, 1);
+        } else if (tan_on && tan2_on) {
+            ui_set(ENG_TANPURA2, TANPURA_P_ON, 0);
+        } else if (tan_on) {
+            ui_set(ENG_TANPURA2, TANPURA_P_ON, 1);
+            ui_set(ENG_TANPURA, TANPURA_P_ON, 0);
         } else {
             ui_set(ENG_TANPURA2, TANPURA_P_ON, 0);
-            ui_set(ENG_TANPURA, TANPURA_P_ON, 0);
         }
     }
     if (pressed & (1u << B_ARP))
@@ -757,7 +836,7 @@ static void ui_frame(void)
         if (u != ui_unsaved)
             ui_unsaved = u, ui_dirty = 1;
     }
-    ui_lights((ui_get(ENG_TANPURA, TANPURA_P_ON) ? 1u << B_SEQ : 0u)
+    ui_lights(((ui_get(ENG_TANPURA, TANPURA_P_ON) || ui_get(ENG_TANPURA2, TANPURA_P_ON)) ? 1u << B_SEQ : 0u)
               | (ui_get(ENG_REFTONE, REFTONE_P_ON) && ui_kt_key < 0 ? 1u << B_ARP : 0u)
               | (ui_get(ENG_TAAL, TAAL_P_ON) ? LED_PLAY_GREEN : 0u) | (ui_page ? 1u << B_EDIT : 0u)
               | (ui_unsaved ? 1u << B_SAVE : 0u), keys);

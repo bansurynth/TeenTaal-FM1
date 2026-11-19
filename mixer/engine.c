@@ -12,7 +12,7 @@ void engine_init(engine_t *e)
     tanpura_init(&e->tanpura2, &cfg);
     tanpura_set_param(&e->tanpura2, TANPURA_P_FIRST, ENGINE_TAN2_FIRST);
     tanpura_set_param(&e->tanpura2, TANPURA_P_PHASE, ENGINE_TAN2_PHASE);
-    e->tan_on = 0, e->tan2_on = 1;
+    e->tan_on = 0, e->tan2_on = 0;
     tabla_init(&e->tabla, 0);
     taal_init(&e->taal, 0);
     reftone_init(&e->reftone, 0);
@@ -26,14 +26,13 @@ void engine_set_param(engine_t *e, int target, int id, int32_t v)
         tanpura_set_param(&e->tanpura, id, v);
         if (id == TANPURA_P_ON) {
             e->tan_on = v != 0;
-            tanpura_set_param(&e->tanpura2, id, e->tan_on && e->tan2_on);
         } else if (id != TANPURA_P_FIRST && id != TANPURA_P_PHASE && id != TANPURA_P_EXTRA)
             tanpura_set_param(&e->tanpura2, id, v);
     }
     if (target == ENG_TANPURA2) {
         if (id == TANPURA_P_ON) {
             e->tan2_on = v != 0;
-            tanpura_set_param(&e->tanpura2, id, e->tan_on && e->tan2_on);
+            tanpura_set_param(&e->tanpura2, id, e->tan2_on);
         } else if (id == TANPURA_P_FIRST || id == TANPURA_P_PHASE || id == TANPURA_P_EXTRA)
             tanpura_set_param(&e->tanpura2, id, v);
     }

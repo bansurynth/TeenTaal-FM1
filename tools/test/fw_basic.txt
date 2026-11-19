@@ -7,11 +7,11 @@ expect register 0
 expect tan_on 0
 expect tan2_on 0
 expect peak 0
-# the tanpura on: SEQ
+# the tanpuras on: SEQ starts both
 tap SEQ
 wait 3000
 expect tan_on 1
-expect tan2_on 0
+expect tan2_on 1
 expect peak >200000
 expect jobs >400
 shot main_tanpura_on.png
@@ -58,11 +58,16 @@ tap HOME
 wait 100
 expect page 0
 shot back_to_main.png
-# the second SEQ adds T2; the third turns both tanpuras off
+# SEQ's cycle: both, T1, T2, off
 tap SEQ
 wait 100
 expect tan_on 1
+expect tan2_on 0
+tap SEQ
+wait 1500
+expect tan_on 0
 expect tan2_on 1
+expect peak >200000
 tap SEQ
 wait 1500
 expect tan_on 0
@@ -184,10 +189,15 @@ shot saved.png
 # SEQ's runtime cycle does not dirty saved settings
 tap SEQ
 expect tan_on 1
-expect tan2_on 0
+expect tan2_on 1
 expect unsaved 0
 tap SEQ
 expect tan_on 1
+expect tan2_on 0
+expect unsaved 0
+tap SEQ
+wait 1500
+expect tan_on 0
 expect tan2_on 1
 expect unsaved 0
 tap SEQ
@@ -216,3 +226,81 @@ expect tan_on 0
 expect taal_on 0
 expect unsaved 0
 shot after_power.png
+# a short SEL+SAVE hold cancels; the long hold restores defaults and stops every source
+turn K1 5
+tap SEQ
+tap PLAY
+tap ARP
+wait 1500
+expect mpm 160
+expect tan_on 1
+expect tan2_on 1
+expect taal_on 1
+expect ref_on 1
+expect peak >0
+press SEL
+press SAVE
+wait 1000
+release SAVE
+release SEL
+wait 100
+expect mpm 160
+expect tan_on 1
+expect tan2_on 1
+expect taal_on 1
+expect ref_on 1
+expect unsaved 1
+press SEL
+press SAVE
+wait 2200
+release SAVE
+release SEL
+wait 600
+expect sa_cents -300
+expect a4_dhz 4400
+expect first 7
+expect register 0
+expect jawari 50
+expect cycle 50
+expect tan_human 50
+expect tabla_human 30
+expect tan2_first 11
+expect tan2_phase 20
+expect taal 0
+expect mpm 120
+expect tan_vol 100
+expect tab_vol 100
+expect volume 70
+expect swara 0
+expect octave 0
+expect extra -1
+expect tan2_extra -1
+expect tan_filter 8500
+expect tan2_filter 8500
+expect tan_on 0
+expect tan2_on 0
+expect taal_on 0
+expect ref_on 0
+expect peak 0
+expect unsaved 0
+# restored defaults persist across a power cycle
+power
+wait 2500
+expect loaded 1
+expect sa_cents -300
+expect a4_dhz 4400
+expect first 7
+expect cycle 50
+expect tan_human 50
+expect tan2_first 11
+expect tan2_phase 20
+expect taal 0
+expect mpm 120
+expect tan_filter 8500
+expect tan2_filter 8500
+expect tan_on 0
+expect tan2_on 0
+expect taal_on 0
+expect ref_on 0
+expect unsaved 0
+expect peak 0

@@ -51,9 +51,9 @@ REGISTER). Il dayan dei tabla si accorda da solo sul Sa.
 
 Il ciclo predefinito del tanpura (5 secondi) pizzica la prima corda, Sa, Sa e la kharaj grave a 0, 1,0, 1,75 e 2,5 secondi,
 poi fa una pausa. Con EXTRA STRING attiva, la corda aggiuntiva viene pizzicata dopo la prima; le due corde Sa e la kharaj
-seguono a 1,75, 2,5 e 3,25 secondi. Entrambi i tanpura sono spenti all'avvio. Premi SEQ una volta per attivare il primo,
-una seconda volta per aggiungere il secondo e una terza volta per spegnerli entrambi. Il secondo tanpura ha la propria
-prima corda (NI di default), fase (20%) e corda aggiuntiva opzionale; l'indicatore ON appare solo quando entrambi sono attivi.
+seguono a 1,75, 2,5 e 3,25 secondi. Entrambi i tanpura sono spenti all'avvio. Ogni pressione di SEQ alterna: entrambi
+accesi, solo T1, solo T2, entrambi spenti. Il secondo tanpura ha la propria prima corda (NI di default), fase (20%) e
+corda aggiuntiva opzionale; l'indicatore ON si accende quando T2 è attivo.
 
 ## Le impostazioni (EDIT)
 
@@ -85,6 +85,11 @@ ricompilare.
 registro, ciclo del tanpura, le irregolarità, swara e ottava del tono. Non salva se le sorgenti sono accese:
 all'accensione l'FM-1 parte in silenzio. Durante il salvataggio il suono si abbassa per un istante (meno di un decimo di secondo): la scrittura nella
 memoria flash ferma l'audio per circa 12 ms, e il firmware sfuma prima e dopo per non fare un click.
+
+Dalla schermata HOME, tieni premuti **SEL + SAVE** per 2 secondi per ripristinare le impostazioni predefinite di
+TeenTaal. Il reset interrompe i tanpura, i tabla e il tono di riferimento, poi salva i default lasciando tutte le sorgenti
+spente. Rilasciando i tasti prima dei 2 secondi, il reset viene annullato. La calibrazione dell'FM-1 e gli abbinamenti
+Bluetooth non vengono modificati.
 
 ## Crediti
 

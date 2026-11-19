@@ -51,9 +51,9 @@ The default Sa is **A3 (220 Hz)**, for a bansuri in A (the flute's Sa is an octa
 
 The default tanpura cycle (5 seconds) plucks its first string, Sa, Sa and the lower kharaj at 0, 1.0, 1.75 and 2.5 seconds,
 then pauses. With EXTRA STRING enabled, it plucks after the first string; the two Sa strings and kharaj follow at 1.75,
-2.5 and 3.25 seconds. Both tanpuras start off. Press SEQ once for the first tanpura, a second time to add the second,
-and a third time to turn both off. The second tanpura has its own first string (NI by default), phase (20%), and optional
-extra string; its ON indicator appears only while both tanpuras are active.
+2.5 and 3.25 seconds. Both tanpuras start off. Each SEQ press advances through both tanpuras on, T1 only, T2 only, and
+both off. The second tanpura has its own first string (NI by default), phase (20%), and optional extra string; its ON
+indicator lights whenever T2 is active.
 
 ## Settings (EDIT)
 
@@ -100,6 +100,10 @@ new file there (format: [data/taal/FORMAT.md](../data/taal/FORMAT.md)) and rebui
 tuning, the tanpura's register and cycle, both irregularities, the tone's swara and octave. Which sounds are on is not
 saved: the FM-1 always starts silent. While it saves, the sound dips for a moment (under a tenth of a second): writing
 the flash stops the audio for about 12 ms, and the firmware fades out and in around it to avoid a click.
+
+On the HOME page, hold **SEL + SAVE** for 2 seconds to restore TeenTaal's default settings. This stops the tanpuras,
+tabla, and reference tone, then saves the defaults with every source off. Releasing before the 2-second hold completes
+cancels the reset. FM-1 calibration and Bluetooth pairings are not changed.
 
 ## Credits
 
