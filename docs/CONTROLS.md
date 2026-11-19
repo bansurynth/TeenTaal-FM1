@@ -12,7 +12,8 @@ settings live on one separate page (EDIT).
 | SEQ | cycle: both tanpuras, T1 only, T2 only, both off | — |
 | ARP | reference tone on / off | — |
 | key | the tone on that swara while held (the last key pressed wins) | — |
-| SEL + key | Sa = that key's note, cents kept; with both tanpuras off, physical C4-C5 plucks that note once without changing Sa | — |
+| SEL + key | Sa = that key's note, cents kept | — |
+| FX + physical C4-C5 | with both tanpuras off, pluck one string an octave below the key without changing Sa | — |
 | SEL + OCT− / OCT+ | Sa an octave down / up | — |
 | OCT− / OCT+ | the tone's octave | — |
 | SELECT | the taal (round the list); while playing, the change waits for the end of the cycle | the row |
@@ -22,7 +23,7 @@ settings live on one separate page (EDIT).
 | KNOB2, KNOB3, KNOB4 | tanpura, tabla, tone volume | the same |
 | EDIT / HOME | to the EDIT page / back | cycle, first string, tuning, irregularity, shared tanpura low-pass cutoff (2.0-8.5 kHz), and other settings |
 | SAVE | save settings; hold SEL+SAVE for 2 s to restore TeenTaal defaults and stop playback | save settings |
-| FX, ENV, LFO, GLO, REC | not used | |
+| ENV, LFO, GLO, REC | not used | |
 
 Lights: SEQ, ARP, PLAY (green), EDIT when their function is on; SAVE while there are unsaved changes; keys from Sa up,
 Sa and Pa bright, Re Ga Ma Dha Ni dim, a held key bright.

@@ -80,7 +80,7 @@ typedef struct {
     tstring_t preview;
     tstring_coefs_t preview_stage;
     volatile int32_t preview_ready, preview_cancel;
-    int32_t preview_left, preview_active;
+    int32_t preview_left, preview_active, preview_cents_above_c4;
     int32_t due[TANPURA_NSTR], nominal[TANPURA_NSTR];   /* samples to the next pluck: actual, on the grid */
     uint32_t rng;
     float gain;                                  /* output fade (on/off, large retunes) */

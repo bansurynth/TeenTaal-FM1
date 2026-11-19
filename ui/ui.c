@@ -10,7 +10,8 @@
  *              end of the cycle; ElectroNick, step 6)        irregularity, tone swara, tabla irregularity, extra strings
  *   KNOB1      tempo, 1 matra/min a step (SEL+KNOB1: 10)
  *   key        the reference tone on that key's swara while held (like an harmonium; ElectroNick, step 1)
- *   SEL + key  Sa = that key's note (cents kept); with both tanpuras off, physical C4..C5 previews that note once
+ *   SEL + key  Sa = that key's note (cents kept)
+ *   FX + C4..C5  with both tanpuras off, pluck one string an octave below the physical key
  *   SEL + OCT-/+  Sa an octave down / up
  *   PRESETS    Sa by a cent
  *   ALGORITHM  jawari (thread position)
@@ -598,6 +599,15 @@ static void ui_edit_step(int row, int32_t d)
     }
 }
 
+static int ui_preview_keys(uint32_t keys)
+{
+    int k;
+    for (k = UI_KEY_C4; k <= UI_KEY_C5; k++)
+        if (keys >> k & 1u)
+            return 1;
+    return 0;
+}
+
 /* SEL + key: Sa = the key's note (C3 .. B3), the cents above the semitone kept, inside Sa's range */
 static void ui_sa_key(int k)
 {
@@ -723,11 +733,13 @@ static void ui_reset(void)
 static void ui_frame(void)
 {
     uint32_t btn = plat_buttons(), pressed = btn & ~ui_btn_was, keys = plat_keys(), kp = keys & ~ui_keys_was;
-    int sel = (btn >> B_SEL) & 1u, k;
-    int reset_combo;
+    int sel = (btn >> B_SEL) & 1u, fx = (btn >> B_FX) & 1u, k;
+    int reset_combo, preview_chord, preview_held;
     int32_t d;
     ui_btn_was = btn;
     ui_keys_was = keys;
+    preview_chord = fx && !sel && ui_preview_keys(kp);
+    preview_held = fx && !sel && ui_preview_keys(keys);
     ui_frames++;
     if (pressed & (1u << B_EDIT))
         ui_page = 1, ui_dirty = 1;
@@ -790,23 +802,27 @@ static void ui_frame(void)
         else
             ui_set(ENG_REFTONE, REFTONE_P_OCTAVE, ui_get(ENG_REFTONE, REFTONE_P_OCTAVE) + 1);
     }
-    if (sel && kp)
+    if (sel && kp) {
         for (k = 0; k < NKEYS; k++)
             if (kp >> k & 1u) {
-                if (k >= UI_KEY_C4 && k <= UI_KEY_C5
-                    && !ui_get(ENG_TANPURA, TANPURA_P_ON) && !ui_get(ENG_TANPURA2, TANPURA_P_ON))
-                    engine_tanpura_preview(ui_eng, (k - UI_KEY_C4) * 100);
-                else
-                    ui_sa_key(k);
+                ui_sa_key(k);
                 break;
             }
-    if (!sel && kp) {                            /* a key alone: the tone there (the last key pressed wins) */
+    } else if (preview_chord) {
+        for (k = UI_KEY_C4; k <= UI_KEY_C5; k++)
+            if (kp >> k & 1u) {
+                if (!ui_get(ENG_TANPURA, TANPURA_P_ON) && !ui_get(ENG_TANPURA2, TANPURA_P_ON))
+                    engine_tanpura_preview(ui_eng, (k - UI_KEY_C4) * 100 - 1200);
+                break;
+            }
+    }
+    if (!sel && kp && !preview_chord) {          /* a key alone: the tone there (the last key pressed wins) */
         for (k = NKEYS - 1; k >= 0; k--)
             if (kp >> k & 1u)
                 break;
         ui_key_tone(k);
     } else if (ui_kt_key >= 0 && !(keys >> ui_kt_key & 1u)) {
-        if (keys) {                              /* released, another still held: the tone goes there */
+        if (keys && !preview_held) {            /* released, another still held: the tone goes there */
             for (k = 0; k < NKEYS && !(keys >> k & 1u); k++)
                 ;
             ui_key_tone(k);

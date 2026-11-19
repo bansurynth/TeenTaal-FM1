@@ -141,6 +141,7 @@ int app_expect(const char *what, int *got)
     else if (!strcmp(what, "tan_on")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_ON);
     else if (!strcmp(what, "tan2_on")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_ON);
     else if (!strcmp(what, "tan_preview")) *got = eng.tanpura.preview_active;
+    else if (!strcmp(what, "tan_preview_cents")) *got = eng.tanpura.preview_cents_above_c4;
     else if (!strcmp(what, "cycle")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_CYCLE);
     else if (!strcmp(what, "tan_human")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_HUMAN);
     else if (!strcmp(what, "tan2_first")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_FIRST);

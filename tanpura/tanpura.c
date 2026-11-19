@@ -195,7 +195,7 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
     lowpass_coefficients(m->lp_coef, m->filter_hz);
     m->start_req = m->extra_silence_req = 0;
     m->preview_ready = m->preview_cancel = 0;
-    m->preview_left = m->preview_active = 0;
+    m->preview_left = m->preview_active = m->preview_cents_above_c4 = 0;
     m->phase = m->phase_done = 0;
     for (j = 0; j < TANPURA_NFINE; j++)
         m->fine[j] = 0;
@@ -288,6 +288,7 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
 void tanpura_preview(tanpura_t *m, int32_t cents_above_c4)
 {
     tstring_par_t p;
+    m->preview_cents_above_c4 = cents_above_c4;
     m->preview_cancel = 0;
     m->preview_ready = 0;
     string_par(m, 1, &p);

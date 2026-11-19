@@ -28,7 +28,8 @@ schermata. All'accensione è tutto spento; le impostazioni salvate tornano come 
 | **PLAY** | tabla: partono dal sam / si fermano (luce verde mentre suonano) |
 | **ARP** | tono di riferimento acceso / spento |
 | **un tasto** | il tono su quello swara **finché lo tieni premuto** (come un harmonium) |
-| **SEL + un tasto** | imposta Sa alla nota (i cents restano); con entrambi i tanpura spenti, i tasti fisici C4-C5 fanno suonare una volta la nota premuta su una sola corda, senza cambiare Sa |
+| **SEL + un tasto** | imposta Sa alla nota (i cents restano) |
+| **FX + un tasto fisico C4-C5** | con entrambi i tanpura spenti, pizzica una corda un'ottava sotto la nota premuta, senza cambiare Sa |
 | **SEL + OCT− / OCT+** | il Sa un'ottava sotto / sopra |
 | **PRESETS** | il Sa di un cent per scatto |
 | **SELECT** | il taal; se i tabla suonano, il nuovo taal parte **alla fine del ciclo** |
@@ -48,6 +49,10 @@ la tastiera mostra dove sono gli swara rispetto al Sa scelto.
 Il Sa di default è **La3 (220 Hz)**, adatto a un bansuri in La (il Sa del flauto è un'ottava sopra). Per un bansuri
 in Sol: **SEL + il primo tasto Sol a sinistra** (Sol3, 196 Hz). Il tanpura suona un'ottava sotto il tuo Sa (si può cambiare in EDIT → TANPURA
 REGISTER). Il dayan dei tabla si accorda da solo sul Sa.
+
+Con entrambi i tanpura spenti, tieni premuto FX e premi un tasto fisico C4-C5: parte una sola corda del primo tanpura
+un'ottava sotto la nota premuta, senza cambiare Sa. Se uno dei tanpura è acceso, la combinazione FX non avvia la corda;
+SEL + un tasto imposta sempre Sa.
 
 Il ciclo predefinito del tanpura (5 secondi) pizzica la prima corda, Sa, Sa e la kharaj grave a 0, 1,0, 1,75 e 2,5 secondi,
 poi fa una pausa. Con EXTRA STRING attiva, la corda aggiuntiva viene pizzicata dopo la prima; le due corde Sa e la kharaj
