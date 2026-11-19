@@ -35,7 +35,7 @@ firmware version in `tanpura/` are this project's own code, written from the pap
 Each file in `data/taal/` names its sources. They are: D. Courtney, [chandrakantha.com](https://chandrakantha.com);
 Wikipedia ([Jhoomra](https://en.wikipedia.org/wiki/Jhoomra), [Dhamar](https://en.wikipedia.org/wiki/Dhamar_(music)));
 NIOS, *Hindustani Music, practical book 2*, ch. 4 (Chautaal);
-[tablatheka.com](https://www.tablatheka.com). Thekas vary between schools: the ones chosen are listed in
+Thekas vary between schools: the ones chosen are listed in
 `docs/DEVELOPMENT.md`.
 
 ## Tools used, not distributed here
