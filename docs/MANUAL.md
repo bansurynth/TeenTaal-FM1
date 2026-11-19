@@ -49,6 +49,9 @@ keyboard shows where the swaras are for the Sa you chose.
 The default Sa is **A3 (220 Hz)**, for a bansuri in A (the flute's Sa is an octave higher). For a bansuri in G: **SEL
 + the G key** (G3, 196 Hz). The keys give C3 to B3 (A3, G3, F3, E3 ...); the octave buttons move it. Sa can go from F#2 to G4. The tanpura plays at the note shown (default A3). The dayan of the tabla tunes itself to Sa (to the octave between 190 and 380 Hz).
 
+With both tanpuras off, hold SEL and press a physical C4-C5 key to pluck that exact note once on a single string of
+the first tanpura, without changing Sa. If either tanpura is on, SEL + key continues to set Sa.
+
 The default tanpura cycle (5 seconds) plucks its first string, Sa, Sa and the lower kharaj at 0, 1.0, 1.75 and 2.5 seconds,
 then pauses. With EXTRA STRING enabled, it plucks after the first string; the two Sa strings and kharaj follow at 1.75,
 2.5 and 3.25 seconds. Both tanpuras start off. Each SEQ press advances through both tanpuras on, T1 only, T2 only, and

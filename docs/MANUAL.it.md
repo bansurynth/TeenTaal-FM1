@@ -28,7 +28,7 @@ schermata. All'accensione è tutto spento; le impostazioni salvate tornano come 
 | **PLAY** | tabla: partono dal sam / si fermano (luce verde mentre suonano) |
 | **ARP** | tono di riferimento acceso / spento |
 | **un tasto** | il tono su quello swara **finché lo tieni premuto** (come un harmonium) |
-| **SEL + un tasto** | il Sa diventa la nota di quel tasto (i cents restano) |
+| **SEL + un tasto** | imposta Sa alla nota (i cents restano); con entrambi i tanpura spenti, i tasti fisici C4-C5 fanno suonare una volta la nota premuta su una sola corda, senza cambiare Sa |
 | **SEL + OCT− / OCT+** | il Sa un'ottava sotto / sopra |
 | **PRESETS** | il Sa di un cent per scatto |
 | **SELECT** | il taal; se i tabla suonano, il nuovo taal parte **alla fine del ciclo** |

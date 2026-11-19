@@ -67,6 +67,12 @@ void engine_tanpura_take(engine_t *e)
     tanpura_take(&e->tanpura2);
 }
 
+void engine_tanpura_preview(engine_t *e, int32_t cents_above_c4)
+{
+    if (!e->tan_on && !e->tan2_on)
+        tanpura_preview(&e->tanpura, cents_above_c4);
+}
+
 void engine_tanpura_render(engine_t *e, int32_t *tan, uint32_t n)
 {
     uint32_t k;

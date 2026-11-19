@@ -39,6 +39,7 @@ static float level_comp(const tanpura_t *m)
 #define PLUCK_AMP (-0.4f)          /* N, toward the bridge (the paper's) */
 #define PLUCK_TAU 0.05f            /* s */
 #define FADE_OUT_S 0.3f
+#define PREVIEW_HOLD_S 5.0f
 static float cycle_at(const tanpura_t *m, int j)
 {
     if (m->extra < 0)
@@ -193,6 +194,8 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
     m->filter_hz = TANPURA_FILTER_MAX_HZ, m->lp_stage_ready = 0;
     lowpass_coefficients(m->lp_coef, m->filter_hz);
     m->start_req = m->extra_silence_req = 0;
+    m->preview_ready = m->preview_cancel = 0;
+    m->preview_left = m->preview_active = 0;
     m->phase = m->phase_done = 0;
     for (j = 0; j < TANPURA_NFINE; j++)
         m->fine[j] = 0;
@@ -206,6 +209,7 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
         tstring_init(&m->str[j], &m->stage[j]);
         m->stage_ready[j] = 0;
     }
+    tstring_init(&m->preview, &m->stage[1]);
     for (k = 0; k < 32; k++)
         m->bw1[k] = m->bw2[k] = 0.0f;
     m->xd1 = m->xn1 = 0.0f;
@@ -242,6 +246,8 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
         v = v != 0;
         if (v && !m->on)
             m->start_req = 1;                    /* (tanpura_take starts the cycle: the render may be running) */
+        m->preview_cancel = 1;
+        m->preview_ready = 0;
         m->on = v;
         break;
     case TANPURA_P_REGISTER:
@@ -277,6 +283,17 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
         break;
     default: break;
     }
+}
+
+void tanpura_preview(tanpura_t *m, int32_t cents_above_c4)
+{
+    tstring_par_t p;
+    m->preview_cancel = 0;
+    m->preview_ready = 0;
+    string_par(m, 1, &p);
+    p.f1 = tuning_hz(&m->tuning, (float)cents_above_c4 - (float)m->tuning.sa_cents);
+    tstring_coefs(&m->preview_stage, &p, TANPURA_FS);
+    m->preview_ready = 1;
 }
 
 int32_t tanpura_get_param(const tanpura_t *m, int id)
@@ -337,6 +354,20 @@ void tanpura_take(tanpura_t *m)
         m->active = 1;
         m->start_req = 0;
     }
+    if (m->preview_cancel) {
+        tstring_silence(&m->preview);
+        m->preview_active = 0;
+        m->preview_left = 0;
+        m->preview_cancel = 0;
+    }
+    if (m->preview_ready && !m->restart) {
+        tstring_init(&m->preview, &m->preview_stage);
+        tstring_pluck(&m->preview, PLUCK_AMP * (float)m->vol[1] * 0.01f, PLUCK_TAU, TANPURA_FS);
+        m->preview_left = (int32_t)(PREVIEW_HOLD_S * DSP_FS);
+        m->preview_active = 1;
+        m->active = 1;
+        m->preview_ready = 0;
+    }
 }
 
 /* string j for n samples from offset `at` of the block, its plucks at their sample */
@@ -376,6 +407,8 @@ void tanpura_render(tanpura_t *m, int32_t *out, int n)
     for (j = 0; j < TANPURA_NSTR; j++)
         if (j != TANPURA_NSTR - 1 || m->extra >= 0)
             run_string(m, j, ns);
+    if (m->preview_active)
+        tstring_run(&m->preview, m->fd, m->fn, ns);
     /* the body at the strings' rate: parallel sections with shared poles, the bridge and nut forces in */
     for (i = 0; i < ns; i++) {
         float xd = m->fd[i], xn = m->fn[i], p = BODY_D_BRIDGE * xd + BODY_D_NUT * xn;
@@ -405,7 +438,7 @@ void tanpura_render(tanpura_t *m, int32_t *out, int n)
     /* up to the FM-1's rate (upsample_coefs.h), with the on/off fade */
     if (m->restart)                              /* a large retune: out in 20 ms */
         g1 = g0 - (float)n / (0.02f * DSP_FS) < 0.0f ? 0.0f : g0 - (float)n / (0.02f * DSP_FS);
-    else if (m->on)
+    else if (m->on || (m->preview_active && m->preview_left > 0))
         g1 = g0 + (float)n / (0.02f * DSP_FS) > 1.0f ? 1.0f : g0 + (float)n / (0.02f * DSP_FS);
     else
         g1 = g0 - (float)n / (FADE_OUT_S * DSP_FS) < 0.0f ? 0.0f : g0 - (float)n / (FADE_OUT_S * DSP_FS);
@@ -424,9 +457,14 @@ void tanpura_render(tanpura_t *m, int32_t *out, int n)
     for (k = 0; k < 2 * UPS_K; k++)              /* keep the last 2K inputs as the next block's history */
         m->up[k] = x[ns - 2 * UPS_K + k];
     m->gain = g1;
+    if (m->preview_active && m->preview_left > 0)
+        m->preview_left = m->preview_left > n ? m->preview_left - n : 0;
     if (!m->on && g1 == 0.0f) {                  /* faded out: silence and stop computing */
         for (j = 0; j < TANPURA_NSTR; j++)
             tstring_silence(&m->str[j]);
+        tstring_silence(&m->preview);
+        m->preview_active = 0;
+        m->preview_left = 0;
         for (k = 0; k < 32; k++)
             m->bw1[k] = m->bw2[k] = 0.0f;
         m->xd1 = m->xn1 = 0.0f;

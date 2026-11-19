@@ -10,7 +10,7 @@
  *              end of the cycle; ElectroNick, step 6)        irregularity, tone swara, tabla irregularity, extra strings
  *   KNOB1      tempo, 1 matra/min a step (SEL+KNOB1: 10)
  *   key        the reference tone on that key's swara while held (like an harmonium; ElectroNick, step 1)
- *   SEL + key  Sa = that key's note (cents kept)
+ *   SEL + key  Sa = that key's note (cents kept); with both tanpuras off, physical C4..C5 previews that note once
  *   SEL + OCT-/+  Sa an octave down / up
  *   PRESETS    Sa by a cent
  *   ALGORITHM  jawari (thread position)
@@ -20,6 +20,8 @@
  *   SAVE       keep settings; SEL + SAVE (2 s, HOME) restores defaults
  * The keys light from Sa up: Sa and Pa bright, the other shuddha swaras dim. */
 #include <stddef.h>
+
+enum { UI_KEY_C4 = 7, UI_KEY_C5 = UI_KEY_C4 + 12 };
 
 static const char *const UI_SWARA[TANPURA_FIRST_MAX + 1] = {"SA", "RE KOMAL", "RE", "GA KOMAL", "GA", "MA", "MA TIVRA", "PA",
                                            "DHA KOMAL", "DHA", "NI KOMAL", "NI", "SA'", "RE KOMAL'", "RE'",
@@ -600,7 +602,7 @@ static void ui_edit_step(int row, int32_t d)
 static void ui_sa_key(int k)
 {
     int32_t sa = ui_get(ENG_ALL, DSP_P_SA_CENTS), semi = (sa >= 0 ? sa + 50 : sa - 49) / 100;
-    int32_t off = sa - 100 * semi, c = (k - 7) * 100;     /* key 7 = C4 */
+    int32_t off = sa - 100 * semi, c = (k - UI_KEY_C4) * 100;
     while (c > -100)                                      /* the keys span C3 .. B3: going down from A3 it is G3, F3, E3 ... */
         c -= 1200;
     while (c < -1200)
@@ -791,7 +793,11 @@ static void ui_frame(void)
     if (sel && kp)
         for (k = 0; k < NKEYS; k++)
             if (kp >> k & 1u) {
-                ui_sa_key(k);
+                if (k >= UI_KEY_C4 && k <= UI_KEY_C5
+                    && !ui_get(ENG_TANPURA, TANPURA_P_ON) && !ui_get(ENG_TANPURA2, TANPURA_P_ON))
+                    engine_tanpura_preview(ui_eng, (k - UI_KEY_C4) * 100);
+                else
+                    ui_sa_key(k);
                 break;
             }
     if (!sel && kp) {                            /* a key alone: the tone there (the last key pressed wins) */

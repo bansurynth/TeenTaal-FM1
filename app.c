@@ -140,6 +140,7 @@ int app_expect(const char *what, int *got)
     else if (!strcmp(what, "a4_dhz")) *got = (int)engine_get_param(&eng, ENG_ALL, DSP_P_A4_DHZ);
     else if (!strcmp(what, "tan_on")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_ON);
     else if (!strcmp(what, "tan2_on")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_ON);
+    else if (!strcmp(what, "tan_preview")) *got = eng.tanpura.preview_active;
     else if (!strcmp(what, "cycle")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_CYCLE);
     else if (!strcmp(what, "tan_human")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_HUMAN);
     else if (!strcmp(what, "tan2_first")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_FIRST);

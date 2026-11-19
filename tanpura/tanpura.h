@@ -77,6 +77,10 @@ typedef struct {
     tstring_t str[TANPURA_NSTR];
     tstring_coefs_t stage[TANPURA_NSTR];         /* retunes prepared by set_param, taken by render */
     volatile int32_t stage_ready[TANPURA_NSTR];
+    tstring_t preview;
+    tstring_coefs_t preview_stage;
+    volatile int32_t preview_ready, preview_cancel;
+    int32_t preview_left, preview_active;
     int32_t due[TANPURA_NSTR], nominal[TANPURA_NSTR];   /* samples to the next pluck: actual, on the grid */
     uint32_t rng;
     float gain;                                  /* output fade (on/off, large retunes) */
@@ -96,5 +100,6 @@ void tanpura_default_config(tanpura_config_t *cfg);
 void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg);   /* cfg NULL: the defaults */
 void tanpura_set_param(tanpura_t *m, int param_id, int32_t value);
 int32_t tanpura_get_param(const tanpura_t *m, int param_id);
+void tanpura_preview(tanpura_t *m, int32_t cents_above_c4);    /* one-shot on a single Sa-model string */
 void tanpura_take(tanpura_t *m);                /* pending starts and retunes in: where no render runs (see above) */
 void tanpura_render(tanpura_t *m, int32_t *out, int n_samples);   /* adds into out; n even, <= DSP_BLOCK */

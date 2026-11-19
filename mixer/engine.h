@@ -48,6 +48,7 @@ void engine_render(engine_t *e, int32_t *lr, uint32_t n, uint32_t master_q12);
  * engine_render_with with a tanpura buffer the second core rendered earlier. The second core's job:
  * engine_tanpura_render (mono Q23, n frames, overwritten). engine_render is exactly these in a row. */
 void engine_tanpura_take(engine_t *e);
+void engine_tanpura_preview(engine_t *e, int32_t cents_above_c4);
 void engine_tanpura_render(engine_t *e, int32_t *tan, uint32_t n);
 void engine_tanpura2_render(engine_t *e, int32_t *tan2, uint32_t n);   /* the second tanpura: the first core's own job */
 void engine_render_with(engine_t *e, int32_t *lr, uint32_t n, uint32_t master_q12, const int32_t *tan, const int32_t *tan2);

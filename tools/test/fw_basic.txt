@@ -7,14 +7,44 @@ expect register 0
 expect tan_on 0
 expect tan2_on 0
 expect peak 0
+# A physical C4-C5 key previews its note on one string while both tanpuras are off; other keys still set Sa
+peakreset
+press SEL
+tapkey 6
+release SEL
+wait 100
+expect sa_cents -100
+expect tan_preview 0
+expect peak 0
+press SEL
+tapkey 7
+release SEL
+wait 100
+expect sa_cents -100
+expect tan_preview 1
+expect peak >0
+press SEL
+tapkey 19
+release SEL
+wait 100
+expect sa_cents -100
+expect tan_preview 1
 # the tanpuras on: SEQ starts both
 tap SEQ
 wait 3000
 expect tan_on 1
 expect tan2_on 1
 expect peak >200000
+expect tan_preview 0
 expect jobs >400
 shot main_tanpura_on.png
+# With a tanpura on, SEL + a physical C4 key keeps setting Sa instead of previewing a string
+press SEL
+tapkey 7
+release SEL
+wait 200
+expect sa_cents -1200
+expect tan_preview 0
 # Sa: SEL + the G key (key 2 = G3), then a cent up and down on PRESET
 press SEL
 tapkey 2
