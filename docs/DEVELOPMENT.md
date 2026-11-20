@@ -99,6 +99,24 @@ Data: `tools/tabla_data/build_samples.py` (needs Python with numpy and scipy, an
 `docs/references/tabla_mmiron/wav/`) regenerates `tabla/tabla_samples.h`; `tools/taal_data/build_taal.py` regenerates
 `taal/taal_tables.h` from `data/taal/`.
 
+The tanpura's pitch corrections are measured offline from the actual DSP and scheduled pluck, including the body
+filters. To regenerate both headers, using Python and NumPy:
+
+```bash
+make build-host/pitch_probe
+python3 tools/reference/calibrate_pitch.py --generate --jobs 4
+python3 tools/reference/calibrate_pitch.py --generate --upper --jobs 4
+make build-host/pitch_probe build-host/regress
+python3 tools/reference/calibrate_pitch.py
+tools/test/run_tests.sh
+python3 tools/reference/verify_pitch.py --all-notes --jobs 4   # optional, all semitone Sa values and off-grid cases
+```
+
+`--cache PATH` can resume a long generation with the same probe binary and NumPy version; use separate cache files
+for each header. The measurement is the power centroid near the fundamental 0.5–2.5 s after a pluck. It is not a
+substitute for listening, especially when jawari splits the fundamental. Regenerate the golden hashes only after
+checking that any change to the sound is intended.
+
 ## Measurements (version 1.0, all sources on)
 
 Measured in fm1-emu in realistic mode, which runs at 240 MHz; the FM-1 runs at 360 MHz.

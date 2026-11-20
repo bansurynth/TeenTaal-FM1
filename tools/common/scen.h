@@ -8,6 +8,7 @@
  *   master=0..4096       MASTER's gain as the platform passes it (default 4096)
  *   tan.on=1  tan.first=Pa (or 0..11)  tan.jawari=0..100  tan.cycle=25..80 (tenths of s)  tan.human=0..100
  *   tan.fine0..3=-50..50 (cents)  tan.vol0..3=0..100  tan.reg=0/1 (1: an octave under Sa, the default)
+ *   tan.preview=G3       pluck a preview at this absolute note, with both tanpuras off
  *   tan2.on=0/1 (the second tanpura, default 1)  tan2.first=Ni (default)  tan2.phase=0..100 (% of the cycle, default 50)
  *   tab.hit=Dha  tab.hit=Dha/60    a bol (data/tabla/bols.json), dynamic 0..127 (default 100)   tab.stop=1
  *   taal.on=1  taal.taal=Ektaal (or 0..9)  taal.mpm=20..600  taal.human=0..100
@@ -21,7 +22,7 @@
 
 typedef struct {
     double t;
-    int target, id;           /* target -1: MASTER */
+    int target, id;           /* negative targets: MASTER or the tanpura preview */
     int32_t v;
 } scen_ev_t;
 

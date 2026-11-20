@@ -1,5 +1,27 @@
 # PROGRESS
 
+## Iterazione autorizzata (ElectroNick, 2026-11-20) — intonazione del tanpura
+
+### Piano e verifica
+1. Verificare come sono state ricavate e applicate le tabelle di correzione, misurando anche il G3 segnalato.
+2. Controllare l'intonazione delle singole corde e dell'anteprima, a diversi Sa, registri e valori di jawari;
+   correggere le cause degli scostamenti misurati e aggiungere verifiche di regressione.
+3. Rigenerare esempi d'ascolto e misurare il costo rispetto al budget; riportare risultati e limiti qui.
+
+Al termine: STOP e ascolto di ElectroNick, senza passare a un altro step.
+
+### Stato delle verifiche
+- Rigenerate 5.830 misure con il pizzico reale del ciclo; massimo residuo sui punti della griglia 1,50 cent.
+- G3 come Ma alta, quattro pizzichi isolati: prima da −8,11 a −8,16 cent, dopo da −0,15 a −0,16 cent; G3 Sa:
+  prima da −0,58 a −0,73 cent, dopo da −0,11 a −0,13 cent. Non è stato riprodotto lo scarto di +30 cent segnalato.
+- Verificati tutti i 26 Sa cromatici da F#2 a G4, 18 swara, entrambi i registri e jawari 0/50/100, più valori
+  intermedi, fine tuning e La diversi: 5.948 prove, massimo 4,88 cent. La gamma continua non è verificabile per intero.
+- Regressione host, stress, autotest, dati tabla/taal e simulatore host: ok. Stima CPU peggiore 79,68% del core contro
+  85%; macOS non fornisce `perf_event_open`, quindi non è una misura reale sul dispositivo.
+- Build target app-only: immagine 426.968 B su 581.564 B, `.data+.bss` 67.920 B su 98.304 B, pool 178.804 B su
+  344.064 B; nessuna routine soft-double. La prova del pacchetto in fm1-emu è in corso. L'FM-1 è stato rilevato come
+  `FM-1_7700`; ElectroNick ha autorizzato l'installazione.
+
 ## Iterazione autorizzata (ElectroNick, 2026-11-12) — tanpura
 
 ### Piano

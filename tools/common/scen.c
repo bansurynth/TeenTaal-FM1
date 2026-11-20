@@ -5,6 +5,8 @@
 #include <string.h>
 #include <math.h>
 
+enum { SCEN_MASTER = -1, SCEN_TAN_PREVIEW = -2 };
+
 static int note_cents(const char *s, int32_t *out)
 {
     static const int SEMI[7] = {9, 11, 0, 2, 4, 5, 7};   /* A B C D E F G */
@@ -82,7 +84,12 @@ int scen_parse(const char *s, scen_ev_t *ev)
     else if (!strcmp(name, "mix.tanpura")) ev->target = ENG_MIXER, ev->id = MIX_P_LEVEL + MIX_TANPURA;
     else if (!strcmp(name, "mix.tabla")) ev->target = ENG_MIXER, ev->id = MIX_P_LEVEL + MIX_TABLA;
     else if (!strcmp(name, "mix.ref"))   ev->target = ENG_MIXER, ev->id = MIX_P_LEVEL + MIX_REFTONE;
-    else if (!strcmp(name, "master"))    ev->target = -1, ev->id = 0;
+    else if (!strcmp(name, "master"))    ev->target = SCEN_MASTER, ev->id = 0;
+    else if (!strcmp(name, "tan.preview")) {
+        ev->target = SCEN_TAN_PREVIEW, ev->id = 0;
+        if (note_cents(val, &ev->v) == 0)
+            return 0;
+    }
     else if (!strcmp(name, "tan.on"))    ev->target = ENG_TANPURA, ev->id = TANPURA_P_ON;
     else if (!strcmp(name, "tan.jawari")) ev->target = ENG_TANPURA, ev->id = TANPURA_P_JAWARI;
     else if (!strcmp(name, "tan.cycle")) ev->target = ENG_TANPURA, ev->id = TANPURA_P_CYCLE;
@@ -173,7 +180,9 @@ void scen_apply_due(scen_run_t *r)
         const scen_ev_t *e = &r->ev[k];
         if (e->t < from || e->t >= to)
             continue;
-        if (e->target < 0)
+        if (e->target == SCEN_TAN_PREVIEW)
+            engine_tanpura_preview(&r->eng, e->v);
+        else if (e->target == SCEN_MASTER)
             r->master = (uint32_t)(e->v < 0 ? 0 : e->v > 4096 ? 4096 : e->v);
         else
             engine_set_param(&r->eng, e->target, e->id, e->v);

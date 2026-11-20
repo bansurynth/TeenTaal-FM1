@@ -4,7 +4,21 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
-### 2026-11-20 — Compensazione dell'intonazione del tanpura
+### 2026-11-20 — Taratura dell'intonazione sul ciclo effettivo
+- Le correzioni sono generate dal DSP effettivo, con il pizzico schedulato dal ciclo e i filtri del corpo. La misura
+  è il centroide di potenza entro ±80 cent dalla fondamentale, fra 0,5 e 2,5 s dopo il pizzico: è una convenzione
+  riproducibile, non una garanzia che coincida sempre con l'altezza percepita.
+- Due tabelle generate, in decimi di cent, coprono 5.830 configurazioni per Sa, jawari, registri e profili distinti
+  di prima/extra, Sa, kharaj e anteprima. Le corde alte mantengono la loro geometria quando variano La e accordatura
+  fine: interpolare fra swara accorciati diversi produceva errori. Il lookup avviene solo preparando i coefficienti.
+- Il generatore parte da correzione zero, senza usare la tabella precedente come riferimento. Il più grande residuo
+  sui punti di calibrazione è 1,50 cent. In 5.948 prove fra tutti i 26 Sa cromatici, registri, swara, jawari e valori
+  fuori griglia il massimo è 4,88 cent. Interpolazione e modello non lineare non garantiscono lo stesso errore per ogni
+  combinazione continua.
+- Scartati un abbassamento globale di 30 cent, non riscontrato nelle configurazioni G3 misurate, e un'unica curva per
+  corde con geometrie e taglio dei modi diversi.
+
+### 2026-11-20 — Compensazione dell'intonazione del tanpura — **superata dalla revisione sopra**
 - I contatti del modello al ponte e al filo spostano il picco rispetto al modo libero; uno scarto fisso non basta
   perché dipende dalla nota, dalla geometria della corda e dal jawari.
 - La frequenza interna viene corretta interpolando in cent le misure per Sa, jawari e profilo della corda, incluse le

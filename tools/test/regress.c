@@ -7,6 +7,7 @@
  *     clicks (sample-to-sample step bounded by a sine's steepest slope), silence where there must be silence
  * GOLDEN_UPDATE=1 rewrites golden.txt (only for an intended change of the sound), BUDGET_UPDATE=1 the baseline. */
 #define _GNU_SOURCE
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,6 +73,11 @@ static scenario_t SC[] = {
     {"tan_G4_extra", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.first=Ma^", "0:tan.extra=Ni", "0:tan2.on=1",
                          "0:tan.on=1"},
                      0, 0, -1, 1, 0},
+    {"tan_G3_cycle", 12, {"0:sa=G3", "0:tan.human=0", "0:tan2.on=1", "0:tan.on=1"},
+     0, 0, -1, 1, 0},
+    {"tan_G3_cycle_human", 12, {"0:sa=G3", "0:tan.human=50", "0:tan2.on=1", "0:tan.on=1"},
+     0, 0, -1, 1, 0},
+    {"tan_preview_G3", 6, {"0:sa=G3", "0:tan.reg=1", "0:tan.preview=G3"}, 0, 0, -1, 1, 0},
     {"tan_Fs2_j0_Ma", 6, {"0:sa=F#2", "0:tan.jawari=0", "0:tan.first=Ma", "0:tan2.on=1", "0:tan.on=1"},
      0, 0, -1, 1, 0},
     {"tan_G4_j100_Ni", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.jawari=100", "0:tan.first=Ni", "0:tan2.on=1",
@@ -181,120 +187,147 @@ static double goertzel_power(const float *x, const double *window, int n, double
     return q1 * q1 + q2 * q2 - coeff * q1 * q2;
 }
 
-static double string_pitch_cents(tstring_t *s, double target)
+static double tanpura_pitch_cents(tanpura_t *t, double target)
 {
     const int before = (int)(0.5 * (double)TANPURA_FS);
     const int n = (int)(2.0 * (double)TANPURA_FS);
     const int total = before + n;
     float *x = (float *)malloc((size_t)n * sizeof *x);
     double *window = (double *)malloc((size_t)n * sizeof *window);
-    float fd[64], fn[64];
-    double coarse[41], fine[21], coarse_cents, fine_cents, a, b, c, den, delta;
-    int i, best = 0, pos = 0;
+    double power_sum = 0.0, frequency_sum = 0.0;
+    int i, pos = 0;
     if (!x || !window) {
         fprintf(stderr, "tanpura pitch check: allocation failed\n");
         free(x);
         free(window);
         return NAN;
     }
-    tstring_silence(s);
-    tstring_pluck(s, -0.4f, 0.05f, TANPURA_FS);
     while (pos < total) {
-        int k, len = total - pos < 64 ? total - pos : 64;
-        memset(fd, 0, sizeof fd);
-        memset(fn, 0, sizeof fn);
-        tstring_run(s, fd, fn, len);
-        for (k = 0; k < len; k++)
-            if (pos + k >= before)
-                x[pos + k - before] = fn[k];
-        pos += len;
+        int32_t out[DSP_BLOCK] = {0};
+        int k;
+        tanpura_render(t, out, DSP_BLOCK);
+        for (k = 0; k < DSP_BLOCK / TANPURA_OS && pos < total; k++, pos++)
+            if (pos >= before)
+                x[pos - before] = (float)out[k * TANPURA_OS] * (1.0f / 8388608.0f);
     }
     for (i = 0; i < n; i++)
         window[i] = 0.5 - 0.5 * cos(2.0 * M_PI * (double)i / (double)(n - 1));
-    for (i = 0; i <= 40; i++) {
-        coarse[i] = goertzel_power(x, window, n, TANPURA_FS, target, -100.0 + 5.0 * i);
-        if (coarse[i] > coarse[best])
-            best = i;
-    }
-    coarse_cents = -100.0 + 5.0 * best;
-    for (i = 0; i <= 20; i++) {
-        fine_cents = coarse_cents - 2.5 + 0.25 * i;
-        fine[i] = goertzel_power(x, window, n, TANPURA_FS, target, fine_cents);
-        if (i == 0 || fine[i] > fine[best])
-            best = i;
-    }
-    fine_cents = coarse_cents - 2.5 + 0.25 * best;
-    if (best > 0 && best < 20) {
-        a = log(fmax(fine[best - 1], 1e-300));
-        b = log(fmax(fine[best], 1e-300));
-        c = log(fmax(fine[best + 1], 1e-300));
-        den = a - 2.0 * b + c;
-        delta = fabs(den) > 1e-15 ? 0.5 * (a - c) / den : 0.0;
-        fine_cents += delta * 0.25;
+    for (i = -80; i <= 80; i++) {
+        double frequency = target * pow(2.0, (double)i / 1200.0);
+        double power = goertzel_power(x, window, n, TANPURA_FS, target, (double)i);
+        power_sum += power;
+        frequency_sum += frequency * power;
     }
     free(x);
     free(window);
-    return fine_cents;
+    if (!(power_sum > 0.0) || !(frequency_sum > 0.0))
+        return NAN;
+    return 1200.0 * log2(frequency_sum / (power_sum * target));
 }
 
-static double sa_note_hz(int sa_cents, int reg, double relative_cents)
+static double sa_note_hz(int a4_dhz, int sa_cents, int reg, double relative_cents)
 {
     int32_t offset = reg && sa_cents - 1200 >= TUNING_SA_MIN ? -1200 : 0;
-    return 440.0 * pow(2.0, ((double)sa_cents + offset + relative_cents - 900.0) / 1200.0);
+    return (double)a4_dhz * 0.1 * pow(2.0, ((double)sa_cents + offset + relative_cents - 900.0) / 1200.0);
 }
 
-static void tanpura_pitch_check(const char *name, int sa_cents, int jawari, int reg, int string, int first,
-                               int fine, double relative_cents)
+static void tanpura_pitch_check_volume(const char *name, int sa_cents, int jawari, int reg, int string, int first,
+                                      int fine, double relative_cents, int a4_dhz, int volume)
 {
     static tanpura_t t;
     char detail[128];
     double target, measured;
+    int j;
     tanpura_init(&t, 0);
+    tanpura_set_param(&t, DSP_P_A4_DHZ, a4_dhz);
     tanpura_set_param(&t, DSP_P_SA_CENTS, sa_cents);
     tanpura_set_param(&t, TANPURA_P_REGISTER, reg);
     tanpura_set_param(&t, TANPURA_P_JAWARI, jawari);
-    if (first >= 0)
-        tanpura_set_param(&t, TANPURA_P_FIRST, first);
+    tanpura_set_param(&t, TANPURA_P_HUMAN, 0);
+    tanpura_set_param(&t, TANPURA_P_VOL + string, volume);
+    if (first >= 0) {
+        int id = string == TANPURA_NSTR - 1 ? TANPURA_P_EXTRA : TANPURA_P_FIRST;
+        tanpura_set_param(&t, id, first);
+    }
     if (fine && string < TANPURA_NFINE)
         tanpura_set_param(&t, TANPURA_P_FINE + string, fine);
+    tanpura_set_param(&t, TANPURA_P_ON, 1);
     tanpura_take(&t);
-    target = sa_note_hz(sa_cents, reg, relative_cents + fine);
-    measured = string_pitch_cents(&t.str[string], target);
+    for (j = 0; j < TANPURA_NSTR; j++) {
+        t.due[j] = j == string ? 0 : INT_MAX / 2;
+        if (j != string)
+            t.str[j].c.M = 0;
+    }
+    t.nominal[string] = 0;
+    target = sa_note_hz(a4_dhz, sa_cents, reg, relative_cents + fine);
+    measured = tanpura_pitch_cents(&t, target);
     snprintf(detail, sizeof detail, "%+.2f cents from %.3f Hz", measured, target);
     check(name, "tanpura pitch within 5 cents", isfinite(measured) && fabs(measured) < 5.0, detail);
 }
 
-static void tanpura_preview_pitch_check(void)
+static void tanpura_pitch_check(const char *name, int sa_cents, int jawari, int reg, int string, int first,
+                               int fine, double relative_cents, int a4_dhz)
+{
+    tanpura_pitch_check_volume(name, sa_cents, jawari, reg, string, first, fine, relative_cents, a4_dhz, 100);
+}
+
+static void tanpura_preview_pitch_check(const char *name, int sa_cents, int reg, int jawari, int preview_cents)
 {
     static tanpura_t t;
     char detail[128];
-    const int sa_cents = -800, preview_cents = -300;
-    double target = sa_note_hz(sa_cents, 0, preview_cents - sa_cents);
+    double target = 440.0 * pow(2.0, ((double)preview_cents - 900.0) / 1200.0);
     double measured;
+    int j;
     tanpura_init(&t, 0);
     tanpura_set_param(&t, DSP_P_SA_CENTS, sa_cents);
-    tanpura_set_param(&t, TANPURA_P_REGISTER, 0);
-    tanpura_set_param(&t, TANPURA_P_JAWARI, 50);
+    tanpura_set_param(&t, TANPURA_P_REGISTER, reg);
+    tanpura_set_param(&t, TANPURA_P_JAWARI, jawari);
     tanpura_preview(&t, preview_cents);
     tanpura_take(&t);
-    measured = string_pitch_cents(&t.preview, target);
+    for (j = 0; j < TANPURA_NSTR; j++)
+        t.str[j].c.M = 0;
+    measured = tanpura_pitch_cents(&t, target);
     snprintf(detail, sizeof detail, "%+.2f cents from %.3f Hz", measured, target);
-    check("tan_preview_Ma", "preview pitch within 5 cents", isfinite(measured) && fabs(measured) < 5.0, detail);
+    check(name, "preview pitch within 5 cents", isfinite(measured) && fabs(measured) < 5.0, detail);
 }
 
 static void tanpura_pitch_checks(void)
 {
-    tanpura_pitch_check("tan_pitch_A2", -1500, 50, 0, 1, -1, 0, 0);
-    tanpura_pitch_check("tan_pitch_E3_Pa", -800, 50, 0, 0, SW_PA, 0, -500);
-    tanpura_pitch_check("tan_pitch_E3_Sa", -800, 50, 0, 1, -1, 0, 0);
-    tanpura_pitch_check("tan_pitch_E3_kharaj", -800, 50, 0, 3, -1, 0, -1200);
-    tanpura_pitch_check("tan_pitch_Ni", -800, 50, 0, 0, SW_NI, 0, -100);
-    tanpura_pitch_check("tan_pitch_Ma", -800, 50, 0, 0, SW_MA, 0, -700);
-    tanpura_pitch_check("tan_pitch_fine", -800, 50, 0, 0, SW_PA, 37, -500);
-    tanpura_pitch_check("tan_pitch_G4", 700, 50, 0, 1, -1, 0, 0);
-    tanpura_pitch_check("tan_pitch_G4_reg", 700, 50, 1, 1, -1, 0, 0);
-    tanpura_pitch_check("tan_pitch_Ma_high", -800, 50, 0, 0, 17, 0, 500);
-    tanpura_preview_pitch_check();
+    int jawari;
+    tanpura_pitch_check("tan_pitch_A2", -1500, 50, 0, 1, -1, 0, 0, 4400);
+    tanpura_pitch_check("tan_pitch_E3_Pa", -800, 50, 0, 0, SW_PA, 0, -500, 4400);
+    tanpura_pitch_check("tan_pitch_E3_Sa", -800, 50, 0, 1, -1, 0, 0, 4400);
+    tanpura_pitch_check("tan_pitch_E3_kharaj", -800, 50, 0, 3, -1, 0, -1200, 4400);
+    tanpura_pitch_check("tan_pitch_Ni", -800, 50, 0, 0, SW_NI, 0, -100, 4400);
+    tanpura_pitch_check("tan_pitch_Ma", -800, 50, 0, 0, SW_MA, 0, -700, 4400);
+    tanpura_pitch_check("tan_pitch_fine", -800, 50, 0, 0, SW_PA, 37, -500, 4400);
+    tanpura_pitch_check("tan_pitch_G4", 700, 50, 0, 1, -1, 0, 0, 4400);
+    tanpura_pitch_check("tan_pitch_G4_reg", 700, 50, 1, 1, -1, 0, 0, 4400);
+    tanpura_pitch_check("tan_pitch_Ma_high", -800, 50, 0, 0, 17, 0, 500, 4400);
+    tanpura_pitch_check("tan_pitch_G3_Pa", 0, 50, 0, 0, SW_PA, 0, -500, 4400);
+    tanpura_pitch_check("tan_pitch_G3_upper", 200, 0, 1, 0, 17, 0, 500, 4400);
+    tanpura_pitch_check("tan_pitch_G3_extra", 200, 0, 1, 4, 17, 0, 500, 4400);
+    tanpura_pitch_check("tan_pitch_G3_kharaj", 700, 50, 0, 3, -1, 0, -1200, 4400);
+    tanpura_pitch_check("tan_pitch_G3_A415", -500, 50, 0, 1, -1, 0, 0, 4150);
+    tanpura_pitch_check("tan_pitch_G3_A466", -500, 50, 0, 1, -1, 0, 0, 4660);
+    tanpura_pitch_check("tan_pitch_kharaj_fine", -500, 75, 0, 3, -1, -50, -1200, 4660);
+    tanpura_pitch_check("tan_pitch_upper_A466_fine", 500, 0, 0, 0, 17, 50, 500, 4660);
+    tanpura_pitch_check("tan_pitch_upper_Sa_A466", 700, 0, 0, 0, 12, 50, 0, 4660);
+    tanpura_pitch_check("tan_pitch_upper_large_fine", 350, 50, 1, 0, 17, 50, 500, 4660);
+    tanpura_pitch_check_volume("tan_pitch_G3_volume25", -500, 50, 0, 1, -1, 0, 0, 4400, 25);
+    tanpura_pitch_check_volume("tan_pitch_G3_upper_volume25", 200, 0, 1, 0, 17, 0, 500, 4400, 25);
+    tanpura_pitch_check("tan_pitch_upper_negative_fine", 669, 0, 0, 0, 17, -43, 500, 4460);
+    tanpura_pitch_check("tan_pitch_upper_extreme_fine", 600, 0, 0, 0, 17, 50, 500, 4660);
+    for (jawari = 0; jawari <= 100; jawari += 50) {
+        char name[32];
+        snprintf(name, sizeof name, "tan_G3_Sa_j%d", jawari);
+        tanpura_pitch_check(name, -500, jawari, 0, 1, -1, 0, 0, 4400);
+        snprintf(name, sizeof name, "tan_G3_large_j%d", jawari);
+        tanpura_pitch_check(name, -500, jawari, 1, 2, -1, 0, 0, 4400);
+    }
+    tanpura_preview_pitch_check("tan_preview_Ma", -800, 0, 50, -300);
+    tanpura_preview_pitch_check("tan_preview_G3", -500, 1, 50, -500);
+    tanpura_preview_pitch_check("tan_preview_C4", -1800, 0, 0, 0);
 }
 
 static uint64_t fnv1a(const int32_t *x, size_t n)

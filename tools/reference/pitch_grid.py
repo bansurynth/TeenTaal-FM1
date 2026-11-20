@@ -10,6 +10,7 @@ separately because it uses bronze. WAV profiles use the isolated string's
 spectrum from 1.0 to 4.9 s and report residual offsets with the renderer's
 current compensation, not replacement table values. The preview profile uses
 the raw nut force from tstring_dump and reports the uncompensated contact shift.
+For reproducible firmware-table generation use calibrate_pitch.py instead.
 """
 import math
 import os

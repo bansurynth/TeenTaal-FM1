@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""Check interpolated tanpura pitches outside the calibration grid.
+
+Run after building the probe: python3 tools/reference/verify_pitch.py --all-notes --jobs 4
+Reports all cases beyond 5 cents and fails if any exceeds that limit.
+"""
+import argparse
+from concurrent.futures import ThreadPoolExecutor
+import itertools
+import random
+
+from calibrate_pitch import render_pitch
+
+
+def cases():
+    rng = random.Random(20261120)
+    for kind, count in (("first", 500), ("sa", 200), ("kharaj", 200), ("preview", 200)):
+        for _ in range(count):
+            sa, reg, jawari = rng.randint(-1800, 700), rng.randrange(2), rng.randint(0, 100)
+            selection = rng.randrange(18) if kind == "first" else rng.randrange(-12, 1) * 100 if kind == "preview" else 0
+            fine = 0 if kind == "preview" else rng.randint(-50, 50)
+            a4 = rng.choice((4150, 4320, 4400, 4460, 4660, rng.randint(4150, 4660)))
+            yield kind, sa, reg, jawari, selection, fine, a4
+
+    sas = (-1800, -1200, -500, 0, 350, 500, 600, 700)
+    tuning = ((-50, 4150), (-50, 4400), (-43, 4460), (0, 4400), (50, 4400), (50, 4660))
+    for sa, reg, jawari, swara, (fine, a4) in itertools.product(
+            sas, (0, 1), (0, 50, 100), (0, 10, 11, 12, 16, 17), tuning):
+        yield "first", sa, reg, jawari, swara, fine, a4
+
+
+def measure(case):
+    kind, sa, reg, jawari, selection, fine, a4 = case
+    _, error = render_pitch(sa, reg, jawari, kind, selection, fine=fine, a4=a4)
+    return abs(error), error, case
+
+
+def all_note_cases():
+    for sa, reg, jawari in itertools.product(range(-1800, 701, 100), (0, 1), (0, 50, 100)):
+        for swara in range(18):
+            yield "first", sa, reg, jawari, swara, 0, 4400
+        yield "sa", sa, reg, jawari, 0, 0, 4400
+        yield "kharaj", sa, reg, jawari, 0, 0, 4400
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--jobs", type=int, default=4, help="parallel probe processes (default: 4)")
+    parser.add_argument("--all-notes", action="store_true",
+                        help="also check all 26 semitone Sa values, both registers, three jawari values and all swaras")
+    args = parser.parse_args()
+    if args.jobs < 1:
+        parser.error("--jobs must be positive")
+    selected = itertools.chain(cases(), all_note_cases()) if args.all_notes else cases()
+    with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+        results = list(pool.map(measure, selected))
+    for kind in ("first", "sa", "kharaj", "preview"):
+        group = [item for item in results if item[2][0] == kind]
+        print(f"{kind:8s} {len(group):4d} cases; max {max(item[0] for item in group):.2f} cents; "
+              f"{sum(item[0] > 5.0 for item in group)} above 5 cents")
+    outliers = sorted((item for item in results if item[0] > 5.0), reverse=True)
+    for _, error, case in outliers:
+        print(f"  {error:+.2f} cents: {case}")
+    return int(any(item[0] > 5.0 for item in results))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

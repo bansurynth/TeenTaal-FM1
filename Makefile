@@ -7,7 +7,7 @@ DSP_SRC = $(wildcard dsp/*.c reftone/*.c tanpura/*.c tabla/*.c taal/*.c mixer/*.
 DSP_HDR = $(wildcard dsp/*.h reftone/*.h tanpura/*.h tabla/*.h taal/*.h mixer/*.h) tools/common/scen.h
 OUT = build-host
 
-all: $(OUT)/render $(OUT)/tabla_demo $(OUT)/regress $(OUT)/tanpura_ref $(OUT)/tanpura_var $(OUT)/tstring_dump $(OUT)/tanpura_stress
+all: $(OUT)/render $(OUT)/tabla_demo $(OUT)/regress $(OUT)/tanpura_ref $(OUT)/tanpura_var $(OUT)/tstring_dump $(OUT)/tanpura_stress $(OUT)/pitch_probe
 
 $(OUT)/render: tools/render/render.c tools/common/scen.c $(DSP_SRC) $(DSP_HDR)
 	@mkdir -p $(OUT)
@@ -28,6 +28,10 @@ $(OUT)/tanpura_var: tools/test/tanpura_var.c tools/common/scen.c $(DSP_SRC) $(DS
 $(OUT)/tstring_dump: tools/test/tstring_dump.c tanpura/tstring.c tanpura/tstring.h
 	@mkdir -p $(OUT)
 	$(CC) $(CFLAGS) -o $@ tools/test/tstring_dump.c tanpura/tstring.c -lm
+
+$(OUT)/pitch_probe: tools/reference/pitch_probe.c tanpura/tanpura.c tanpura/tstring.c dsp/tuning.c $(DSP_HDR)
+	@mkdir -p $(OUT)
+	$(CC) $(CFLAGS) -o $@ tools/reference/pitch_probe.c tanpura/tanpura.c tanpura/tstring.c dsp/tuning.c -lm
 
 $(OUT)/tanpura_stress: tools/test/tanpura_stress.c $(DSP_SRC) $(DSP_HDR)
 	@mkdir -p $(OUT)
