@@ -4,6 +4,17 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
+### 2026-11-20 — Compensazione dell'intonazione del tanpura
+- I contatti del modello al ponte e al filo spostano il picco rispetto al modo libero; uno scarto fisso non basta
+  perché dipende dalla nota, dalla geometria della corda e dal jawari.
+- La frequenza interna viene corretta interpolando in cent le misure per Sa, jawari e profilo della corda, incluse le
+  corde alte accorciate, il kharaj e l'anteprima. L'accordatura fine resta applicata alla nota richiesta.
+- I render a E3 per Pa, Ni e Ma alto risultano entro un cent nel tratto 1,0–4,9 s. Il test della forza grezza del Ma
+  alto misura +5,92 cent nel tratto 0,5–2,5 s, oltre il limite di 5 cent: la differenza tra misure va approfondita.
+  Gli hash audio precedenti non sono ancora aggiornati dopo il cambio intenzionale del suono.
+- `tools/reference/pitch_grid.py` misura ora i residui usando il renderer compensato; il profilo di anteprima usa invece
+  il modello grezzo senza compensazione. I residui del renderer non rigenerano direttamente le tabelle originali.
+
 ### 2026-11-17 — Più modi sulle note alte del tanpura
 - Il limite statico resta a 96 modi per corda: nei render ad alta Sa non era quello il limite, ma il taglio `fmax`.
 - Il taglio per corda cresce da 1x a Sa C4 fino a 2x a G4; sotto C4 resta invariato. A G4 i modi attivi sulle quattro corde standard passano da 151 a 238.

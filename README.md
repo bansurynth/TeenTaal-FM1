@@ -6,17 +6,19 @@ one screen, no menus to dig through.
 
 By **ElectroNick** — <https://github.com/ELENICK97>
 
+Fork: <https://github.com/bansurynth/TeenTaal-FM1>
+
 ![The main screen](docs/img/screen.png)
 
 > [!WARNING]
-> **This firmware was generated with AI and has not been tested on a real FM-1 yet.** It was written by an AI coding
-> assistant (Claude, by Anthropic) under ElectroNick's direction, and has been tested only in emulators. Installing any
+> **This firmware was generated with AI and has had limited testing on a real FM-1.** It was written by an AI coding
+> assistant (Claude, by Anthropic) under ElectroNick's direction. Hardware testing is incomplete, and installing any
 > unofficial firmware can leave an FM-1 unable to start. **Use it at your own risk.** Read the
 > [Disclaimer](#disclaimer) before installing.
 
-**Status: version 1.1, still to be fully tested.** Every feature works in the emulators; nothing has been checked on
-the device yet (CPU load, speaker sound, real flash timings). Updates are likely in the near future: watch the
-repository or check the [Releases](https://github.com/ELENICK97/TeenTaal-FM1/releases).
+**Status: version 1.1, still to be fully tested.** The firmware has started on a real device, but CPU load, speaker
+sound and real flash timings have not been comprehensively verified. Updates are likely in the near future: watch the
+repository or check the [Releases](https://github.com/bansurynth/TeenTaal-FM1/releases).
 
 ## What it does
 
@@ -47,7 +49,7 @@ Listen: [docs/audio/](docs/audio/) has short recordings made by the firmware's o
 ## Quick start
 
 1. Read the [Disclaimer](#disclaimer) and [INSTALL.md](INSTALL.md); keep the official V15 firmware at hand.
-2. Install the firmware (the package is in the [Releases](https://github.com/ELENICK97/TeenTaal-FM1/releases)).
+2. Install the firmware (the package is in the [Releases](https://github.com/bansurynth/TeenTaal-FM1/releases)).
 3. On the FM-1: **SEQ** starts the tanpura, **PLAY** the tabla, **ARP** the reference tone. **SEL + a key** sets your
    Sa (default A3, for a bansuri in A); **SELECT** picks the taal, **KNOB1** the tempo. More in the
    [manual](docs/MANUAL.md).
@@ -58,8 +60,9 @@ To try it without an FM-1, build and run the browser emulator from the source (s
 ## Licence and credit
 
 TeenTaal-FM1 is open source under the [Apache License 2.0](LICENSE). You may use, change and share it, also in your
-own projects, as long as you **keep the [NOTICE](NOTICE) file and credit ElectroNick, linking this repository:
-<https://github.com/ELENICK97/TeenTaal-FM1>** ([CITATION.cff](CITATION.cff) gives the citation).
+own projects, as long as you **keep the [NOTICE](NOTICE) file and credit ElectroNick, linking the original repository:
+<https://github.com/ELENICK97/TeenTaal-FM1>**. This fork is at <https://github.com/bansurynth/TeenTaal-FM1>
+([CITATION.cff](CITATION.cff) gives the citation).
 
 It is built on **fm1-base** by Charles Vestal and **felucca-bsp** by Leo Kuroshita (MPL-2.0, in `platform/`), uses
 the tabla recordings of the Freesound pack *"tabla bols"* by **mmiron** (CC0), and its tanpura follows the paper by
@@ -71,8 +74,8 @@ and the other sources: [CREDITS.md](CREDITS.md).
 - **AI-generated.** The code, data processing and documents were produced by an AI coding assistant (Claude, by
   Anthropic), under the direction and review of ElectroNick, who knows how to write and read firmware. Even so,
   AI-written code can contain mistakes that the tests did not catch.
-- **Not tested on hardware.** Every package was run in emulators (fm1-emu and the fm1-base browser emulator), which do
-  not reproduce the FM-1 exactly. The first installation on a real device is also its first real test.
+- **Limited hardware testing.** The firmware has started and responded over USB-MIDI on an FM-1, but not every package
+  or feature has been tested on hardware. Emulators do not reproduce the FM-1 exactly.
 - **Risk to your device.** The FM-1 has a single flash bank and no debug port. A failed or interrupted update, a
   power loss during the write, or a firmware bug at start-up can leave it unable to start; recovering it may need a
   hardware adapter. Installing an unofficial firmware may also void your warranty, and erases what other firmwares saved.

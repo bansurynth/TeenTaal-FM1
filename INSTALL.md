@@ -1,8 +1,8 @@
 # Installing TeenTaal on the FM-1
 
 > [!WARNING]
-> TeenTaal is **AI-generated** and has been **tested only in emulators, never on a real FM-1**. The first installation
-> is also its first real test. A failed update can leave an FM-1 unable to start. **You do this at your own risk**
+> TeenTaal is **AI-generated** and has had **limited testing on a real FM-1**. Hardware testing is incomplete, and a
+> failed update can leave an FM-1 unable to start. **You do this at your own risk**
 > (see the [Disclaimer](README.md#disclaimer)).
 
 The installation writes **only the FM-1's application area**: M-VAVE's bootloader is left as it is, so you can go back
@@ -25,8 +25,8 @@ The installer is a small Python program that comes with fm1-base, inside this re
 as an installer web page: it puts the FM-1 in update mode and writes the package, then checks that the FM-1 restarted
 with it.
 
-1. **Download the project**: on <https://github.com/ELENICK97/TeenTaal-FM1>, **Code → Download ZIP**, and unzip it.
-2. **Download the firmware**: from the [Releases](https://github.com/ELENICK97/TeenTaal-FM1/releases), the file
+1. **Download the project**: on <https://github.com/bansurynth/TeenTaal-FM1>, **Code → Download ZIP**, and unzip it.
+2. **Download the firmware**: from the [Releases](https://github.com/bansurynth/TeenTaal-FM1/releases), the file
    `teentaal-1.0.fwsc`. Put it in the unzipped project folder. You can check that it is the published file: its
    SHA-256 must be the one in the release notes (Windows: `certutil -hashfile teentaal-1.0.fwsc SHA256`; macOS and
    Linux: `shasum -a 256 teentaal-1.0.fwsc`).

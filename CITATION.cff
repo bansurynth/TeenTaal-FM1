@@ -4,8 +4,8 @@ title: "TeenTaal-FM1: an Indian classical music practice firmware for the M-VAVE
 authors:
   - alias: "ElectroNick"
     website: "https://github.com/ELENICK97"
-repository-code: "https://github.com/ELENICK97/TeenTaal-FM1"
-url: "https://github.com/ELENICK97/TeenTaal-FM1"
+repository-code: "https://github.com/bansurynth/TeenTaal-FM1"
+url: "https://github.com/bansurynth/TeenTaal-FM1"
 license: Apache-2.0
 version: "1.1"
 date-released: "2026-11-08"

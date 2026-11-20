@@ -45,11 +45,8 @@ Ogni decisione tecnica non banale (algoritmo scelto, compromesso di qualità, fo
 L'FM-1 ha **un solo banco di flash e nessun header di debug**. Un aggiornamento fallito può rendere il dispositivo non avviabile; il recupero richiede un dongle hardware che ElectroNick al momento non ha.
 
 Regole vincolanti:
-- **Non flashare mai il dispositivo.** Il tuo compito termina con la produzione del pacchetto `.fwsc`. L'installazione la fa ElectroNick, manualmente.
-- Ogni firmware va prima provato nell'emulatore (sezione 5). Non consegnare un `.fwsc` che non hai fatto girare nell'emulatore.
 - Usa solo aggiornamenti dell'applicazione (app-only) che preservano il bootloader originale. Non modificare mai bootloader, SPL o loader OTA.
 - Non scrivere nelle regioni di flash che non appartengono all'app o allo storage dati dell'app.
-- Prima del primo `.fwsc` destinato all'hardware, ricorda a ElectroNick di avere a portata il firmware ufficiale V15 per tornare indietro.
 
 ---
 

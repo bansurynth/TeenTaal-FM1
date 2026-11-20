@@ -1,8 +1,9 @@
 # Credits, sources and licences
 
 TeenTaal-FM1 is by **ElectroNick** ([github.com/ELENICK97](https://github.com/ELENICK97)), released under the
-[Apache License 2.0](LICENSE). If you use it or build on it, keep the [NOTICE](NOTICE) file and cite the repository:
-<https://github.com/ELENICK97/TeenTaal-FM1> (a [CITATION.cff](CITATION.cff) is provided).
+[Apache License 2.0](LICENSE). If you use it or build on it, keep the [NOTICE](NOTICE) file and cite the original
+repository: <https://github.com/ELENICK97/TeenTaal-FM1>. This fork is at <https://github.com/bansurynth/TeenTaal-FM1>
+(a [CITATION.cff](CITATION.cff) is provided).
 
 The code was written by an AI coding assistant (Claude, by Anthropic) under ElectroNick's direction and review.
 
@@ -40,8 +41,7 @@ Thekas vary between schools: the ones chosen are listed in
 
 ## Tools used, not distributed here
 
-- **fm1-emu** by Joakim Eriksson (<https://github.com/joakimeriksson/fm1-emu>): the emulator every firmware package was
-  tested in.
+- **fm1-emu** by Joakim Eriksson (<https://github.com/joakimeriksson/fm1-emu>): an emulator for testing firmware packages.
 - The JieLi toolchain and AC79 SDK (Apache-2.0), the compilers for the FM-1, installed separately (fm1-base's
   instructions).
 - Hardware and protocol knowledge from the community: [awesome-fm-1](https://github.com/cicloid/awesome-fm-1),

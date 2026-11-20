@@ -3,8 +3,8 @@
 > Versione italiana. English: [INSTALL.md](INSTALL.md).
 
 > [!WARNING]
-> TeenTaal è **generato con l'IA** (Claude) ed è stato **provato solo negli emulatori, mai su un FM-1 vero**: la
-> prima installazione è anche la prima prova reale. Un aggiornamento non riuscito può rendere l'FM-1 non avviabile.
+> TeenTaal è **generato con l'IA** (Claude) ed è stato **provato in modo limitato su un FM-1 vero**. Le prove hardware
+> non sono complete e un aggiornamento non riuscito può rendere l'FM-1 non avviabile.
 > **Lo fai a tuo rischio** (vedi il [Disclaimer](README.md#disclaimer)).
 
 L'installazione scrive **solo l'area dell'applicazione** dell'FM-1: il bootloader di M-VAVE resta com'è, quindi si
@@ -29,8 +29,8 @@ L'installer è un piccolo programma Python che fa parte di fm1-base, dentro ques
 aggiornamento di una pagina d'installazione web: porta l'FM-1 in modalità di aggiornamento, scrive il pacchetto e
 controlla che l'FM-1 si sia riavviato con il firmware nuovo.
 
-1. **Scarica il progetto**: su <https://github.com/ELENICK97/TeenTaal-FM1>, **Code → Download ZIP**, e scompattalo.
-2. **Scarica il firmware**: dalle [Release](https://github.com/ELENICK97/TeenTaal-FM1/releases), il file
+1. **Scarica il progetto**: su <https://github.com/bansurynth/TeenTaal-FM1>, **Code → Download ZIP**, e scompattalo.
+2. **Scarica il firmware**: dalle [Release](https://github.com/bansurynth/TeenTaal-FM1/releases), il file
    `teentaal-1.0.fwsc`. Mettilo nella cartella del progetto scompattato. Puoi controllare che sia il file pubblicato:
    il suo SHA-256 deve essere quello scritto nella release (Windows: `certutil -hashfile teentaal-1.0.fwsc SHA256`;
    macOS e Linux: `shasum -a 256 teentaal-1.0.fwsc`).

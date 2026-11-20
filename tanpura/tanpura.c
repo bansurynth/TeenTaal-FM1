@@ -21,19 +21,144 @@ static const float LEVEL_DB[6][5] = {
                                                 RMS, and with the irregularity they clipped (tools/test/tanpura_stress) */
 };
 
-/* the compensation gain for the current Sa and jawari: bilinear in the table (main loop, not per sample) */
-static float level_comp(const tanpura_t *m)
+/* Contact-induced pitch shift in cents to subtract from the free-string target, measured by
+ * tools/reference/pitch_grid.py. Note profiles: steel at -1200, -500, 0 and +500 cents from Sa;
+ * shortened upper steel at Sa^ and Ma^; bronze kharaj at Sa-1200. Rows are effective instrument Sa,
+ * columns jawari 0, 25, 50, 75, 100. */
+#define PITCH_SA_N 9
+#define PITCH_JAWARI_N 5
+#define PITCH_NORMAL_N 4
+static const float PITCH_SA[PITCH_SA_N] = {-1800.0f, -1500.0f, -1200.0f, -1000.0f, -800.0f, -500.0f, -300.0f, 0.0f, 700.0f};
+static const float PITCH_NORMAL_NOTE[PITCH_NORMAL_N] = {-1200.0f, -500.0f, 0.0f, 500.0f};
+static const float PITCH_NORMAL[PITCH_NORMAL_N][PITCH_SA_N][PITCH_JAWARI_N] = {
+    {   /* normal steel, Sa below by an octave */
+        {19.1f, 19.6f, 20.2f, 20.7f, 21.2f},
+        {18.3f, 18.9f, 19.4f, 20.0f, 20.5f},
+        {18.5f, 19.3f, 20.0f, 20.6f, 21.2f},
+        {19.0f, 19.9f, 20.7f, 21.4f, 21.9f},
+        {19.8f, 20.7f, 21.5f, 22.3f, 22.7f},
+        {21.3f, 22.2f, 23.2f, 24.1f, 24.5f},
+        {22.7f, 23.7f, 24.7f, 25.6f, 26.2f},
+        {24.9f, 26.2f, 27.2f, 28.2f, 29.0f},
+        {29.1f, 30.7f, 32.3f, 33.6f, 35.3f},
+    },
+    {   /* normal steel, Pa */
+        {17.5f, 18.3f, 19.0f, 19.6f, 20.2f},
+        {17.7f, 18.6f, 19.3f, 19.8f, 20.5f},
+        {19.0f, 20.0f, 20.8f, 21.3f, 22.0f},
+        {20.0f, 21.3f, 22.1f, 22.7f, 23.5f},
+        {21.3f, 22.7f, 23.8f, 24.4f, 25.1f},
+        {24.0f, 25.5f, 26.8f, 27.5f, 28.1f},
+        {32.4f, 32.9f, 29.3f, 30.5f, 30.9f},
+        {36.9f, 37.4f, 37.2f, 37.8f, 35.3f},
+        {45.1f, 45.2f, 45.5f, 46.2f, 46.7f},
+    },
+    {   /* normal steel, Sa */
+        {17.5f, 18.3f, 19.1f, 19.8f, 20.6f},
+        {17.3f, 18.5f, 19.5f, 20.4f, 21.3f},
+        {18.5f, 20.0f, 21.2f, 22.2f, 23.5f},
+        {27.0f, 21.0f, 22.4f, 23.7f, 25.2f},
+        {28.5f, 28.8f, 29.3f, 29.9f, 28.4f},
+        {31.9f, 32.4f, 32.7f, 33.0f, 33.1f},
+        {34.5f, 34.9f, 35.4f, 35.8f, 36.2f},
+        {39.8f, 40.1f, 40.5f, 41.1f, 41.6f},
+        {55.8f, 54.9f, 55.3f, 56.1f, 56.6f},
+    },
+    {   /* normal steel, preview note Sa+500 */
+        {18.0f, 19.4f, 19.9f, 20.2f, 21.1f},
+        {25.0f, 24.9f, 25.4f, 26.2f, 27.7f},
+        {27.6f, 28.1f, 28.6f, 28.8f, 28.8f},
+        {29.9f, 30.6f, 31.2f, 31.3f, 31.6f},
+        {32.9f, 33.4f, 34.0f, 34.2f, 34.5f},
+        {37.9f, 38.1f, 38.7f, 39.1f, 39.8f},
+        {41.5f, 42.3f, 42.6f, 43.2f, 43.6f},
+        {49.2f, 49.3f, 49.7f, 50.2f, 50.7f},
+        {73.6f, 75.0f, 75.8f, 74.0f, 73.3f},
+    },
+};
+static const float PITCH_UPPER[2][PITCH_SA_N][PITCH_JAWARI_N] = {
+    {   /* shortened upper steel, Sa^ */
+        {17.9f, 18.9f, 19.6f, 20.2f, 21.0f},
+        {18.4f, 19.7f, 20.6f, 21.3f, 22.3f},
+        {22.0f, 22.1f, 22.7f, 23.4f, 24.3f},
+        {27.9f, 28.3f, 25.5f, 25.5f, 26.1f},
+        {30.7f, 31.1f, 30.7f, 31.8f, 33.3f},
+        {35.3f, 35.7f, 36.2f, 36.4f, 36.3f},
+        {38.3f, 39.1f, 39.4f, 39.9f, 40.2f},
+        {45.5f, 45.9f, 46.4f, 47.1f, 47.4f},
+        {53.6f, 54.8f, 55.0f, 55.4f, 56.3f},
+    },
+    {   /* shortened upper steel, Ma^ */
+        {25.4f, 26.9f, 27.8f, 28.1f, 28.1f},
+        {26.4f, 28.5f, 29.5f, 29.8f, 29.8f},
+        {29.2f, 31.4f, 33.3f, 33.7f, 33.7f},
+        {38.7f, 33.7f, 35.7f, 36.4f, 36.4f},
+        {41.4f, 42.2f, 38.9f, 39.6f, 39.6f},
+        {47.7f, 48.6f, 48.9f, 49.6f, 49.6f},
+        {51.9f, 52.9f, 53.6f, 53.8f, 53.8f},
+        {60.0f, 60.8f, 61.9f, 62.0f, 62.0f},
+        {75.6f, 75.3f, 78.5f, 75.6f, 75.6f},
+    },
+};
+static const float PITCH_KHARAJ[PITCH_SA_N][PITCH_JAWARI_N] = {
+    {20.8f, 21.6f, 22.2f, 22.6f, 22.9f},
+    {21.1f, 22.0f, 22.6f, 23.0f, 23.4f},
+    {22.7f, 23.6f, 24.3f, 24.8f, 25.2f},
+    {24.4f, 25.4f, 26.1f, 26.7f, 27.1f},
+    {25.7f, 26.9f, 27.7f, 28.4f, 28.8f},
+    {29.5f, 31.1f, 32.1f, 32.8f, 33.4f},
+    {32.4f, 33.8f, 35.1f, 35.9f, 36.5f},
+    {36.5f, 38.9f, 40.3f, 41.5f, 42.3f},
+    {39.8f, 40.1f, 40.3f, 39.2f, 39.8f},
+};
+
+static float sa_jawari_grid(const float *sa_axis, int n_sa, const float table[][PITCH_JAWARI_N],
+                            float sa, int jawari)
 {
-    float sa = fm_clampf((float)(m->tuning.sa_cents + reg_offset(m)), LEVEL_SA[0], LEVEL_SA[5]), jw = (float)m->jawari * 0.04f, fs, fj, db;
+    float jw = (float)jawari * 0.04f, fs, fj;
     int i = 0, j = (int)jw;
-    while (i < 4 && sa > LEVEL_SA[i + 1])
+    sa = fm_clampf(sa, sa_axis[0], sa_axis[n_sa - 1]);
+    while (i < n_sa - 2 && sa > sa_axis[i + 1])
         i++;
     if (j > 3)
         j = 3;
-    fs = (sa - LEVEL_SA[i]) / (LEVEL_SA[i + 1] - LEVEL_SA[i]);
+    fs = (sa - sa_axis[i]) / (sa_axis[i + 1] - sa_axis[i]);
     fj = jw - (float)j;
-    db = (1.0f - fs) * ((1.0f - fj) * LEVEL_DB[i][j] + fj * LEVEL_DB[i][j + 1])
-         + fs * ((1.0f - fj) * LEVEL_DB[i + 1][j] + fj * LEVEL_DB[i + 1][j + 1]);
+    return (1.0f - fs) * ((1.0f - fj) * table[i][j] + fj * table[i][j + 1])
+           + fs * ((1.0f - fj) * table[i + 1][j] + fj * table[i + 1][j + 1]);
+}
+
+enum { PITCH_PROFILE_NORMAL, PITCH_PROFILE_UPPER, PITCH_PROFILE_KHARAJ };
+
+static float pitch_compensation(const tanpura_t *m, int profile, float relative_cents)
+{
+    float sa = (float)(m->tuning.sa_cents + reg_offset(m));
+    if (profile == PITCH_PROFILE_KHARAJ)
+        return sa_jawari_grid(PITCH_SA, PITCH_SA_N, PITCH_KHARAJ, sa, m->jawari);
+    if (profile == PITCH_PROFILE_UPPER) {
+        float u = fm_clampf(relative_cents * (1.0f / 500.0f), 0.0f, 1.0f);
+        float a = sa_jawari_grid(PITCH_SA, PITCH_SA_N, PITCH_UPPER[0], sa, m->jawari);
+        float b = sa_jawari_grid(PITCH_SA, PITCH_SA_N, PITCH_UPPER[1], sa, m->jawari);
+        return (1.0f - u) * a + u * b;
+    }
+    relative_cents = fm_clampf(relative_cents, PITCH_NORMAL_NOTE[0], PITCH_NORMAL_NOTE[PITCH_NORMAL_N - 1]);
+    {
+        int i = 0;
+        float u, a, b;
+        while (i < PITCH_NORMAL_N - 2 && relative_cents > PITCH_NORMAL_NOTE[i + 1])
+            i++;
+        u = (relative_cents - PITCH_NORMAL_NOTE[i]) / (PITCH_NORMAL_NOTE[i + 1] - PITCH_NORMAL_NOTE[i]);
+        a = sa_jawari_grid(PITCH_SA, PITCH_SA_N, PITCH_NORMAL[i], sa, m->jawari);
+        b = sa_jawari_grid(PITCH_SA, PITCH_SA_N, PITCH_NORMAL[i + 1], sa, m->jawari);
+        return (1.0f - u) * a + u * b;
+    }
+}
+
+/* the compensation gain for the current Sa and jawari: bilinear in the table (main loop, not per sample) */
+static float level_comp(const tanpura_t *m)
+{
+    float sa = (float)(m->tuning.sa_cents + reg_offset(m));
+    float db = sa_jawari_grid(LEVEL_SA, 6, LEVEL_DB, sa, m->jawari);
     return fm_exp2f(db * 0.166096405f);          /* 10^(db/20) */
 }
 #define PLUCK_AMP (-0.4f)          /* N, toward the bridge (the paper's) */
@@ -98,16 +223,24 @@ static int32_t reg_offset(const tanpura_t *m)
 static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
 {
     int32_t fine = j < TANPURA_NFINE ? m->fine[j] : 0;
-    float cents = (float)(fine + reg_offset(m)), r, rho, E, k = 1.0f;
+    float cents = (float)(fine + reg_offset(m)), relative_cents = (float)fine, r, rho, E, k = 1.0f;
+    int profile = PITCH_PROFILE_NORMAL;
     float high_sa = fm_clampf((float)m->tuning.sa_cents * (1.0f / 700.0f), 0.0f, 1.0f);
     if (j == 0 || j == TANPURA_NSTR - 1) {
         int swara = j == 0 ? m->first : m->extra >= 0 ? m->extra : SW_NI;
-        cents += 100.0f * (float)swara - 1200.0f;      /* 12..17: the upper Sa .. Ma, above the player's Sa */
-        if (swara > SW_NI)
+        float interval = 100.0f * (float)swara - 1200.0f;
+        cents += interval;                             /* 12..17: the upper Sa .. Ma, above the player's Sa */
+        relative_cents += interval;
+        if (swara > SW_NI) {
             k = fm_exp2f(-(float)(100 * swara - 1200) * (1.0f / 1200.0f));
+            profile = PITCH_PROFILE_UPPER;
+        }
     }
-    if (j == 3)
+    if (j == 3) {
         cents -= 1200.0f;
+        relative_cents -= 1200.0f;
+        profile = PITCH_PROFILE_KHARAJ;
+    }
     /* the instrument follows Sa (step 2b): the large tanpura (1.1 m, steel 0.16 mm, kharaj bronze 0.25 mm) at Sa A2
      * and below, the smaller one (0.85 m, 0.13 / 0.18 mm) at Sa A3, both heard and liked by ElectroNick at step 2a;
      * in between and above (to 0.7 m at G4) by interpolation in cents, so the tension stays realistic */
@@ -125,7 +258,7 @@ static void string_par(const tanpura_t *m, int j, tstring_par_t *p)
     }
     p->rhoA = rho * FM_PI * r * r;
     p->EI = E * 0.25f * FM_PI * r * r * r * r;
-    p->f1 = tuning_hz(&m->tuning, cents);
+    p->f1 = tuning_hz(&m->tuning, cents - pitch_compensation(m, profile, relative_cents));
     p->s0 = m->cfg.s0, p->s1 = 6.5e-3f, p->s3 = 5.0e-6f;     /* Table 1, s0 from step 2a */
     if (k < 1.0f)
         p->s0 = 0.20f;                          /* reduce decay for shortened upper swara strings */
@@ -288,11 +421,13 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
 void tanpura_preview(tanpura_t *m, int32_t cents_above_c4)
 {
     tstring_par_t p;
+    float relative_cents = (float)(cents_above_c4 - m->tuning.sa_cents - reg_offset(m));
     m->preview_cents_above_c4 = cents_above_c4;
     m->preview_cancel = 0;
     m->preview_ready = 0;
     string_par(m, 1, &p);
-    p.f1 = tuning_hz(&m->tuning, (float)cents_above_c4 - (float)m->tuning.sa_cents);
+    p.f1 = tuning_hz(&m->tuning, (float)cents_above_c4 - (float)m->tuning.sa_cents
+                     - pitch_compensation(m, PITCH_PROFILE_NORMAL, relative_cents));
     tstring_coefs(&m->preview_stage, &p, TANPURA_FS);
     m->preview_ready = 1;
 }
