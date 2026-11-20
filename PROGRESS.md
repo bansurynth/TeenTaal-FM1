@@ -20,10 +20,11 @@ Al termine: STOP e ascolto di ElectroNick, senza passare a un altro step.
   85%; macOS non fornisce `perf_event_open`, quindi non è una misura reale sul dispositivo.
 - Build target app-only: immagine 426.968 B su 581.564 B, `.data+.bss` 67.920 B su 98.304 B, pool 178.804 B su
   344.064 B; nessuna routine soft-double. Il pacchetto è stato avviato in fm1-emu e ha rilasciato il secondo core;
-  la prova audio completa nell'emulatore Linux è ancora in corso.
+  la prova è stata interrotta dopo oltre 9 minuti per la sua durata, prima della verifica audio completa.
 - Firmware installato con aggiornamento app-only, senza risorse aggiuntive; il dispositivo riavviato risponde come
   `FM-1_77010001`. SHA-256 del pacchetto: `75347de90e86701a079da1d05f68268bfc92c37c9291e0738a8d4feb0c14c6b2`.
-- Commit `6cf7c63` pubblicato su `bansurynth/main`; il workflow dell'emulatore GitHub Pages è terminato con successo.
+- Commit `6cf7c63` pubblicato su `bansurynth/main`; il workflow dell'emulatore GitHub Pages è terminato con successo
+  e la pagina pubblicata si avvia nel browser. Resta da ascoltare il ciclo sul dispositivo.
 
 ## Iterazione autorizzata (ElectroNick, 2026-11-12) — tanpura
 
