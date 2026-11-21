@@ -26,8 +26,14 @@ Questa sezione sostituisce `tan2_fine[5]` descritto nella sezione precedente: il
 - `build-host/tanpura_stress quick`: 0 falliti.
 - Test MUTE: con il tanpura muto l'uscita è zero dopo la rampa; alla riaccensione torna a suonare.
 
+### Build target, flash e pubblicazione
+- `sh tools/fw.sh`: exit 0, nessun warning. Build id `87B33DE2`. App 427.556 B su 581.564; `.data+.bss` 67.920 su 98.304; pool 178.820 su 344.064; `.ram_text` 5.800 su 32.768; nessun soft-double. Pacchetto `build/teentaal.fwsc` 614.938 B.
+- Flash con `fm1_install.py --port Felucca --yes --no-resources`: exit 0. `--info`: `FM-1_7700 [running]`. I settaggi della build precedente sono stati scartati, come previsto.
+- Commit `58fb7d3`, push su `fork/main` (bansurynth/TeenTaal-FM1).
+- Workflow "Browser emulator" run 44890494759: success (deploy alle 09:38:57Z).
+- GitHub Pages `https://bansurynth.github.io/TeenTaal-FM1/`: HTTP 200. Il `app.wasm` pubblicato contiene `MUTE`, `2ND: EXTRA STRING` e `FINE: SA (2ND)`, e non contiene `2ND: FINE`.
+
 ### Da fare o da verificare
-- Build target (`tools/fw.sh`), flash, `--info`, commit, push, verifica di GitHub Pages.
 - Ascolto del MUTE e della rampa di 20 ms: non ancora fatto, va verificato con ElectroNick (click, transizione).
 - Etichette a 240 px sul dispositivo: "2ND: EXTRA STRING", "FINE: SA (2ND)", "MUTE".
 - Prova audio dell'emulatore con `--ms 5000`: non ancora eseguita.
