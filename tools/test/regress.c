@@ -175,6 +175,45 @@ static void tanpura_cycle_checks(void)
     }
 }
 
+static int32_t tanpura_block_peak(tanpura_t *t, int blocks)
+{
+    int32_t peak = 0, out[DSP_BLOCK];
+    int b, k;
+    for (b = 0; b < blocks; b++) {
+        memset(out, 0, sizeof out);             /* tanpura_render adds into out */
+        tanpura_render(t, out, DSP_BLOCK);
+        for (k = 0; k < DSP_BLOCK; k++) {
+            int32_t a = out[k] < 0 ? -out[k] : out[k];
+            if (a > peak)
+                peak = a;
+        }
+    }
+    return peak;
+}
+
+static void tanpura_mute_checks(void)
+{
+    tanpura_t t;
+    const int quarter = (int)(0.25 * (double)DSP_FS / DSP_BLOCK);
+    int32_t on_peak, muted_peak, back_peak;
+    char buf[96];
+    tanpura_init(&t, 0);
+    tanpura_set_param(&t, TANPURA_P_HUMAN, 0);
+    tanpura_set_param(&t, TANPURA_P_ON, 1);
+    tanpura_take(&t);                      /* starts the cycle (the render does not) */
+    tanpura_block_peak(&t, 4 * quarter);
+    on_peak = tanpura_block_peak(&t, quarter);
+    tanpura_set_param(&t, TANPURA_P_MUTE, 1);
+    tanpura_block_peak(&t, 2 * quarter);   /* the 20 ms ramp; the strings keep plucking underneath */
+    muted_peak = tanpura_block_peak(&t, quarter);
+    tanpura_set_param(&t, TANPURA_P_MUTE, 0);
+    tanpura_block_peak(&t, 2 * quarter);
+    back_peak = tanpura_block_peak(&t, quarter);
+    snprintf(buf, sizeof buf, "playing %ld, muted %ld, back %ld",
+             (long)on_peak, (long)muted_peak, (long)back_peak);
+    check("tan_mute", "muted output is exact silence", on_peak > 0 && muted_peak == 0 && back_peak > 0, buf);
+}
+
 static double goertzel_power(const float *x, const double *window, int n, double fs, double target, double cents)
 {
     double coeff = 2.0 * cos(2.0 * M_PI * target * pow(2.0, cents / 1200.0) / fs);
@@ -515,6 +554,7 @@ int main(int argc, char **argv)
     SC[8].f_max = ref_hz(440, -800, pow(2, 11 / 12.0), 1);   /* Ni, tar, Sa = E3: the highest the scenario reaches */
 
     tanpura_cycle_checks();
+    tanpura_mute_checks();
     tanpura_pitch_checks();
     for (s = 0; s < NSC; s++) {
         static scen_run_t r;

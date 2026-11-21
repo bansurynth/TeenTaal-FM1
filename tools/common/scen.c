@@ -127,6 +127,8 @@ int scen_parse(const char *s, scen_ev_t *ev)
     else if (!strcmp(name, "taal.human")) ev->target = ENG_TAAL, ev->id = TAAL_P_HUMAN;
     else if (!strcmp(name, "tab.stop"))  ev->target = ENG_TABLA, ev->id = TABLA_P_STOP;
     else if (!strcmp(name, "tan2.on"))   ev->target = ENG_TANPURA2, ev->id = TANPURA_P_ON;
+    else if (!strcmp(name, "tan.mute"))  ev->target = ENG_TANPURA, ev->id = TANPURA_P_MUTE;
+    else if (!strcmp(name, "tan2.mute")) ev->target = ENG_TANPURA2, ev->id = TANPURA_P_MUTE;
     else if (!strcmp(name, "tan2.phase")) ev->target = ENG_TANPURA2, ev->id = TANPURA_P_PHASE;
     else if (!strcmp(name, "tan2.first")) {
         ev->target = ENG_TANPURA2, ev->id = TANPURA_P_FIRST;

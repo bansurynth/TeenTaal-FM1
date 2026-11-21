@@ -280,7 +280,7 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
     else
         tanpura_default_config(&m->cfg);
     m->tuning = m->cfg.tuning;
-    m->on = 0, m->first = SW_PA, m->extra = -1, m->jawari = 50, m->cycle = 50, m->human = 50, m->reg = 1;
+    m->on = 0, m->mute = 0, m->first = SW_PA, m->extra = -1, m->jawari = 50, m->cycle = 50, m->human = 50, m->reg = 1;
     m->filter_hz = TANPURA_FILTER_MAX_HZ, m->lp_stage_ready = 0;
     lowpass_coefficients(m->lp_coef, m->filter_hz);
     m->start_req = m->extra_silence_req = 0;
@@ -339,6 +339,9 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
         m->preview_cancel = 1;
         m->preview_ready = 0;
         m->on = v;
+        break;
+    case TANPURA_P_MUTE:
+        m->mute = v != 0;
         break;
     case TANPURA_P_REGISTER:
         m->reg = v != 0;
@@ -401,6 +404,7 @@ int32_t tanpura_get_param(const tanpura_t *m, int id)
     if (id >= TANPURA_P_VOL && id < TANPURA_P_VOL + TANPURA_NSTR) return m->vol[id - TANPURA_P_VOL];
     switch (id) {
     case TANPURA_P_ON:     return m->on;
+    case TANPURA_P_MUTE:   return m->mute;
     case TANPURA_P_FIRST:  return m->first;
     case TANPURA_P_JAWARI: return m->jawari;
     case TANPURA_P_CYCLE:  return m->cycle;
@@ -535,8 +539,10 @@ void tanpura_render(tanpura_t *m, int32_t *out, int n)
     /* up to the FM-1's rate (upsample_coefs.h), with the on/off fade */
     if (m->restart)                              /* a large retune: out in 20 ms */
         g1 = g0 - (float)n / (0.02f * DSP_FS) < 0.0f ? 0.0f : g0 - (float)n / (0.02f * DSP_FS);
-    else if (m->on || (m->preview_active && m->preview_left > 0))
+    else if ((m->on && !m->mute) || (m->preview_active && m->preview_left > 0))
         g1 = g0 + (float)n / (0.02f * DSP_FS) > 1.0f ? 1.0f : g0 + (float)n / (0.02f * DSP_FS);
+    else if (m->on)                              /* muted: out in 20 ms, the strings keep plucking */
+        g1 = g0 - (float)n / (0.02f * DSP_FS) < 0.0f ? 0.0f : g0 - (float)n / (0.02f * DSP_FS);
     else
         g1 = g0 - (float)n / (FADE_OUT_S * DSP_FS) < 0.0f ? 0.0f : g0 - (float)n / (FADE_OUT_S * DSP_FS);
     dg = (g1 - g0) / (float)n;

@@ -1,5 +1,42 @@
 # PROGRESS
 
+## EDIT riordinato, SEQ a quattro stati con MUTE, FINE del secondo tanpura condiviso (ElectroNick, 2026-11-21)
+
+Questa sezione sostituisce `tan2_fine[5]` descritto nella sezione precedente: il secondo tanpura non ha più FINE propri.
+
+### Richiesta
+1. EDIT: rimuovere le 5 righe "2ND: FINE".
+2. EDIT: spostare "2ND: FIRST STRING" e "2ND: EXTRA STRING" sotto "EXTRA STRING".
+3. SEQ: dopo la prima pressione (entrambi accesi), la seconda mette in MUTE il secondo tanpura, che resta acceso; la terza mette in MUTE il primo e riattiva il secondo; la quarta spegne entrambi, come prima.
+4. Il FINE del secondo tanpura segue quello del primo.
+5. Dopo il flash: commit e verifica dell'emulatore su GitHub Pages.
+
+### Fatto
+- `ui/ui.c`: righe EDIT ridotte a 20. Ordine: ciclo, primo tanpura, 2ND FIRST e 2ND EXTRA, FINE ×5, 2ND PHASE, poi il resto. Rimossi `tan2_fine`, `ui_fine_target` e le loro voci in impostazioni, validazione e applicazione. Handler SEQ a quattro stati. Schermata principale: MUTE in grigio al posto di ON. MUTE azzerato all'avvio e in `ui_reset`.
+- `mixer/engine.c`: `ENG_TANPURA` inoltra a `tanpura2` tutti gli id tranne FIRST, PHASE, EXTRA e MUTE, quindi il FINE è già condiviso. `ENG_TANPURA2` inoltra anche MUTE.
+- `tanpura/tanpura.h`, `tanpura.c`: `TANPURA_P_MUTE` e campo `mute`. Il MUTE porta il guadagno a zero con una rampa di 20 ms. Le corde continuano a suonare, così il ciclo resta in fase. Il MUTE non è salvato nelle impostazioni.
+- `app.c`, `tools/common/scen.c`, `scen.h`: hook `tan_mute` / `tan2_mute` e comandi `tan.mute` / `tan2.mute`.
+- `tools/test/fw_basic.txt`: navigazione e sezioni SEQ aggiornate; rimossa una pressione duplicata.
+- `tools/test/regress.c`: `tanpura_mute_checks` verifica il silenzio con MUTE, il ritorno del suono alla riaccensione e la fase del ciclo.
+- Documentazione: `docs/MANUAL.md`, `docs/MANUAL.it.md`, `docs/CONTROLS.md`, `docs/CONTROLS.it.md`.
+
+### Verifica (host)
+- `tools/test/fw_basic.txt` (build host 4): 190 ok, 0 FAIL.
+- `build-host/regress`: 0 falliti; hash golden invariati (il suono di default non cambia); costo peggiore 79,68% di un core.
+- `build-host/tanpura_stress quick`: 0 falliti.
+- Test MUTE: con il tanpura muto l'uscita è zero dopo la rampa; alla riaccensione torna a suonare.
+
+### Da fare o da verificare
+- Build target (`tools/fw.sh`), flash, `--info`, commit, push, verifica di GitHub Pages.
+- Ascolto del MUTE e della rampa di 20 ms: non ancora fatto, va verificato con ElectroNick (click, transizione).
+- Etichette a 240 px sul dispositivo: "2ND: EXTRA STRING", "FINE: SA (2ND)", "MUTE".
+- Prova audio dell'emulatore con `--ms 5000`: non ancora eseguita.
+- Nota di intonazione in DECISIONS.md (2026-11-20, +5,92 cent sul Ma alto): non riverificata in questo step.
+
+### Assunzioni da confermare
+- "2ND: PHASE" messo dopo le righe FINE: non specificato da ElectroNick.
+- Il build id cambia, quindi al primo flash i settaggi precedenti vengono scartati, come da politica (vedi DECISIONS.md).
+
 ## Ciclo di pizzico più lungo, FINE e EXTRA STRING (ElectroNick, 2026-11-20)
 
 ### Richiesta

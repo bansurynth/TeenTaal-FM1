@@ -12,6 +12,7 @@
  *
  * Parameters (tanpura_set_param), besides the shared tuning (DSP_P_A4_DHZ, DSP_P_SA_CENTS):
  *   TANPURA_P_ON        0 / 1      1 starts the cycle; 0 stops plucking and fades out in 0.3 s
+ *   TANPURA_P_MUTE      0 / 1      1: the output fades out in 20 ms, the strings keep plucking (the cycle stays in phase)
  *   TANPURA_P_FIRST     0..17      the first string's swara (SW_PA default; 12..17: the upper Sa .. Ma shuddha)
  *   TANPURA_P_JAWARI    0..100     the thread position: 0 = 4 mm (short jvari) .. 100 = 8 mm (long); 50 = 6 mm
  *   TANPURA_P_CYCLE     25..600    the cycle in tenths of a second (default 50: 5 s; 600: 60 s)
@@ -56,6 +57,7 @@ enum {
     TANPURA_P_PHASE,
     TANPURA_P_EXTRA,
     TANPURA_P_FILTER,
+    TANPURA_P_MUTE,
     TANPURA_P_END
 };
 
@@ -71,7 +73,7 @@ typedef struct {
 typedef struct {
     tanpura_config_t cfg;
     tuning_t tuning;
-    int32_t on, first, extra, jawari, cycle, human, reg, phase, phase_done, filter_hz;
+    int32_t on, mute, first, extra, jawari, cycle, human, reg, phase, phase_done, filter_hz;
     int32_t fine[TANPURA_NFINE], vol[TANPURA_NSTR];
     volatile int32_t start_req, extra_silence_req; /* main-loop changes taken between render blocks */
     tstring_t str[TANPURA_NSTR];

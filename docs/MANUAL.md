@@ -25,7 +25,7 @@ silent; the saved settings come back as you left them.
 
 | Control | What it does |
 |---|---|
-| **SEQ** | tanpura on / off |
+| **SEQ** | tanpura: both on / 2nd muted / 1st muted / both off |
 | **PLAY** | tabla: start from the sam / stop (green light while playing) |
 | **ARP** | reference tone on / off |
 | **a key** | the tone on that key's swara **while you hold it** (like an harmonium) |
@@ -55,9 +55,11 @@ that key, without changing Sa. If either tanpura is on, this FX chord does not p
 
 The default tanpura cycle (5 seconds) plucks its first string, Sa, Sa and the lower kharaj at 0, 1.0, 1.75 and 2.5 seconds,
 then pauses. With EXTRA STRING enabled, it plucks after the first string; the two Sa strings and kharaj follow at 1.75,
-2.5 and 3.25 seconds. Both tanpuras start off. Each SEQ press advances through both tanpuras on, T1 only, T2 only, and
-both off. The second tanpura has its own first string (NI by default), phase (20%), fine tuning of each string, and optional extra string (the pluck cycle is shared with the first tanpura); its ON
-indicator lights whenever T2 is active.
+2.5 and 3.25 seconds. Both tanpuras start off. Each SEQ press moves to the next state: both tanpuras on; the second
+muted (the first plays); the first muted (the second plays); both off. A muted tanpura keeps its cycle running, so it
+comes back in time. While a tanpura is muted, the main page shows MUTE instead of ON. The second tanpura has its own
+first string (NI by default), phase (20%) and optional extra string; the pluck cycle and the fine tuning of each string
+are shared with the first tanpura.
 
 ## Settings (EDIT)
 
@@ -68,9 +70,9 @@ SELECT picks the row, PRESETS changes the value, HOME goes back. The dots at the
 | PLUCK CYCLE | the length of the plucking cycle, shared by both tanpuras: 2.5–60 s (steps of 0.1 s up to 10 s, then 1 s) |
 | FIRST STRING | the tanpura's first string: Pa (default), Ma, Ni or any swara |
 | EXTRA STRING | OFF by default; select a swara to add a string after the first string and before the two Sa strings and kharaj |
-| FINE: 1ST STRING, EXTRA, SA (2ND), SA (3RD), KHARAJ | fine tuning of each string, ±50 cents |
 | 2ND: FIRST STRING, 2ND: EXTRA STRING | the second tanpura's first string and its independent optional string, OFF by default |
-| 2ND: PHASE, 2ND: FINE ×5 | the other settings of the second tanpura |
+| FINE: 1ST STRING, EXTRA, SA (2ND), SA (3RD), KHARAJ | fine tuning of each string, ±50 cents; the second tanpura follows these |
+| 2ND: PHASE | the phase of the second tanpura |
 | TANPURA IRREG. | how irregular the plucking is, like a real hand |
 | TABLA IRREG. | the same for the tabla (timing and strength of the strokes) |
 | TONE SWARA | the swara of the tone switched on with ARP |

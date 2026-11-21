@@ -29,28 +29,19 @@ enum { UI_KEY_C4 = 7, UI_KEY_C5 = UI_KEY_C4 + 12 };
 static const char *const UI_SWARA[TANPURA_FIRST_MAX + 1] = {"SA", "RE KOMAL", "RE", "GA KOMAL", "GA", "MA", "MA TIVRA", "PA",
                                            "DHA KOMAL", "DHA", "NI KOMAL", "NI", "SA'", "RE KOMAL'", "RE'",
                                            "GA KOMAL'", "GA'", "MA'"};
-enum { ROW_CYCLE, ROW_FIRST, ROW_EXTRA, ROW_FINE0, ROW_FINE1, ROW_FINE2, ROW_FINE3, ROW_FINE4,
-       ROW_TAN2_FIRST, ROW_TAN2_EXTRA, ROW_TAN2_PHASE, ROW_TAN2_FINE0, ROW_TAN2_FINE1, ROW_TAN2_FINE2, ROW_TAN2_FINE3,
-       ROW_TAN2_FINE4, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, ROW_BT, ROW_BT_DEV, ROW_BT_LINK,
+enum { ROW_CYCLE, ROW_FIRST, ROW_EXTRA, ROW_TAN2_FIRST, ROW_TAN2_EXTRA, ROW_FINE0, ROW_FINE1, ROW_FINE2, ROW_FINE3, ROW_FINE4,
+       ROW_TAN2_PHASE, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, ROW_BT, ROW_BT_DEV, ROW_BT_LINK,
        ROW_BT_OUT, ROW_FILTER, NROWS };
-static const char *const ROW_NAME[NROWS] = {"PLUCK CYCLE", "FIRST STRING", "EXTRA STRING", "FINE: 1ST STRING", "FINE: EXTRA",
+static const char *const ROW_NAME[NROWS] = {"PLUCK CYCLE", "FIRST STRING", "EXTRA STRING",
+                                            "2ND: FIRST STRING", "2ND: EXTRA STRING", "FINE: 1ST STRING", "FINE: EXTRA",
                                             "FINE: SA (2ND)", "FINE: SA (3RD)", "FINE: KHARAJ",
-                                            "2ND: FIRST STRING", "2ND: EXTRA STRING", "2ND: PHASE", "2ND: FINE 1ST",
-                                            "2ND: FINE EXTRA", "2ND: FINE SA(2ND)", "2ND: FINE SA(3RD)", "2ND: FINE KHARAJ",
-                                            "TANPURA IRREG.", "TABLA IRREG.", "TONE SWARA",
+                                            "2ND: PHASE", "TANPURA IRREG.", "TABLA IRREG.", "TONE SWARA",
                                             "A REFERENCE", "BLUETOOTH", "BT SPEAKER", "BT LINK", "BT OUTPUT",
                                             "TANPURA FILTER"};
-/* the FINE rows follow the pluck order (first, extra, Sa, Sa, kharaj): the string each row tunes */
+/* the FINE rows follow the pluck order (first, extra, Sa, Sa, kharaj): the string each row tunes; they tune both tanpuras */
 static const int UI_FINE_STRING[TANPURA_NFINE] = {0, 4, 1, 2, 3};
-static int ui_is_fine(int row)
-{
-    return (row >= ROW_FINE0 && row <= ROW_FINE4) || (row >= ROW_TAN2_FINE0 && row <= ROW_TAN2_FINE4);
-}
-static int ui_fine_target(int row) { return row >= ROW_TAN2_FINE0 ? ENG_TANPURA2 : ENG_TANPURA; }
-static int ui_fine_param(int row)
-{
-    return TANPURA_P_FINE + UI_FINE_STRING[row >= ROW_TAN2_FINE0 ? row - ROW_TAN2_FINE0 : row - ROW_FINE0];
-}
+static int ui_is_fine(int row) { return row >= ROW_FINE0 && row <= ROW_FINE4; }
+static int ui_fine_param(int row) { return TANPURA_P_FINE + UI_FINE_STRING[row - ROW_FINE0]; }
 /* the pluck cycle, in tenths of a second: steps of 0.1 s up to 10 s, then of 1 s, up to 60 s */
 static int32_t ui_cycle_step(int32_t v, int32_t d)
 {
@@ -88,7 +79,6 @@ typedef struct {
     int8_t extra, extra2;
     uint32_t tan_filter_hz;
     uint16_t cycle;                         /* tenths of a second, for both tanpuras: 16 bits, up to 60 s */
-    int8_t tan2_fine[TANPURA_NFINE];
     uint32_t build;                         /* FM1B_BUILD: a record from another build is not used, so each flash starts from the defaults */
 } ui_settings_t;
 
@@ -117,8 +107,6 @@ static void ui_settings_now(ui_settings_t *p)
     p->tabla_human = (uint8_t)ui_get(ENG_TAAL, TAAL_P_HUMAN);
     p->tan2 = (int16_t)(0x8000 | (ui_get(ENG_TANPURA2, TANPURA_P_FIRST) << 7)
                         | ui_get(ENG_TANPURA2, TANPURA_P_PHASE));
-    for (j = 0; j < TANPURA_NFINE; j++)
-        p->tan2_fine[j] = (int8_t)ui_get(ENG_TANPURA2, TANPURA_P_FINE + j);
     p->taal = (uint8_t)ui_get(ENG_TAAL, TAAL_P_TAAL);
     p->mpm = (int16_t)ui_get(ENG_TAAL, TAAL_P_MPM);
     if (ui_kt_key >= 0)                     /* (a key's tone is not a setting: what it will go back to) */
@@ -180,7 +168,7 @@ static int ui_settings_valid(const ui_settings_t *p)
     if ((p->tan2 & 0x8000) && (((p->tan2 >> 7) & 31) > TANPURA_FIRST_MAX || (p->tan2 & 127) > 100))
         return 0;
     for (j = 0; j < TANPURA_NFINE; j++)
-        if (p->fine[j] < -50 || p->fine[j] > 50 || p->tan2_fine[j] < -50 || p->tan2_fine[j] > 50)
+        if (p->fine[j] < -50 || p->fine[j] > 50)
             return 0;
     if (p->extra < -1 || p->extra > TANPURA_FIRST_MAX || p->extra2 < -1 || p->extra2 > TANPURA_FIRST_MAX)
         return 0;
@@ -204,8 +192,6 @@ static void ui_settings_apply(const ui_settings_t *p)
         engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_FIRST, (p->tan2 >> 7) & 31);
         engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_PHASE, p->tan2 & 127);
     }
-    for (j = 0; j < TANPURA_NFINE; j++)
-        engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_FINE + j, p->tan2_fine[j]);
     engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_CYCLE, p->cycle);
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_EXTRA, p->extra);
     engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_EXTRA, p->extra2);
@@ -240,8 +226,9 @@ static void ui_init_state(engine_t *e)
     engine_set_param(e, ENG_ALL, DSP_P_SA_CENTS, UI_SA_DEFAULT);
     engine_set_param(e, ENG_TANPURA, TANPURA_P_REGISTER, 0);
     engine_set_param(e, ENG_TANPURA2, TANPURA_P_ON, 0);
+    engine_set_param(e, ENG_TANPURA, TANPURA_P_MUTE, 0);
+    engine_set_param(e, ENG_TANPURA2, TANPURA_P_MUTE, 0);
     n = plat_store_size(OBJ_SETTINGS);
-    if (n == (int)sizeof s)
         ok = plat_store_load(OBJ_SETTINGS, &s, sizeof s) == n;
     if (ok && ui_settings_valid(&s)) {
         ui_settings_apply(&s);
@@ -392,6 +379,7 @@ static void ui_main(void)
     char t[48], u[24];
     int32_t tsa = ui_get(ENG_TANPURA, TANPURA_P_SA_NOW);
     int32_t ton = ui_get(ENG_TANPURA, TANPURA_P_ON), jw = ui_get(ENG_TANPURA, TANPURA_P_JAWARI);
+    int32_t mute = ui_get(ENG_TANPURA, TANPURA_P_MUTE);
     int32_t on = ui_get(ENG_REFTONE, REFTONE_P_ON), sw = ui_get(ENG_REFTONE, REFTONE_P_SWARA);
     int32_t oct = ui_get(ENG_REFTONE, REFTONE_P_OCTAVE), x;
     /* Sa */
@@ -404,15 +392,15 @@ static void ui_main(void)
     /* the tanpura, the tone, the tabla's volume: a line each */
     cv_begin(240, 46, C_BLACK);
     cv_text(10, 0, &FONT_XS, "TANPURA", C_GRAY);
-    cv_text(84, 0, &FONT_XS, ton ? "ON" : "OFF", ton ? C_HI : C_DIM);
+    cv_text(84, 0, &FONT_XS, ton ? (mute ? "MUTE" : "ON") : "OFF", ton && !mute ? C_HI : ton ? C_GRAY : C_DIM);
     t[0] = 0;
     ui_cat(t, UI_SWARA[ui_get(ENG_TANPURA, TANPURA_P_FIRST)]);
     ui_cat(t, "  J"); ui_num(u, jw, 0); ui_cat(t, u);
     ui_cat(t, "  V"); ui_num(u, ui_get(ENG_MIXER, MIX_P_LEVEL + MIX_TANPURA), 0); ui_cat(t, u);
     cv_text(120, 0, &FONT_XS, t, C_WHITE);
     cv_text(10, 15, &FONT_XS, "TANPURA 2", C_GRAY);
-    ton = ui_get(ENG_TANPURA2, TANPURA_P_ON);
-    cv_text(84, 15, &FONT_XS, ton ? "ON" : "OFF", ton ? C_HI : C_DIM);
+    ton = ui_get(ENG_TANPURA2, TANPURA_P_ON), mute = ui_get(ENG_TANPURA2, TANPURA_P_MUTE);
+    cv_text(84, 15, &FONT_XS, ton ? (mute ? "MUTE" : "ON") : "OFF", ton && !mute ? C_HI : ton ? C_GRAY : C_DIM);
     t[0] = 0;
     ui_cat(t, UI_SWARA[ui_get(ENG_TANPURA2, TANPURA_P_FIRST)]);
     ui_cat(t, "  PH "); ui_num(u, ui_get(ENG_TANPURA2, TANPURA_P_PHASE), 0); ui_cat(t, u); ui_cat(t, "%");
@@ -545,7 +533,7 @@ static void ui_row_value(char *t, int row)
     case ROW_TABLA_HUMAN: ui_num(u, ui_get(ENG_TAAL, TAAL_P_HUMAN), 0); ui_cat(t, u); ui_cat(t, " %"); break;
     default:
         if (ui_is_fine(row)) {
-            ui_num(u, ui_get(ui_fine_target(row), ui_fine_param(row)), 1);
+            ui_num(u, ui_get(ENG_TANPURA, ui_fine_param(row)), 1);
             ui_cat(t, u); ui_cat(t, " CENTS");
         }
         break;
@@ -629,8 +617,8 @@ static void ui_edit_step(int row, int32_t d)
         break;
     default:
         if (ui_is_fine(row)) {
-            int eng = ui_fine_target(row), id = ui_fine_param(row);
-            ui_set(eng, id, clamp(ui_get(eng, id) + d, -50, 50));
+            int id = ui_fine_param(row);
+            ui_set(ENG_TANPURA, id, clamp(ui_get(ENG_TANPURA, id) + d, -50, 50));
         }
         break;
     }
@@ -751,6 +739,8 @@ static void ui_reset(void)
     if (plat_store_save(OBJ_SETTINGS, &defaults, sizeof defaults) == 0) {
         engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_ON, 0);
         engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_ON, 0);
+        engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_MUTE, 0);
+        engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_MUTE, 0);
         engine_set_param(ui_eng, ENG_TAAL, TAAL_P_ON, 0);
         engine_set_param(ui_eng, ENG_TABLA, TABLA_P_STOP, 0);
         engine_set_param(ui_eng, ENG_REFTONE, REFTONE_P_ON, 0);
@@ -810,19 +800,25 @@ static void ui_frame(void)
     }
     if (pressed & (1u << B_PLAY))
         ui_set(ENG_TAAL, TAAL_P_ON, !ui_get(ENG_TAAL, TAAL_P_ON));
-    if (pressed & (1u << B_SEQ)) {
+    if (pressed & (1u << B_SEQ)) {               /* off, both, 2nd muted, 1st muted, off */
         int32_t tan_on = ui_get(ENG_TANPURA, TANPURA_P_ON);
         int32_t tan2_on = ui_get(ENG_TANPURA2, TANPURA_P_ON);
-        if (!tan_on && !tan2_on) {
+        int32_t mute1 = ui_get(ENG_TANPURA, TANPURA_P_MUTE), mute2 = ui_get(ENG_TANPURA2, TANPURA_P_MUTE);
+        if (!tan_on || !tan2_on) {
             ui_set(ENG_TANPURA, TANPURA_P_ON, 1);
             ui_set(ENG_TANPURA2, TANPURA_P_ON, 1);
-        } else if (tan_on && tan2_on) {
-            ui_set(ENG_TANPURA2, TANPURA_P_ON, 0);
-        } else if (tan_on) {
-            ui_set(ENG_TANPURA2, TANPURA_P_ON, 1);
+            ui_set(ENG_TANPURA, TANPURA_P_MUTE, 0);
+            ui_set(ENG_TANPURA2, TANPURA_P_MUTE, 0);
+        } else if (!mute1 && !mute2) {           /* both play: the 2nd muted */
+            ui_set(ENG_TANPURA2, TANPURA_P_MUTE, 1);
+        } else if (mute2 && !mute1) {            /* the 2nd plays again, the 1st muted */
+            ui_set(ENG_TANPURA2, TANPURA_P_MUTE, 0);
+            ui_set(ENG_TANPURA, TANPURA_P_MUTE, 1);
+        } else {                                 /* the 1st muted, the 2nd playing: both off */
             ui_set(ENG_TANPURA, TANPURA_P_ON, 0);
-        } else {
             ui_set(ENG_TANPURA2, TANPURA_P_ON, 0);
+            ui_set(ENG_TANPURA, TANPURA_P_MUTE, 0);
+            ui_set(ENG_TANPURA2, TANPURA_P_MUTE, 0);
         }
     }
     if (pressed & (1u << B_ARP))

@@ -9,7 +9,7 @@ settings live on one separate page (EDIT).
 | Control | Main page | EDIT page |
 |---|---|---|
 | PLAY | tabla (taal) on / off, from the sam; green light | — |
-| SEQ | cycle: both tanpuras, T1 only, T2 only, both off | — |
+| SEQ | cycle: both tanpuras on, 2nd muted, 1st muted, both off | — |
 | ARP | reference tone on / off | — |
 | key | the tone on that swara while held (the last key pressed wins) | — |
 | SEL + key | Sa = that key's note, cents kept | — |

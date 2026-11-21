@@ -4,6 +4,23 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
+### 2026-11-21 — FINE del secondo tanpura segue il primo (righe "2ND: FINE" rimosse)
+- **Decisione**: le cinque righe "2ND: FINE" sono state tolte. Il secondo tanpura usa i FINE del primo. `ENG_TANPURA` inoltra a `tanpura2` tutti gli id tranne FIRST, PHASE, EXTRA e MUTE, quindi l'accordatura fine è già condivisa. `tan2_fine` non esiste più nelle impostazioni.
+- **Motivazione**: richiesta esplicita di ElectroNick ("si useranno quelli legati ai settaggi già presenti per il Tampura 1").
+- **Scartato**: mantenere cinque righe FINE per il secondo tanpura (il comportamento precedente); una sola riga FINE dedicata al secondo.
+- **Effetto sui settaggi**: la struttura `ui_settings_t` cambia, quindi il build id cambia e i settaggi precedenti vengono scartati al primo flash, come da politica.
+
+### 2026-11-21 — SEQ a quattro stati con MUTE, senza interruzione del ciclo
+- **Decisione**: SEQ alterna quattro stati: entrambi accesi; secondo in MUTE (il primo suona); primo in MUTE (il secondo suona); entrambi spenti. Il MUTE porta il guadagno a zero con una rampa di 20 ms. Le corde continuano a suonare durante il MUTE, così il ciclo resta in fase quando il tanpura torna udibile. Il MUTE non è salvato nelle impostazioni: si azzera allo spegnimento e all'avvio. Nella schermata principale compare MUTE al posto di ON.
+- **Motivazione**: il MUTE deve restare un comando di sessione, senza cambiare la configurazione. Il ciclo di pizzico deve restare allineato fra i due tanpura: se il secondo ripartisse dal primo pizzico alla riaccensione, non sarebbe più in fase con il primo.
+- **Scartato**: taglio netto del segnale (produce un click); fermare il ciclo del tanpura in MUTE (la riaccensione lo farebbe ripartire fuori fase); una riga MUTE separata nell'EDIT (il comando richiesto è sulla SEQ); salvare il MUTE nelle impostazioni (una sessione di pratica non dovrebbe riaprirsi con un tanpura muto).
+- **Da verificare all'ascolto**: l'assenza di click con la rampa di 20 ms. Il test host verifica il silenzio, non la qualità percepita.
+
+### 2026-11-21 — Ordine delle righe EDIT dei due tanpura
+- **Decisione**: "2ND: FIRST STRING" e "2ND: EXTRA STRING" stanno subito sotto "EXTRA STRING", come richiesto. Le cinque FINE vengono dopo, poi "2ND: PHASE". Le righe dell'EDIT passano da 25 a 20.
+- **Motivazione**: le impostazioni del secondo tanpura stanno vicine a quelle del primo; le FINE, condivise, sono un blocco unico.
+- **Assunzione da confermare**: "2ND: PHASE" non era stato indicato. È messo dopo le FINE, per tenere le impostazioni proprie del secondo tanpura in un solo gruppo. Alternativa: subito sotto "2ND: EXTRA STRING".
+
 ### 2026-11-20 — Ciclo di pizzico condiviso, prima riga dell'EDIT
 - **Decisione**: un solo PLUCK CYCLE per entrambi i tanpura, prima riga dell'EDIT (`ROW_CYCLE` = 0). La riga
   `2ND: PLUCK CYCLE` è stata tolta e `tan2_cycle` non esiste più nelle impostazioni. `ui_edit_step(ROW_CYCLE)` scrive

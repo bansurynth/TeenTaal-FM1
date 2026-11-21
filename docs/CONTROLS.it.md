@@ -23,7 +23,7 @@ fisso e nessun menu; le impostazioni che si toccano di rado stanno in una pagina
 | Controllo | Funzione |
 |---|---|
 | **PLAY** | tabla: avvio / arresto (si parte dal sam; LED verde mentre suona) |
-| **SEQ** | tanpura: avvio / arresto |
+| **SEQ** | tanpura: entrambi accesi / 2° in MUTE / 1° in MUTE / entrambi spenti |
 | **ARP** | tono di riferimento: acceso / spento |
 | **KNOB1** | tempo (matra al minuto) |
 | **KNOB2** | volume tanpura |
@@ -99,6 +99,6 @@ cella della matra corrente accesa.
 |---|---|
 | **tasto da solo** | tono di riferimento su quello swara finché è premuto (più tasti: l'ultimo premuto; poi il tono torna com'era) |
 | **SAVE** | salva le impostazioni (UNSAVED sullo schermo e luce di SAVE accesa finché ci sono modifiche) |
-| **EDIT** | 25 righe, scorrono: ciclo di pizzico (uno per entrambi i tanpura, prima riga), prima corda, corda aggiuntiva, accordatura fine di ogni corda, secondo tanpura, irregolarità di tanpura e tabla, swara del tono, La di riferimento, Bluetooth, filtro |
+| **EDIT** | 20 righe, scorrono: ciclo di pizzico (uno per entrambi i tanpura, prima riga), prima corda, corda aggiuntiva, prima corda e corda aggiuntiva del secondo tanpura, accordatura fine di ogni corda (condivisa dai due tanpura), fase del secondo tanpura, irregolarità di tanpura e tabla, swara del tono, La di riferimento, Bluetooth, filtro |
 
 Luci dei tasti: dal Sa in su, Sa e Pa accesi, Re Ga Ma Dha Ni tenui. Manuale d'uso: `docs/MANUAL.md`.
