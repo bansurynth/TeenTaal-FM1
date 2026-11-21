@@ -351,7 +351,7 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
         for (j = 0; j < TANPURA_NSTR; j++)
             stage(m, j);
         break;
-    case TANPURA_P_CYCLE:  m->cycle = clampi(v, 25, 80); break;
+    case TANPURA_P_CYCLE:  m->cycle = clampi(v, 25, 600); break;
     case TANPURA_P_HUMAN:  m->human = clampi(v, 0, 100); break;
     case TANPURA_P_PHASE:  m->phase = clampi(v, 0, 100); break;
     case TANPURA_P_EXTRA:

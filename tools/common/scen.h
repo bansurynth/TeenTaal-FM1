@@ -6,7 +6,7 @@
  *   ref.on=1  ref.swara=Pa (or 0..11)  ref.oct=-1..1  ref.vol=0..100
  *   mix.tanpura= mix.tabla= mix.ref=   0..100
  *   master=0..4096       MASTER's gain as the platform passes it (default 4096)
- *   tan.on=1  tan.first=Pa (or 0..11)  tan.jawari=0..100  tan.cycle=25..80 (tenths of s)  tan.human=0..100
+ *   tan.on=1  tan.first=Pa (or 0..11)  tan.jawari=0..100  tan.cycle=25..600 (tenths of s)  tan.human=0..100
  *   tan.fine0..3=-50..50 (cents)  tan.vol0..3=0..100  tan.reg=0/1 (1: an octave under Sa, the default)
  *   tan.preview=G3       pluck a preview at this absolute note, with both tanpuras off
  *   tan2.on=0/1 (the second tanpura, default 1)  tan2.first=Ni (default)  tan2.phase=0..100 (% of the cycle, default 50)

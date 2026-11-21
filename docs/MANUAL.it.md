@@ -57,8 +57,8 @@ SEL + un tasto imposta sempre Sa.
 Il ciclo predefinito del tanpura (5 secondi) pizzica la prima corda, Sa, Sa e la kharaj grave a 0, 1,0, 1,75 e 2,5 secondi,
 poi fa una pausa. Con EXTRA STRING attiva, la corda aggiuntiva viene pizzicata dopo la prima; le due corde Sa e la kharaj
 seguono a 1,75, 2,5 e 3,25 secondi. Entrambi i tanpura sono spenti all'avvio. Ogni pressione di SEQ alterna: entrambi
-accesi, solo T1, solo T2, entrambi spenti. Il secondo tanpura ha la propria prima corda (NI di default), fase (20%) e
-corda aggiuntiva opzionale; l'indicatore ON si accende quando T2 è attivo.
+accesi, solo T1, solo T2, entrambi spenti. Il secondo tanpura ha la propria prima corda (NI di default), fase (20%), accordatura fine di ogni corda e
+corda aggiuntiva opzionale; il ciclo di pizzico è condiviso dai due tanpura. L'indicatore ON si accende quando T2 è attivo.
 
 ## Le impostazioni (EDIT)
 
@@ -67,11 +67,12 @@ dove sei nell'elenco.
 
 | Riga | Cosa regola |
 |---|---|
+| PLUCK CYCLE | la durata del ciclo di pizzico, condivisa dai due tanpura: 2,5–60 s (passi di 0,1 s fino a 10 s, poi 1 s) |
 | FIRST STRING | la prima corda del tanpura: Pa (default), Ma, Ni o qualsiasi swara |
 | EXTRA STRING | OFF di default; scegli uno swara per aggiungere una corda dopo la prima e prima delle due corde Sa e del kharaj |
-| 2ND: EXTRA STRING | corda aggiuntiva indipendente del secondo tanpura, OFF di default |
-| FINE: 1ST STRING, SA (2ND), SA (3RD), KHARAJ | accordatura fine delle corde, ±50 cents |
-| PLUCK CYCLE | la durata del ciclo di pizzico (2,5–8 s) |
+| FINE: 1ST STRING, EXTRA, SA (2ND), SA (3RD), KHARAJ | accordatura fine delle corde, ±50 cents |
+| 2ND: FIRST STRING, 2ND: EXTRA STRING | la prima corda del secondo tanpura e la sua corda aggiuntiva indipendente, OFF di default |
+| 2ND: PHASE, 2ND: FINE ×5 | le altre impostazioni del secondo tanpura |
 | TANPURA IRREG. | quanto il pizzico è irregolare, come una mano vera |
 | TABLA IRREG. | lo stesso per i tabla (tempi e forza dei colpi) |
 | TONE SWARA | lo swara del tono acceso con ARP |

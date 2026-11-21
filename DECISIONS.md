@@ -4,6 +4,36 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
+### 2026-11-20 — Ciclo di pizzico condiviso, prima riga dell'EDIT
+- **Decisione**: un solo PLUCK CYCLE per entrambi i tanpura, prima riga dell'EDIT (`ROW_CYCLE` = 0). La riga
+  `2ND: PLUCK CYCLE` è stata tolta e `tan2_cycle` non esiste più nelle impostazioni. `ui_edit_step(ROW_CYCLE)` scrive
+  su ENG_TANPURA e copia su ENG_TANPURA2; `ui_settings_apply` applica il valore a entrambi.
+- **Motivazione**: richiesta di ElectroNick. Il ciclo è un parametro comune di sessione; tenerlo in due righe permetteva
+  di impostare valori diversi per i due tanpura senza un motivo musicale.
+- **Scartato**: due cicli indipendenti, una riga per tanpura (il comportamento precedente); una riga comune in fondo
+  all'EDIT (ElectroNick ha chiesto la prima posizione).
+- **Effetto sui settaggi**: il record v4 cambia dimensione (manca `tan2_cycle`), quindi i record precedenti vengono
+  scartati dal controllo di dimensione e di `build`. Il build di questo step è `43A2407D`; il precedente era `BFE9E738`.
+- **Limite di test**: lo scenario `tan.cycle` imposta solo ENG_TANPURA, quindi ENG_TANPURA2 resta al valore di default.
+  Non tocca il firmware; da sistemare se uno scenario deve controllare il secondo tanpura.
+
+### 2026-11-20 — Ciclo fino a 60 s, FINE per la extra, impostazioni v4
+- **Ciclo**: 25..600 decimi di secondo (2,5–60 s). Il valore arriva a 60 s, dato che serve per accordare le corde.
+  Passo 0,1 s fino a 10 s, poi 1 s. I tempi relativi delle corde restano quelli attuali (no slot uguali).
+- **Motivazione del formato v4**: il ciclo era un `uint8_t` (massimo 25,5 s) e `fine[]` cambiava dimensione. Entrambi
+  spostano gli offset, quindi serve un layout nuovo.
+- **Nessuna retrocompatibilità** (richiesta di ElectroNick): il caricamento accetta solo un record v4 della dimensione
+  attesa e con `build == FM1B_BUILD`. Ogni altro record viene scartato e si parte dai default. Il codice di lettura
+  v1–v3 e il file di test della migrazione sono stati rimossi.
+- **Chiave di scarto**: `FM1B_BUILD` è l'hash dei sorgenti dell'app, di `device/`, `include/` e del chip (`build_id()`
+  in `platform/fm1-base/tools/build.py`). Un build con sorgenti modificati scarta i settaggi; reflashare un build
+  identico li conserva. Scartare a ogni flash richiederebbe che l'installer cancelli lo storage, ma `fm1_install.py`
+  è di fm1-base, che non si modifica.
+- **FINE per la extra**: indice 4 di `TANPURA_NFINE` (ora 5), con la stessa scala ±50 cent delle altre corde.
+- **Ordine**: EXTRA STRING subito sotto FIRST STRING, perché è la corda che viene pizzicata per seconda. Stessa regola per 2ND: EXTRA STRING sotto 2ND: FIRST STRING.
+- **Scartato**: slot di tempo uguali per ogni nota, rifiutato da ElectroNick nella domanda di conferma.
+- **Scartato**: estendere `ui_settings_t` in place senza un layout nuovo. Sposterebbe i campi dei record esistenti.
+
 ### 2026-11-20 — Taratura dell'intonazione sul ciclo effettivo
 - Le correzioni sono generate dal DSP effettivo, con il pizzico schedulato dal ciclo e i filtri del corpo. La misura
   è il centroide di potenza entro ±80 cent dalla fondamentale, fra 0,5 e 2,5 s dopo il pizzico: è una convenzione

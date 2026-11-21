@@ -95,10 +95,18 @@ expect octave 1
 tap EDIT
 wait 100
 expect page 1
+turn SELECT 1
 turn PRESET -2
 wait 300
 expect first 5
 expect register 0
+# the shared pluck cycle (row 0): one value for both tanpuras, 50 -> 48 tenths of a second
+turn SELECT -1
+turn PRESET -2
+wait 100
+expect cycle 48
+expect tan2_cycle 48
+turn SELECT 1
 shot edit.png
 tap HOME
 wait 100
@@ -152,12 +160,12 @@ expect taal_now 1
 shot main_ektaal.png
 # the tabla's irregularity: EDIT
 tap EDIT
-turn SELECT 9
+turn SELECT 16
 turn PRESET -2
 wait 200
 expect tabla_human 20
 shot edit_tabla.png
-# Bluetooth audio (EDIT rows 13..16): on (scans), a speaker found, picked, streaming; the output back to the FM-1 and again
+# Bluetooth audio (EDIT rows 20..23): on (scans), a speaker found, picked, streaming; the output back to the FM-1 and again
 bta add SPEAKER
 turn SELECT 3
 turn PRESET 1
@@ -179,15 +187,14 @@ turn PRESET -1
 wait 50
 expect bta 0
 # both tanpuras' optional extra string: OFF by default; the row cycles through every swara and its upper octave
-turn SELECT 4
+turn SELECT -18
 expect extra -1
 turn PRESET 12
 expect extra 11
-turn SELECT 1
+turn SELECT 7
 expect tan2_extra -1
 turn PRESET 17
 expect tan2_extra 16
-turn SELECT -8
 tap HOME
 # off: PLAY; the strokes ring out
 tap PLAY
@@ -215,9 +222,9 @@ wait 300
 expect ref_on 0
 expect octave 1
 expect kt_key -1
-# the first string's fine tuning (EDIT, row 1), then SAVE, a change, and a power cycle: the saved values come back
+# the first string's fine tuning (EDIT, row 3), then SAVE, a change, and a power cycle: the saved values come back
 tap EDIT
-turn SELECT -8
+turn SELECT -6
 turn PRESET 7
 wait 100
 expect fine0 7
@@ -258,6 +265,8 @@ expect unsaved 1
 power
 wait 2500
 expect loaded 1
+expect cycle 48
+expect tan2_cycle 48
 expect mpm 155
 expect fine0 7
 expect tan_filter 5000
@@ -308,6 +317,7 @@ expect first 7
 expect register 0
 expect jawari 50
 expect cycle 50
+expect tan2_cycle 50
 expect tan_human 50
 expect tabla_human 30
 expect tan2_first 11
@@ -337,6 +347,7 @@ expect sa_cents -300
 expect a4_dhz 4400
 expect first 7
 expect cycle 50
+expect tan2_cycle 50
 expect tan_human 50
 expect tan2_first 11
 expect tan2_phase 20

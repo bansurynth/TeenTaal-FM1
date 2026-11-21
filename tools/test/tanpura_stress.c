@@ -67,7 +67,7 @@ static void retune(tanpura_t *t, long k)
     tanpura_set_param(t, DSP_P_SA_CENTS, SA[k % 6]);
     tanpura_set_param(t, TANPURA_P_FIRST, (int32_t)(k * 5 % 12));
     tanpura_set_param(t, TANPURA_P_JAWARI, (int32_t)(k * 37 % 101));
-    tanpura_set_param(t, TANPURA_P_FINE + (int)(k % 4), (int32_t)((k * 13) % 101) - 50);
+    tanpura_set_param(t, TANPURA_P_FINE + (int)(k % TANPURA_NFINE), (int32_t)((k * 13) % 101) - 50);
     retune_step++;
 }
 

@@ -14,12 +14,12 @@
  *   TANPURA_P_ON        0 / 1      1 starts the cycle; 0 stops plucking and fades out in 0.3 s
  *   TANPURA_P_FIRST     0..17      the first string's swara (SW_PA default; 12..17: the upper Sa .. Ma shuddha)
  *   TANPURA_P_JAWARI    0..100     the thread position: 0 = 4 mm (short jvari) .. 100 = 8 mm (long); 50 = 6 mm
- *   TANPURA_P_CYCLE     25..80     the cycle in tenths of a second (default 50: 5 s)
+ *   TANPURA_P_CYCLE     25..600    the cycle in tenths of a second (default 50: 5 s; 600: 60 s)
  *   TANPURA_P_PHASE     0..100     the plucks' offset in % of the cycle (default 0; moves a running cycle too)
  *   TANPURA_P_EXTRA     -1..17     optional extra string: -1 off, otherwise SW_SA..SW_NI and upper Sa..Ma (default off)
  *   TANPURA_P_FILTER    2000..8500 shared low-pass cutoff in Hz (default 8500)
  *   TANPURA_P_HUMAN     0..100     irregularity: 100 = plucks +-50 ms and +-30 % (default 50)
- *   TANPURA_P_FINE + j  -50..50    strings 0..3 fine tuning in cents
+ *   TANPURA_P_FINE + j  -50..50    strings 0..4 fine tuning in cents (4: the extra string)
  *   TANPURA_P_VOL + j   0..100     string j's volume (taken at its next pluck: the model is exactly linear in it)
  *   TANPURA_P_REGISTER  0 / 1      1 (default): the tanpura an octave under the player's Sa ("large"), when that stays
  *                                  in its range (Sa F#3 and up); 0: at the Sa itself
@@ -36,7 +36,7 @@
 #include "tanpura/tstring.h"
 
 #define TANPURA_NSTR 5
-#define TANPURA_NFINE 4
+#define TANPURA_NFINE 5
 #define TANPURA_FIRST_MAX 17                     /* the first string: SW_SA..SW_NI, then the upper Sa .. Ma shuddha */
 #define TANPURA_OS 2                             /* the strings run at DSP_FS / TANPURA_OS */
 #define TANPURA_FS (DSP_FS / (float)TANPURA_OS)
@@ -49,7 +49,7 @@ enum {
     TANPURA_P_JAWARI,
     TANPURA_P_CYCLE,
     TANPURA_P_HUMAN,
-    TANPURA_P_FINE,                              /* + string 0..3 */
+    TANPURA_P_FINE,                              /* + string 0..4 */
     TANPURA_P_VOL = TANPURA_P_FINE + TANPURA_NFINE,   /* + string 0..4 */
     TANPURA_P_REGISTER = TANPURA_P_VOL + TANPURA_NSTR,
     TANPURA_P_SA_NOW,

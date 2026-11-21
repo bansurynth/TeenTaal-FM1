@@ -1,5 +1,49 @@
 # PROGRESS
 
+## Ciclo di pizzico più lungo, FINE e EXTRA STRING (ElectroNick, 2026-11-20)
+
+### Richiesta
+- Ciclo fino a 60 s (passo 0,1 s fino a 10 s, poi 1 s); tempi del ciclo invariati, come confermato (no slot uguali).
+- FINE per la corda extra; EXTRA STRING spostata subito sotto FIRST STRING.
+- Secondo tanpura: opzioni FINE ×5 e CYCLE, oltre a FIRST, PHASE ed EXTRA già presenti; 2ND: EXTRA STRING subito sotto 2ND: FIRST STRING, come nel primo.
+
+### Fatto
+- `tanpura/`: cycle 25..600 decimi di secondo; `TANPURA_NFINE` 4 → 5 (la corda 4 è la extra).
+- `ui/ui.c`: PLUCK CYCLE è una sola riga, condivisa dai due tanpura, e sta per prima nell'EDIT. Poi il primo tanpura
+  con FIRST, EXTRA, FINE×5 (1ST, EXTRA, SA(2ND), SA(3RD), KHARAJ); poi il secondo con FIRST, EXTRA, PHASE, FINE×5.
+  Il CYC della schermata principale legge ENG_TANPURA; `ui_edit_step(ROW_CYCLE)` copia il valore su ENG_TANPURA2.
+- Impostazioni v4: ciclo a 16 bit (il vecchio campo a 8 bit arrivava a 25,5 s), `fine[5]`, `tan2_fine[5]`,
+  e il campo `build` (= `FM1B_BUILD`).
+- Nessuna retrocompatibilità (richiesta di ElectroNick): il caricamento accetta solo un record v4 della dimensione
+  attesa e con lo stesso `build` di questo firmware. Ogni altro record viene scartato e si parte dai default. Il
+  codice di lettura v1–v3 è stato rimosso.
+- `tools/common/scen.c`, `scen.h`, `tools/test/tanpura_stress.c`: indici FINE 0..4 e limite 600.
+
+### Verifica
+- `build-host/regress`: 0 falliti, hash golden invariati (il suono di default non cambia); costo peggiore 79,68%.
+- `build-host/tanpura_stress quick`: 0 falliti; nessun clipping né valore non finito. Caso a 60 s (una corda, un
+  pizzico): l'energia non cresce mai, a fine corsa è sotto 1e-25 dell'inizio.
+- `tools/fw.sh --host`: compila senza warning; `tools/test/fw_basic.txt`: 180 ok, 0 FAIL.
+- Wipe dei settaggi nel simulatore: un'immagine salvata dalla build precedente viene scartata al power-on
+  (`loaded 0`, `fine0 0`, `unsaved 0`). Il file di test della migrazione è stato eliminato.
+- `tools/test/run_tests.sh` (regress: 0 falliti, costo 79,68%), `tanpura_stress quick`, `tanpura_ref -selftest`,
+  `tabla_demo -selftest`, `taal/build_taal.py --check`: tutti ok.
+
+### Build target, flash
+- Blocco libraqm risolto (`brew install libraqm`): Pillow con raqm, `gen_font.py` rigenera l'header invariato.
+- `tools/fw.sh` (target): exit 0, zero FAIL. App `build/teentaal.bin` 427.408 B su 581.564 B; `.data+.bss` 67.920 B su
+  98.304; pool 178.812 B su 344.064; `.ram_text` 5.800 B su 32.768. Nessuna routine soft-double.
+- Pacchetto `build/teentaal.fwsc`: 614.938 B, identità `FM-1_7700`, build `43A2407D` (prima `BFE9E738`: il build cambia
+  perché i sorgenti sono cambiati).
+- Flash con `fm1_install.py build/teentaal.fwsc --port Felucca --yes --no-resources`: exit 0, "done: the FM-1 runs
+  FM-1_7700". `--info` dopo il riavvio: `FM-1_7700 [running]`.
+- Dopo il flash il dispositivo parte con i default: i settaggi della versione precedente vengono scartati (vedi
+  DECISIONS.md). Reflashare un build identico conserva i settaggi.
+- Non verificato: prova audio dell'emulatore con `--ms 5000` (mai completata); etichette a 240 px sul dispositivo (le
+  più lunghe: "2ND: EXTRA STRING", "2ND: FINE SA(2ND)", "FINE: SA (2ND)").
+- Preesistente, non modificato: il parser `tan.vol` accetta solo 0..3. Il ciclo a 60 s è coperto solo dal test a corda
+  singola, non da un accordo completo al massimo.
+
 ## Iterazione autorizzata (ElectroNick, 2026-11-20) — intonazione del tanpura
 
 ### Piano e verifica
