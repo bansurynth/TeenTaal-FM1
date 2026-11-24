@@ -26,7 +26,7 @@
 - `fm1_install.py build/teentaal.fwsc --port Felucca --yes --no-resources`: scrittura al 100%, poi `error: the FM-1 did not come back: power-cycle it` (exit 5).
 - Dopo il power-cycle manuale di ElectroNick: `fm1_install.py --info --port Felucca` risponde `FM-1_7700 [running]` (exit 0).
 - `--info` mostra solo l'identità del prodotto, uguale per tutte le build. Non conferma il build id `D5B98004`. Il controllo a vista: la prima riga di EDIT è TEMPERAMENT e le impostazioni sono ai default (versione 5).
-- Commit e push: eseguiti dopo il flash, come richiesto (vedi `git log`).
+- Commit `082acf0` pubblicato su `bansurynth/main`. Il workflow "Browser emulator" è terminato con successo. Il `app.wasm` pubblicato su GitHub Pages contiene `TEMPERAMENT`, `EQUAL`, `JUST 5`, `JUST PYTH`, `2ND: EXTRA STRING`, `FINE: SA (2ND)`.
 
 ### Battimento PA + NI in JUST 5 (indagine, 2026-11-21)
 - Misure host (`probe` fuori repo, 6 s, Sa 110 Hz, tanpura 1 = PA, tanpura 2 = NI): le fondamentali delle corde sono entro 1,3 cent dal target in tutti e tre i temperamenti. PA è −1,3 cent in EQUAL, JUST 5 e PYTH, quindi non è un effetto del JUST.
