@@ -99,6 +99,6 @@ cella della matra corrente accesa.
 |---|---|
 | **tasto da solo** | tono di riferimento su quello swara finché è premuto (più tasti: l'ultimo premuto; poi il tono torna com'era) |
 | **SAVE** | salva le impostazioni (UNSAVED sullo schermo e luce di SAVE accesa finché ci sono modifiche) |
-| **EDIT** | 20 righe, scorrono: ciclo di pizzico (uno per entrambi i tanpura, prima riga), prima corda, corda aggiuntiva, prima corda e corda aggiuntiva del secondo tanpura, accordatura fine di ogni corda (condivisa dai due tanpura), fase del secondo tanpura, irregolarità di tanpura e tabla, swara del tono, La di riferimento, Bluetooth, filtro |
+| **EDIT** | 21 righe, scorrono: temperamento (EQUAL, JUST 5, JUST PYTH; prima riga), ciclo di pizzico (uno per entrambi i tanpura), prima corda, corda aggiuntiva, prima corda e corda aggiuntiva del secondo tanpura, accordatura fine di ogni corda (condivisa dai due tanpura), fase del secondo tanpura, irregolarità di tanpura e tabla, swara del tono, La di riferimento, Bluetooth, filtro |
 
 Luci dei tasti: dal Sa in su, Sa e Pa accesi, Re Ga Ma Dha Ni tenui. Manuale d'uso: `docs/MANUAL.md`.

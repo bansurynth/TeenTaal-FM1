@@ -15,17 +15,22 @@
 
 /* the twelve swaras of a saptak, from Sa */
 enum { SW_SA, SW_RE_K, SW_RE, SW_GA_K, SW_GA, SW_MA, SW_MA_T, SW_PA, SW_DHA_K, SW_DHA, SW_NI_K, SW_NI, SW_N };
+#define TUNING_SWARA_MAX 17         /* the tanpura's range: SW_SA .. the upper Sa (12) .. the upper Ma (17) */
+
+/* the swara intervals (DSP_P_TEMPERAMENT): equal, or just intonation in the 5-limit or Pythagorean ratios */
+enum { TUNING_TEMPERAMENT_EQUAL, TUNING_TEMPERAMENT_JUST5, TUNING_TEMPERAMENT_JUSTPYTH, TUNING_TEMPERAMENT_N };
 
 typedef struct {
     int32_t a4_dhz;
     int32_t sa_cents;
+    int32_t temperament;
 } tuning_t;
 
 void tuning_default(tuning_t *t);
-/* apply a shared parameter (DSP_P_A4_DHZ, DSP_P_SA_CENTS), clamped; 1 if it was one of them */
+/* apply a shared parameter (DSP_P_A4_DHZ, DSP_P_SA_CENTS, DSP_P_TEMPERAMENT), clamped; 1 if it was one of them */
 int tuning_set_param(tuning_t *t, int id, int32_t v);
-/* the swara's interval above Sa in cents (equal temperament), any swara 0..11 */
-float tuning_swara_cents(int swara);
+/* the swara's interval above Sa in cents, for the temperament of t: swara 0..TUNING_SWARA_MAX (12..17: the octave above) */
+float tuning_swara_cents(const tuning_t *t, int swara);
 /* frequency in Hz of a pitch `cents` above Sa */
 float tuning_hz(const tuning_t *t, float cents);
 /* 32-bit phase increment per sample for a frequency (0 above Nyquist) */

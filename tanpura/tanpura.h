@@ -10,7 +10,7 @@
  * Rates (step 2b): the strings and the body run at half the FM-1's rate (22058.8 Hz; above 11 kHz the reference
  * holds -44 dB of its energy), then a half-band filter brings the output up to 44117.6 Hz.
  *
- * Parameters (tanpura_set_param), besides the shared tuning (DSP_P_A4_DHZ, DSP_P_SA_CENTS):
+ * Parameters (tanpura_set_param), besides the shared tuning (DSP_P_A4_DHZ, DSP_P_SA_CENTS, DSP_P_TEMPERAMENT):
  *   TANPURA_P_ON        0 / 1      1 starts the cycle; 0 stops plucking and fades out in 0.3 s
  *   TANPURA_P_MUTE      0 / 1      1: the output fades out in 20 ms, the strings keep plucking (the cycle stays in phase)
  *   TANPURA_P_FIRST     0..17      the first string's swara (SW_PA default; 12..17: the upper Sa .. Ma shuddha)

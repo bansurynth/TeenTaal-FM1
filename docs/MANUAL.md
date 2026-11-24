@@ -67,6 +67,7 @@ SELECT picks the row, PRESETS changes the value, HOME goes back. The dots at the
 
 | Row | What it sets |
 |---|---|
+| TEMPERAMENT | the tuning of the swaras: EQUAL (default, equal temperament), JUST 5 (5-limit just intonation) or JUST PYTH (Pythagorean just intonation). Sa does not change; the first and extra strings of both tanpuras and the reference tone follow the choice; the keyboard pluck (FX) stays equal |
 | PLUCK CYCLE | the length of the plucking cycle, shared by both tanpuras: 2.5–60 s (steps of 0.1 s up to 10 s, then 1 s) |
 | FIRST STRING | the tanpura's first string: Pa (default), Ma, Ni or any swara |
 | EXTRA STRING | OFF by default; select a swara to add a string after the first string and before the two Sa strings and kharaj |

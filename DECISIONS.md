@@ -4,6 +4,15 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
+### 2026-11-21 — TEMPERAMENT: EQUAL / JUST 5 / JUST PYTH, prima riga dell'EDIT
+- **Decisione**: nuova prima riga EDIT con tre opzioni. EQUAL resta il default e produce lo stesso suono di prima. Il Sa non cambia mai. Seguono la scelta la prima corda e la corda aggiuntiva di entrambi i tanpura, e il tono di riferimento (ARP e tasto da solo). Il pizzico FX dalla tastiera resta equabile, perché usa cents assoluti. Il tabla salva il campo senza usarlo.
+- **Tabelle** (cents sopra il Sa, dal Re al Ni): 5-limit 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 9/5, 15/8. Pitagorica 256/243, 9/8, 32/27, 81/64, 4/3, 729/512, 3/2, 128/81, 27/16, 16/9, 243/128. La deviazione dall'equabile arriva a circa ±18 cent.
+- **Compensazione**: `pitch_compensation` è indicizzata sull'altezza richiesta, non sullo swara. Così la deviazione JUST entra nella correzione delle tabelle di intonazione, invece di essere sommata dopo.
+- **Motivazione**: ElectroNick ha chiesto la scelta fra le due tradizioni giuste, con EQUAL come comportamento attuale. Le due JUST sono le più usate nella pratica.
+- **Impostazioni**: versione 5. Il build id cambia, quindi i settaggi precedenti vengono scartati al primo flash, come da politica.
+- **Scartato**: spostare anche il Sa con il temperamento (ElectroNick: il Sa non cambia); applicare JUST al pizzico FX (modifica non richiesta); una sola opzione JUST (ElectroNick ha chiesto le due).
+- **Da verificare all'ascolto**: quale delle due JUST suona meglio sul tanpura reale.
+
 ### 2026-11-21 — FINE del secondo tanpura segue il primo (righe "2ND: FINE" rimosse)
 - **Decisione**: le cinque righe "2ND: FINE" sono state tolte. Il secondo tanpura usa i FINE del primo. `ENG_TANPURA` inoltra a `tanpura2` tutti gli id tranne FIRST, PHASE, EXTRA e MUTE, quindi l'accordatura fine è già condivisa. `tan2_fine` non esiste più nelle impostazioni.
 - **Motivazione**: richiesta esplicita di ElectroNick ("si useranno quelli legati ai settaggi già presenti per il Tampura 1").

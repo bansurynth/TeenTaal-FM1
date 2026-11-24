@@ -1,6 +1,6 @@
 /* reftone.h — reference tone: a steady, clean sine on a swara, tuned like the tanpura.
  *
- * Parameters (reftone_set_param): the shared tuning (DSP_P_A4_DHZ, DSP_P_SA_CENTS) and
+ * Parameters (reftone_set_param): the shared tuning (DSP_P_A4_DHZ, DSP_P_SA_CENTS, DSP_P_TEMPERAMENT) and
  *   REFTONE_P_ON      0 / 1        on fades in, off fades out (20 ms)
  *   REFTONE_P_SWARA   0..11        SW_SA .. SW_NI (dsp/tuning.h)
  *   REFTONE_P_OCTAVE  -1..+1       mandra, madhya, tar saptak

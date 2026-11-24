@@ -186,12 +186,12 @@ void tanpura_string_par(const tanpura_t *m, int j, tstring_par_t *p)
     float high_sa = fm_clampf((float)m->tuning.sa_cents * (1.0f / 700.0f), 0.0f, 1.0f);
     if (j == 0 || j == TANPURA_NSTR - 1) {
         swara = j == 0 ? m->first : m->extra >= 0 ? m->extra : SW_NI;
-        float interval = 100.0f * (float)swara - 1200.0f;
+        float interval = tuning_swara_cents(&m->tuning, swara) - 1200.0f;
         cents += interval;                             /* 12..17: the upper Sa .. Ma, above the player's Sa */
-        pitch_note += 100.0f * (float)swara;
+        pitch_note += tuning_swara_cents(&m->tuning, swara);
         profile = PITCH_PROFILE_FIRST;
         if (swara > SW_NI) {
-            k = fm_exp2f(-(float)(100 * swara - 1200) * (1.0f / 1200.0f));
+            k = fm_exp2f(-interval * (1.0f / 1200.0f));
         }
     }
     if (j == 3) {
@@ -400,6 +400,7 @@ int32_t tanpura_get_param(const tanpura_t *m, int id)
 {
     if (id == DSP_P_A4_DHZ) return m->tuning.a4_dhz;
     if (id == DSP_P_SA_CENTS) return m->tuning.sa_cents;
+    if (id == DSP_P_TEMPERAMENT) return m->tuning.temperament;
     if (id >= TANPURA_P_FINE && id < TANPURA_P_FINE + TANPURA_NFINE) return m->fine[id - TANPURA_P_FINE];
     if (id >= TANPURA_P_VOL && id < TANPURA_P_VOL + TANPURA_NSTR) return m->vol[id - TANPURA_P_VOL];
     switch (id) {

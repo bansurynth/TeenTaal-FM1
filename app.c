@@ -138,6 +138,7 @@ int app_expect(const char *what, int *got)
     else if (!strcmp(what, "volume")) *got = (int)engine_get_param(&eng, ENG_REFTONE, REFTONE_P_VOLUME);
     else if (!strcmp(what, "sa_cents")) *got = (int)engine_get_param(&eng, ENG_ALL, DSP_P_SA_CENTS);
     else if (!strcmp(what, "a4_dhz")) *got = (int)engine_get_param(&eng, ENG_ALL, DSP_P_A4_DHZ);
+    else if (!strcmp(what, "temperament")) *got = (int)engine_get_param(&eng, ENG_ALL, DSP_P_TEMPERAMENT);
     else if (!strcmp(what, "tan_on")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_ON);
     else if (!strcmp(what, "tan2_on")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_ON);
     else if (!strcmp(what, "tan_mute")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_MUTE);

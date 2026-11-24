@@ -271,7 +271,7 @@ static double sa_note_hz(int a4_dhz, int sa_cents, int reg, double relative_cent
 }
 
 static void tanpura_pitch_check_volume(const char *name, int sa_cents, int jawari, int reg, int string, int first,
-                                      int fine, double relative_cents, int a4_dhz, int volume)
+                                      int fine, double relative_cents, int a4_dhz, int volume, int temperament)
 {
     static tanpura_t t;
     char detail[128];
@@ -280,6 +280,7 @@ static void tanpura_pitch_check_volume(const char *name, int sa_cents, int jawar
     tanpura_init(&t, 0);
     tanpura_set_param(&t, DSP_P_A4_DHZ, a4_dhz);
     tanpura_set_param(&t, DSP_P_SA_CENTS, sa_cents);
+    tanpura_set_param(&t, DSP_P_TEMPERAMENT, temperament);
     tanpura_set_param(&t, TANPURA_P_REGISTER, reg);
     tanpura_set_param(&t, TANPURA_P_JAWARI, jawari);
     tanpura_set_param(&t, TANPURA_P_HUMAN, 0);
@@ -307,8 +308,21 @@ static void tanpura_pitch_check_volume(const char *name, int sa_cents, int jawar
 static void tanpura_pitch_check(const char *name, int sa_cents, int jawari, int reg, int string, int first,
                                int fine, double relative_cents, int a4_dhz)
 {
-    tanpura_pitch_check_volume(name, sa_cents, jawari, reg, string, first, fine, relative_cents, a4_dhz, 100);
+    tanpura_pitch_check_volume(name, sa_cents, jawari, reg, string, first, fine, relative_cents, a4_dhz, 100,
+                               TUNING_TEMPERAMENT_EQUAL);
 }
+
+/* cents above Sa for swara s, from the frequency ratios of each temperament (independent of dsp/tuning.c) */
+static double just_cents(int s, int temperament)
+{
+    static const double five_limit[12] = {1.0, 16.0 / 15, 9.0 / 8, 6.0 / 5, 5.0 / 4, 4.0 / 3,
+                                          45.0 / 32, 3.0 / 2, 8.0 / 5, 5.0 / 3, 9.0 / 5, 15.0 / 8};
+    static const double pythagorean[12] = {1.0, 256.0 / 243, 9.0 / 8, 32.0 / 27, 81.0 / 64, 4.0 / 3,
+                                           729.0 / 512, 3.0 / 2, 128.0 / 81, 27.0 / 16, 16.0 / 9, 243.0 / 128};
+    const double *r = temperament == TUNING_TEMPERAMENT_JUST5 ? five_limit : pythagorean;
+    return 1200.0 * log2(r[s % 12]) + 1200.0 * (s / 12);
+}
+
 
 static void tanpura_preview_pitch_check(const char *name, int sa_cents, int reg, int jawari, int preview_cents)
 {
@@ -353,8 +367,9 @@ static void tanpura_pitch_checks(void)
     tanpura_pitch_check("tan_pitch_upper_A466_fine", 500, 0, 0, 0, 17, 50, 500, 4660);
     tanpura_pitch_check("tan_pitch_upper_Sa_A466", 700, 0, 0, 0, 12, 50, 0, 4660);
     tanpura_pitch_check("tan_pitch_upper_large_fine", 350, 50, 1, 0, 17, 50, 500, 4660);
-    tanpura_pitch_check_volume("tan_pitch_G3_volume25", -500, 50, 0, 1, -1, 0, 0, 4400, 25);
-    tanpura_pitch_check_volume("tan_pitch_G3_upper_volume25", 200, 0, 1, 0, 17, 0, 500, 4400, 25);
+    tanpura_pitch_check_volume("tan_pitch_G3_volume25", -500, 50, 0, 1, -1, 0, 0, 4400, 25, TUNING_TEMPERAMENT_EQUAL);
+    tanpura_pitch_check_volume("tan_pitch_G3_upper_volume25", 200, 0, 1, 0, 17, 0, 500, 4400, 25,
+                               TUNING_TEMPERAMENT_EQUAL);
     tanpura_pitch_check("tan_pitch_upper_negative_fine", 669, 0, 0, 0, 17, -43, 500, 4460);
     tanpura_pitch_check("tan_pitch_upper_extreme_fine", 600, 0, 0, 0, 17, 50, 500, 4660);
     for (jawari = 0; jawari <= 100; jawari += 50) {
@@ -367,6 +382,21 @@ static void tanpura_pitch_checks(void)
     tanpura_preview_pitch_check("tan_preview_Ma", -800, 0, 50, -300);
     tanpura_preview_pitch_check("tan_preview_G3", -500, 1, 50, -500);
     tanpura_preview_pitch_check("tan_preview_C4", -1800, 0, 0, 0);
+}
+
+/* each JUST swara on the first string, and the high Ma, against the target of its ratio */
+static void tanpura_just_pitch_checks(void)
+{
+    int t, s;
+    for (t = TUNING_TEMPERAMENT_JUST5; t < TUNING_TEMPERAMENT_N; t++) {
+        for (s = 1; s <= 17; s++) {
+            char name[48];
+            if (s == 12)
+                continue;
+            snprintf(name, sizeof name, "tan_just%d_swara%d", t, s);
+            tanpura_pitch_check_volume(name, -800, 50, 0, 0, s, 0, just_cents(s, t) - 1200.0, 4400, 100, t);
+        }
+    }
 }
 
 static uint64_t fnv1a(const int32_t *x, size_t n)
@@ -556,6 +586,7 @@ int main(int argc, char **argv)
     tanpura_cycle_checks();
     tanpura_mute_checks();
     tanpura_pitch_checks();
+    tanpura_just_pitch_checks();
     for (s = 0; s < NSC; s++) {
         static scen_run_t r;
         scen_ev_t ev[48];

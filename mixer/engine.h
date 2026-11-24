@@ -37,7 +37,7 @@ typedef struct {
 } engine_t;
 
 void engine_init(engine_t *e);
-/* ENG_ALL sends the shared tuning (DSP_P_A4_DHZ, DSP_P_SA_CENTS) to every module */
+/* ENG_ALL sends the shared tuning (DSP_P_A4_DHZ, DSP_P_SA_CENTS, DSP_P_TEMPERAMENT) to every module */
 void engine_set_param(engine_t *e, int target, int param_id, int32_t value);
 int32_t engine_get_param(const engine_t *e, int target, int param_id);
 /* lr: n stereo frames (Q23), overwritten; n a multiple of DSP_BLOCK, <= ENGINE_MAXN; master_q12: MASTER's gain

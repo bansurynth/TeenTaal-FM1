@@ -91,16 +91,21 @@ tap OCT+
 wait 300
 expect ref_on 1
 expect octave 1
-# EDIT: the first string to Ma (first row, two steps down); the tanpura plays at Sa (no register row)
+# EDIT: TEMPERAMENT is the first row (EQUAL by default); JUST 5 here, kept through the power cycle below
+# then the first string to Ma (row 2); the tanpura plays at Sa (no register row)
 tap EDIT
 wait 100
 expect page 1
-turn SELECT 1
+expect temperament 0
+turn PRESET 1
+wait 100
+expect temperament 1
+turn SELECT 2
 turn PRESET -2
 wait 300
 expect first 5
 expect register 0
-# the shared pluck cycle (row 0): one value for both tanpuras, 50 -> 48 tenths of a second
+# the shared pluck cycle (row 1): one value for both tanpuras, 50 -> 48 tenths of a second
 turn SELECT -1
 turn PRESET -2
 wait 100
@@ -172,7 +177,7 @@ turn PRESET -2
 wait 200
 expect tabla_human 20
 shot edit_tabla.png
-# Bluetooth audio (EDIT rows 15..18): on (scans), a speaker found, picked, streaming; the output back to the FM-1 and again
+# Bluetooth audio (EDIT rows 16..19): on (scans), a speaker found, picked, streaming; the output back to the FM-1 and again
 bta add SPEAKER
 turn SELECT 3
 turn PRESET 1
@@ -229,10 +234,10 @@ wait 300
 expect ref_on 0
 expect octave 1
 expect kt_key -1
-# the first string's fine tuning (EDIT, row 5), then SAVE, a change, and a power cycle: the saved values come back
+# the first string's fine tuning (EDIT, row 6), then SAVE, a change, and a power cycle: the saved values come back
 tap EDIT
 turn SELECT -100
-turn SELECT 5
+turn SELECT 6
 turn PRESET 7
 wait 100
 expect fine0 7
@@ -282,6 +287,7 @@ expect mpm 155
 expect fine0 7
 expect tan_filter 5000
 expect tan2_filter 5000
+expect temperament 1
 expect first 5
 expect extra 11
 expect tan2_extra 16
@@ -325,6 +331,7 @@ wait 600
 expect sa_cents -300
 expect a4_dhz 4400
 expect first 7
+expect temperament 0
 expect register 0
 expect jawari 50
 expect cycle 50

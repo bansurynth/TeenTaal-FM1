@@ -7,7 +7,7 @@ static int32_t clampi(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : 
 
 float reftone_hz(const reftone_t *m)
 {
-    return tuning_hz(&m->tuning, tuning_swara_cents(m->swara) + 1200.0f * (float)m->octave);
+    return tuning_hz(&m->tuning, tuning_swara_cents(&m->tuning, m->swara) + 1200.0f * (float)m->octave);
 }
 
 static void retune(reftone_t *m)
@@ -50,6 +50,7 @@ int32_t reftone_get_param(const reftone_t *m, int id)
     switch (id) {
     case DSP_P_A4_DHZ:     return m->tuning.a4_dhz;
     case DSP_P_SA_CENTS:   return m->tuning.sa_cents;
+    case DSP_P_TEMPERAMENT: return m->tuning.temperament;
     case REFTONE_P_ON:     return m->on;
     case REFTONE_P_SWARA:  return m->swara;
     case REFTONE_P_OCTAVE: return m->octave;

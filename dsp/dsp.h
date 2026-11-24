@@ -21,5 +21,6 @@
 enum {
     DSP_P_A4_DHZ = 1,        /* reference A4 in tenths of a hertz (4400 = 440.0 Hz) */
     DSP_P_SA_CENTS = 2,      /* Sa (middle octave) in cents above C4 at that reference (-1100 = C#3) */
+    DSP_P_TEMPERAMENT = 3,   /* swara intervals: TUNING_TEMPERAMENT_EQUAL, _JUST5 or _JUSTPYTH (dsp/tuning.h) */
     DSP_P_MODULE = 16
 };

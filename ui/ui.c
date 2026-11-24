@@ -6,7 +6,7 @@
  *   PLAY       tabla (the taal) on / off          SELECT     the row
  *   SEQ        both, T1, T2, off                  PRESETS    its value
  *   ARP        reference tone on / off            HOME       back to the main page
- *   SELECT     the taal (while playing: from the  rows: pluck cycle (both tanpuras), first string, extra string, the cents
+ *   SELECT     the taal (while playing: from the  rows: temperament (EQUAL, JUST 5, JUST PYTH), pluck cycle (both tanpuras), first string, extra string, the cents
  *              end of the cycle; ElectroNick, step 6)        of each string (FINE), the same for the 2ND tanpura,
  *                                                            tanpura and tabla irregularity, tone swara, A reference,
  *                                                            bluetooth, tanpura filter
@@ -29,10 +29,11 @@ enum { UI_KEY_C4 = 7, UI_KEY_C5 = UI_KEY_C4 + 12 };
 static const char *const UI_SWARA[TANPURA_FIRST_MAX + 1] = {"SA", "RE KOMAL", "RE", "GA KOMAL", "GA", "MA", "MA TIVRA", "PA",
                                            "DHA KOMAL", "DHA", "NI KOMAL", "NI", "SA'", "RE KOMAL'", "RE'",
                                            "GA KOMAL'", "GA'", "MA'"};
-enum { ROW_CYCLE, ROW_FIRST, ROW_EXTRA, ROW_TAN2_FIRST, ROW_TAN2_EXTRA, ROW_FINE0, ROW_FINE1, ROW_FINE2, ROW_FINE3, ROW_FINE4,
-       ROW_TAN2_PHASE, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, ROW_BT, ROW_BT_DEV, ROW_BT_LINK,
+enum { ROW_TEMPERAMENT, ROW_CYCLE, ROW_FIRST, ROW_EXTRA, ROW_TAN2_FIRST, ROW_TAN2_EXTRA, ROW_FINE0, ROW_FINE1, ROW_FINE2,
+       ROW_FINE3, ROW_FINE4, ROW_TAN2_PHASE, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, ROW_BT, ROW_BT_DEV, ROW_BT_LINK,
        ROW_BT_OUT, ROW_FILTER, NROWS };
-static const char *const ROW_NAME[NROWS] = {"PLUCK CYCLE", "FIRST STRING", "EXTRA STRING",
+static const char *const UI_TEMPERAMENT[TUNING_TEMPERAMENT_N] = {"EQUAL", "JUST 5", "JUST PYTH"};
+static const char *const ROW_NAME[NROWS] = {"TEMPERAMENT", "PLUCK CYCLE", "FIRST STRING", "EXTRA STRING",
                                             "2ND: FIRST STRING", "2ND: EXTRA STRING", "FINE: 1ST STRING", "FINE: EXTRA",
                                             "FINE: SA (2ND)", "FINE: SA (3RD)", "FINE: KHARAJ",
                                             "2ND: PHASE", "TANPURA IRREG.", "TABLA IRREG.", "TONE SWARA",
@@ -77,6 +78,7 @@ typedef struct {
     uint8_t jawari, tan_human, tabla_human, taal, vol_tanpura, vol_tabla, vol_tone;
     int16_t mpm, tan2;                      /* tan2: bit 15 set = valid; bits 7..11 first string, bits 0..6 phase */
     int8_t extra, extra2;
+    int8_t temperament;                     /* TUNING_TEMPERAMENT_*: EQUAL, JUST 5-limit, JUST Pythagorean */
     uint32_t tan_filter_hz;
     uint16_t cycle;                         /* tenths of a second, for both tanpuras: 16 bits, up to 60 s */
     uint32_t build;                         /* FM1B_BUILD: a record from another build is not used, so each flash starts from the defaults */
@@ -94,7 +96,7 @@ static void ui_settings_now(ui_settings_t *p)
     int j;
     for (j = 0; j < (int)sizeof *p; j++)
         ((uint8_t *)p)[j] = 0;
-    p->magic = UI_SET_MAGIC, p->version = 4, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
+    p->magic = UI_SET_MAGIC, p->version = 5, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
     p->a4_dhz = ui_get(ENG_ALL, DSP_P_A4_DHZ);
     p->sa_cents = ui_get(ENG_ALL, DSP_P_SA_CENTS);
     p->first = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_FIRST);
@@ -118,6 +120,7 @@ static void ui_settings_now(ui_settings_t *p)
     p->vol_tone = (uint8_t)ui_get(ENG_REFTONE, REFTONE_P_VOLUME);
     p->extra = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_EXTRA);
     p->extra2 = (int8_t)ui_get(ENG_TANPURA2, TANPURA_P_EXTRA);
+    p->temperament = (int8_t)ui_get(ENG_ALL, DSP_P_TEMPERAMENT);
     p->tan_filter_hz = (uint16_t)ui_get(ENG_TANPURA, TANPURA_P_FILTER);
 }
 
@@ -130,7 +133,7 @@ static void ui_settings_defaults(ui_settings_t *p)
     int j;
     for (j = 0; j < (int)sizeof *p; j++)
         ((uint8_t *)p)[j] = 0;
-    p->magic = UI_SET_MAGIC, p->version = 4, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
+    p->magic = UI_SET_MAGIC, p->version = 5, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
     p->a4_dhz = TUNING_A4_DHZ_DEFAULT, p->sa_cents = UI_SA_DEFAULT;
     p->first = SW_PA, p->reg = 0;
     p->jawari = 50, p->cycle = 50, p->tan_human = 50, p->tabla_human = 30;
@@ -139,6 +142,7 @@ static void ui_settings_defaults(ui_settings_t *p)
     p->tone_swara = SW_SA, p->tone_oct = 0;
     p->vol_tanpura = 100, p->vol_tabla = 100, p->vol_tone = 70;
     p->extra = p->extra2 = -1;
+    p->temperament = TUNING_TEMPERAMENT_EQUAL;
     p->tan_filter_hz = TANPURA_FILTER_MAX_HZ;
 }
 
@@ -156,7 +160,7 @@ static int32_t ui_sa_clamp(int32_t c) { return c < UI_SA_MIN ? UI_SA_MIN : c > U
 static int ui_settings_valid(const ui_settings_t *p)
 {
     int j;
-    if (p->magic != UI_SET_MAGIC || p->version != 4 || p->size != sizeof *p || p->build != FM1B_BUILD)
+    if (p->magic != UI_SET_MAGIC || p->version != 5 || p->size != sizeof *p || p->build != FM1B_BUILD)
         return 0;
     if (p->a4_dhz < TUNING_A4_DHZ_MIN || p->a4_dhz > TUNING_A4_DHZ_MAX || p->sa_cents < TUNING_SA_MIN
         || p->sa_cents > TUNING_SA_MAX || p->first < 0 || p->first > TANPURA_FIRST_MAX || p->reg < 0 || p->reg > 1
@@ -172,6 +176,8 @@ static int ui_settings_valid(const ui_settings_t *p)
             return 0;
     if (p->extra < -1 || p->extra > TANPURA_FIRST_MAX || p->extra2 < -1 || p->extra2 > TANPURA_FIRST_MAX)
         return 0;
+    if (p->temperament < 0 || p->temperament >= TUNING_TEMPERAMENT_N)
+        return 0;
     if (p->tan_filter_hz < TANPURA_FILTER_MIN_HZ || p->tan_filter_hz > TANPURA_FILTER_MAX_HZ)
         return 0;
     return 1;
@@ -182,6 +188,7 @@ static void ui_settings_apply(const ui_settings_t *p)
     int j;
     engine_set_param(ui_eng, ENG_ALL, DSP_P_A4_DHZ, p->a4_dhz);
     engine_set_param(ui_eng, ENG_ALL, DSP_P_SA_CENTS, ui_sa_fold(p->sa_cents));   /* (an older record: the same note, in the central octave) */
+    engine_set_param(ui_eng, ENG_ALL, DSP_P_TEMPERAMENT, p->temperament);
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_FIRST, p->first);
     for (j = 0; j < TANPURA_NFINE; j++)
         engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_FINE + j, p->fine[j]);
@@ -224,6 +231,7 @@ static void ui_init_state(engine_t *e)
     ui_eng = e;
     engine_set_param(e, ENG_ALL, DSP_P_A4_DHZ, TUNING_A4_DHZ_DEFAULT);
     engine_set_param(e, ENG_ALL, DSP_P_SA_CENTS, UI_SA_DEFAULT);
+    engine_set_param(e, ENG_ALL, DSP_P_TEMPERAMENT, TUNING_TEMPERAMENT_EQUAL);
     engine_set_param(e, ENG_TANPURA, TANPURA_P_REGISTER, 0);
     engine_set_param(e, ENG_TANPURA2, TANPURA_P_ON, 0);
     engine_set_param(e, ENG_TANPURA, TANPURA_P_MUTE, 0);
@@ -509,6 +517,7 @@ static void ui_row_value(char *t, int row)
     char u[16];
     t[0] = 0;
     switch (row) {
+    case ROW_TEMPERAMENT: ui_cat(t, UI_TEMPERAMENT[ui_get(ENG_ALL, DSP_P_TEMPERAMENT)]); break;
     case ROW_FIRST:    ui_cat(t, UI_SWARA[ui_get(ENG_TANPURA, TANPURA_P_FIRST)]); break;
     case ROW_A4:       ui_dec1(t, ui_get(ENG_ALL, DSP_P_A4_DHZ)); ui_cat(t, " HZ"); break;
     case ROW_CYCLE:
@@ -584,6 +593,9 @@ static void ui_draw_all(void)
 static void ui_edit_step(int row, int32_t d)
 {
     switch (row) {
+    case ROW_TEMPERAMENT:
+        ui_set(ENG_ALL, DSP_P_TEMPERAMENT, clamp(ui_get(ENG_ALL, DSP_P_TEMPERAMENT) + d, 0, TUNING_TEMPERAMENT_N - 1));
+        break;
     case ROW_FIRST:
         ui_set(ENG_TANPURA, TANPURA_P_FIRST, clamp(ui_get(ENG_TANPURA, TANPURA_P_FIRST) + d, 0, TANPURA_FIRST_MAX));
         break;

@@ -1,5 +1,55 @@
 # PROGRESS
 
+## TEMPERAMENT: EQUAL, JUST 5, JUST PYTH (ElectroNick, 2026-11-21) — **flash completato, identità non verificabile via `--info`**
+
+### Richiesta
+1. EDIT: nuova prima riga TEMPERAMENT, con EQUAL (il comportamento attuale) e le opzioni JUST (confermate da ElectroNick come JUST 5-limit e JUST pitagorica).
+2. Dopo il flash: commit su GitHub e verifica dell'emulatore su GitHub Pages.
+
+### Fatto
+- `dsp/tuning.c`, `tuning.h`: enum EQUAL / JUST5 / JUSTPYTH, tabelle in cents sopra il Sa, `tuning_swara_cents` come unica fonte delle altezze.
+- `tanpura/tanpura.c`: la prima corda e la corda aggiuntiva di entrambi i tanpura seguono la scelta. La compensazione di intonazione è indicizzata sull'altezza richiesta, quindi include la deviazione JUST.
+- `reftone/reftone.c`: il tono di riferimento (ARP e tasto da solo) segue la scelta.
+- `ui/ui.c`: riga TEMPERAMENT in prima posizione (etichette EQUAL, JUST 5, JUST PYTH). Impostazioni versione 5.
+- `tools/test/regress.c`: nuovo controllo `tanpura_just_pitch_checks`, con la tabella JUST scritta in modo indipendente da `dsp/tuning.c`.
+- `app.c` (solo host): nome `temperament` per lo scenario.
+- `tools/test/fw_basic.txt`: nuovo ordine delle righe e controlli su TEMPERAMENT (impostazione, persistenza dopo riavvio, ripristino defaults).
+- Documentazione: `docs/MANUAL.md`, `docs/MANUAL.it.md`, `docs/CONTROLS.md`, `docs/CONTROLS.it.md`.
+
+### Verifica (host e target)
+- `make -B build-host/regress && ./build-host/regress`: 0 falliti; hash golden invariati (EQUAL è bit per bit uguale a prima); costo peggiore 79,68% di un core. Errore di intonazione JUST sotto 1,6 cent sugli swara testati.
+- `./build-host/tanpura_stress quick`: 0 falliti.
+- `tools/test/fw_basic.txt` (host): 0 FAIL, incluse le quattro verifiche `temperament` (0 → 1, persistenza, ripristino).
+- `sh tools/fw.sh` (target): exit 0. Build id `D5B98004`, app 428.076 B, pacchetto `build/teentaal.fwsc` 614.938 B.
+
+### Flash: completato, con una riserva
+- `fm1_install.py build/teentaal.fwsc --port Felucca --yes --no-resources`: scrittura al 100%, poi `error: the FM-1 did not come back: power-cycle it` (exit 5).
+- Dopo il power-cycle manuale di ElectroNick: `fm1_install.py --info --port Felucca` risponde `FM-1_7700 [running]` (exit 0).
+- `--info` mostra solo l'identità del prodotto, uguale per tutte le build. Non conferma il build id `D5B98004`. Il controllo a vista: la prima riga di EDIT è TEMPERAMENT e le impostazioni sono ai default (versione 5).
+- Commit e push: eseguiti dopo il flash, come richiesto (vedi `git log`).
+
+### Battimento PA + NI in JUST 5 (indagine, 2026-11-21)
+- Misure host (`probe` fuori repo, 6 s, Sa 110 Hz, tanpura 1 = PA, tanpura 2 = NI): le fondamentali delle corde sono entro 1,3 cent dal target in tutti e tre i temperamenti. PA è −1,3 cent in EQUAL, JUST 5 e PYTH, quindi non è un effetto del JUST.
+- La corda PA ha l'energia concentrata a 660, 742 e 825 Hz (4, 4,5, 5 volte la fondamentale). La fondamentale a 165 Hz è circa 30 dB sotto. La corda NI è simile: energia a 519 e 727 Hz, più debole a 830 Hz. Le corde Sa (110 Hz) hanno invece uno spettro armonico.
+- La prima corda è modellata un'ottava sotto il suono (`tanpura_string_par`, `interval = swara − 1200`): i suoi modi cadono su multipli di 82,5 Hz. I modi più forti sono l'8°, il 9° e il 10° (660, 742, 825 Hz). È il progetto attuale, non un errore di accordatura.
+- Modo dominante di PA: 825,1 e 826,0 Hz, uguale nei tre temperamenti. Modo dominante di NI: EQUAL 830,8 Hz, JUST 5 825,2 Hz, PYTH 835,6 Hz.
+- JUST 5: il 5° parziale di PA e il 4° di NI cadono entrambi su 7,5 Sa, quindi coincidono in teoria. Nelle corde reali (leggera inarmonicità) distano 0,2–0,8 Hz e battono lentamente. È il battimento segnalato.
+- EQUAL: distanza circa 5,7 Hz, battimento più veloce (non confermato all'ascolto).
+- PYTH: distanza circa 10 Hz, battimento più veloce (coerente con il picco di 9 Hz nell'inviluppo).
+- Il picco di inviluppo a 0,75 Hz in EQUAL è un artefatto della modulazione di ampiezza: il metodo dell'inviluppo non separava il battimento dalla modulazione. Il conteggio dei picchi a 825 Hz è più affidabile.
+- Coppie Sa–Sa tra i due tanpura: 0,5–1,4 Hz a 770–1650 Hz, presenti in tutti i temperamenti. Sono un effetto dell'evoluzione spettrale nel tempo, non della scelta del temperamento.
+- Da chiedere a ElectroNick: se il battimento lento in JUST 5 è accettabile come carattere del temperamento, oppure se NI va spostato di qualche cent per separare i due parziali.
+
+### Da verificare all'ascolto
+- Quale delle due JUST preferisci: 5-limit (terze più pure) o pitagorica (quinte pure, terze più larghe).
+- Etichette LCD "JUST 5" e "JUST PYTH" a 240 px: entrano e si leggono?
+- Corde superiori con JUST (swara 12–17, registro 1): non ancora ascoltate; la compensazione è verificata solo sul pitch misurato.
+
+### Assunzioni
+- Il Sa non cambia con il temperamento.
+- Il tabla salva il campo ma non lo usa.
+- Il pizzico FX dalla tastiera resta equabile: usa cents assoluti, non gli swara.
+
 ## EDIT riordinato, SEQ a quattro stati con MUTE, FINE del secondo tanpura condiviso (ElectroNick, 2026-11-21)
 
 Questa sezione sostituisce `tan2_fine[5]` descritto nella sezione precedente: il secondo tanpura non ha più FINE propri.

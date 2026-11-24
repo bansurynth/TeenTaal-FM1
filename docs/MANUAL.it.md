@@ -69,6 +69,7 @@ dove sei nell'elenco.
 
 | Riga | Cosa regola |
 |---|---|
+| TEMPERAMENT | l'intonazione degli swara: EQUAL (default, temperamento equabile), JUST 5 (intonazione giusta a 5 limiti) o JUST PYTH (giusta pitagorica). Il Sa non cambia; la prima e la corda aggiuntiva di entrambi i tanpura e il tono di riferimento seguono la scelta; il pizzico FX dalla tastiera resta equabile |
 | PLUCK CYCLE | la durata del ciclo di pizzico, condivisa dai due tanpura: 2,5–60 s (passi di 0,1 s fino a 10 s, poi 1 s) |
 | FIRST STRING | la prima corda del tanpura: Pa (default), Ma, Ni o qualsiasi swara |
 | EXTRA STRING | OFF di default; scegli uno swara per aggiungere una corda dopo la prima e prima delle due corde Sa e del kharaj |
