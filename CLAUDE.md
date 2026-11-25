@@ -86,7 +86,7 @@ Guarda anche il repository **mvave-fm1** (skill per Claude Code e container di b
 
 ### Due bersagli di build
 1. **Host** (Linux, gcc/clang): lo stesso codice DSP compilato per PC, con un tool a riga di comando `render` che scrive file WAV. È il banco di prova principale per il suono.
-2. **Target** (pi32v2): firmware `.fwsc`, provato prima nell'emulatore.
+2. **Target** (pi32v2): firmware `.fwsc`, provato prima nell'emulatore a meno di richiesta esplicita di prova su dispositivo
 
 Il codice DSP deve essere **identico** sui due bersagli. Niente `#ifdef` nel DSP per distinguere host e target, tranne nel platform layer.
 
