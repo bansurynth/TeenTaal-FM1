@@ -17,7 +17,9 @@
 - Trasformare l'hook `TANPURA_MAXM` in costante.
 - Pool margin ~5 % libero contro 25 % richiesto da CLAUDE.md.
 - Effetti (ECHO, REVERB, DELAY) non coperti da regress.
-- Modifiche non committate: nessun commit né push fatto.
+- Commit locali (non ancora su origin): `2e1c3db` (tanpura cap 80, cutoff 1×, effetti, UI, tooling) e `c837475` (CLAUDE.md, test su device solo su richiesta esplicita).
+- Push su `origin main` bloccato: 403, l'account git attivo (`bansurynth`) non ha permesso di scrittura su ELENICK97/TeenTaal-FM1. origin/main (`5f206c4`) è antenato dei commit locali, quindi basta un push normale, senza force. Il remote `fork` non va usato: Pages si aggiorna solo da `origin`.
+- Rigenerazione delle tabelle di intonazione: il processo è terminato senza scrivere. `pitch_coefs.h` e `pitch_upper_coefs.h` sono ancora quelli committati, da rigenerare.
 
 ## Precisione dell'intonazione: 0,5 o 0,1 cent? Misure e domande (in attesa di ElectroNick)
 
