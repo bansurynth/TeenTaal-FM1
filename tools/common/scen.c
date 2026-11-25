@@ -150,6 +150,14 @@ int scen_parse(const char *s, scen_ev_t *ev)
         if (swara_index(val, &ev->v) == 0)
             return 0;
     }
+    else if (!strcmp(name, "fx.echo"))        ev->target = ENG_FX, ev->id = FX_P_ECHO;
+    else if (!strcmp(name, "fx.echo.time"))   ev->target = ENG_FX, ev->id = FX_P_ECHO_TIME;
+    else if (!strcmp(name, "fx.echo.fb"))     ev->target = ENG_FX, ev->id = FX_P_ECHO_FB;
+    else if (!strcmp(name, "fx.reverb"))      ev->target = ENG_FX, ev->id = FX_P_REVERB;
+    else if (!strcmp(name, "fx.reverb.size")) ev->target = ENG_FX, ev->id = FX_P_REVERB_SIZE;
+    else if (!strcmp(name, "fx.delay"))       ev->target = ENG_FX, ev->id = FX_P_DELAY;
+    else if (!strcmp(name, "fx.delay.time"))  ev->target = ENG_FX, ev->id = FX_P_DELAY_TIME;
+    else if (!strcmp(name, "fx.delay.fb"))    ev->target = ENG_FX, ev->id = FX_P_DELAY_FB;
     else
         goto bad;
     ev->v = (int32_t)strtol(val, &end, 10);

@@ -17,6 +17,7 @@ void engine_init(engine_t *e)
     taal_init(&e->taal, 0);
     reftone_init(&e->reftone, 0);
     mixer_init(&e->mixer);
+    fx_init(&e->fx);
     e->muted = 0;
 }
 
@@ -44,6 +45,8 @@ void engine_set_param(engine_t *e, int target, int id, int32_t v)
         mixer_set_param(&e->mixer, id, v);
     if (target == ENG_TAAL)
         taal_set_param(&e->taal, id, v);
+    if (target == ENG_FX)
+        fx_set_param(&e->fx, id, v);
 }
 
 int32_t engine_get_param(const engine_t *e, int target, int id)
@@ -58,6 +61,8 @@ int32_t engine_get_param(const engine_t *e, int target, int id)
         return tabla_get_param(&e->tabla, id);
     if (target == ENG_TAAL)
         return taal_get_param(&e->taal, id);
+    if (target == ENG_FX)
+        return fx_get_param(&e->fx, id);
     return reftone_get_param(&e->reftone, id);   /* the shared tuning (the same in every module) and the tone */
 }
 
@@ -116,6 +121,7 @@ void engine_render_with(engine_t *e, int32_t *lr, uint32_t n, uint32_t master_q1
         tabla_render(&e->tabla, e->buf[MIX_TABLA], DSP_BLOCK);
         reftone_render(&e->reftone, e->buf[MIX_REFTONE], DSP_BLOCK);
         mixer_render(&e->mixer, src, lr + 2u * k, DSP_BLOCK, master_q12);
+        fx_process(&e->fx, lr + 2u * k, DSP_BLOCK);
     }
     for (; k < n; k++)             /* (n not a multiple of DSP_BLOCK: the rest silent; never on the FM-1) */
         lr[2u * k] = lr[2u * k + 1] = 0;

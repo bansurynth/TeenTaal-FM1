@@ -24,36 +24,41 @@ static const float LEVEL_DB[6][5] = {
                                                 RMS, and with the irregularity they clipped (tools/test/tanpura_stress) */
 };
 
-static float sa_jawari_grid(const float *sa_axis, int n_sa, const float table[][PITCH_JAWARI_N],
-                            float sa, int jawari)
+static int32_t clampi(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+/* the jawari takes five values (no interpolation across them): the nearest of 0, 25, 50, 75, 100 */
+static int32_t jawari_snap(int32_t v)
 {
-    float jw = (float)jawari * 0.04f, fs, fj;
-    int i = 0, j = (int)jw;
+    return TANPURA_JAWARI_STEP * ((clampi(v, 0, 100) + TANPURA_JAWARI_STEP / 2) / TANPURA_JAWARI_STEP);
+}
+
+static int jawari_column(const tanpura_t *m)
+{
+    return m->jawari / TANPURA_JAWARI_STEP;
+}
+
+/* a loudness column at Sa: linear in Sa */
+static float level_at_sa(const float *sa_axis, int n_sa, const float table[][PITCH_JAWARI_N], float sa, int column)
+{
+    int i = 0;
+    float fs;
     sa = fm_clampf(sa, sa_axis[0], sa_axis[n_sa - 1]);
     while (i < n_sa - 2 && sa > sa_axis[i + 1])
         i++;
-    if (j > 3)
-        j = 3;
     fs = (sa - sa_axis[i]) / (sa_axis[i + 1] - sa_axis[i]);
-    fj = jw - (float)j;
-    return (1.0f - fs) * ((1.0f - fj) * table[i][j] + fj * table[i][j + 1])
-           + fs * ((1.0f - fj) * table[i + 1][j] + fj * table[i + 1][j + 1]);
+    return (1.0f - fs) * table[i][column] + fs * table[i + 1][column];
 }
 
-static float pitch_sa_jawari_grid(const float *axis, int n, const int16_t table[][PITCH_JAWARI_N],
-                                   float sa, int jawari)
+/* a pitch column at Sa, in cents: linear in Sa (the tables hold 0.1 cent) */
+static float pitch_at_sa(const float *axis, int n, const int16_t table[][PITCH_JAWARI_N], float sa, int column)
 {
-    float jw = (float)jawari * 0.04f, fs, fj;
-    int i = 0, j = (int)jw;
+    int i = 0;
+    float fs;
     sa = fm_clampf(sa, axis[0], axis[n - 1]);
     while (i < n - 2 && sa > axis[i + 1])
         i++;
-    if (j > 3)
-        j = 3;
     fs = (sa - axis[i]) / (axis[i + 1] - axis[i]);
-    fj = jw - (float)j;
-    return 0.1f * ((1.0f - fs) * ((1.0f - fj) * (float)table[i][j] + fj * (float)table[i][j + 1])
-                   + fs * ((1.0f - fj) * (float)table[i + 1][j] + fj * (float)table[i + 1][j + 1]));
+    return 0.1f * ((1.0f - fs) * (float)table[i][column] + fs * (float)table[i + 1][column]);
 }
 
 enum { PITCH_PROFILE_FIRST, PITCH_PROFILE_STEEL, PITCH_PROFILE_KHARAJ, PITCH_PROFILE_PREVIEW };
@@ -66,6 +71,7 @@ static float pitch_compensation(const tanpura_t *m, int profile, float note, int
     float sa = (float)(m->tuning.sa_cents + (large ? 0 : reg_offset(m)));
     float ref = 1200.0f * fm_log2f((float)m->tuning.a4_dhz * (1.0f / 4400.0f));
     float position, fraction, a, b;
+    int column = jawari_column(m);
     const int16_t (*row0)[PITCH_JAWARI_N], (*row1)[PITCH_JAWARI_N];
     if (profile == PITCH_PROFILE_FIRST && swara >= PITCH_FIRST_SHIFT_START) {
         int index = swara - PITCH_FIRST_SHIFT_START;
@@ -75,8 +81,8 @@ static float pitch_compensation(const tanpura_t *m, int profile, float note, int
             row1 = large ? PITCH_FIRST_FLAT_LARGE[index] : PITCH_FIRST_FLAT[index];
         else
             row1 = large ? PITCH_FIRST_SHARP_LARGE[index] : PITCH_FIRST_SHARP[index];
-        a = pitch_sa_jawari_grid(axis, n, row0, sa, m->jawari);
-        b = pitch_sa_jawari_grid(axis, n, row1, sa, m->jawari);
+        a = pitch_at_sa(axis, n, row0, sa, column);
+        b = pitch_at_sa(axis, n, row1, sa, column);
         return a + (shift < 0.0f ? -shift : shift) * (1.0f / 200.0f) * (b - a);
     }
     if (profile == PITCH_PROFILE_FIRST) {
@@ -107,16 +113,16 @@ static float pitch_compensation(const tanpura_t *m, int profile, float note, int
         row0 = large ? PITCH_STEEL_LARGE[i] : PITCH_STEEL[i];
         row1 = large ? PITCH_STEEL_LARGE[i + 1] : PITCH_STEEL[i + 1];
     }
-    a = pitch_sa_jawari_grid(axis, n, row0, sa, m->jawari);
-    b = pitch_sa_jawari_grid(axis, n, row1, sa, m->jawari);
+    a = pitch_at_sa(axis, n, row0, sa, column);
+    b = pitch_at_sa(axis, n, row1, sa, column);
     return a + fraction * (b - a);
 }
 
-/* the compensation gain for the current Sa and jawari: bilinear in the table (main loop, not per sample) */
+/* the compensation gain for the current Sa and jawari: linear in Sa, in the table column (main loop, not per sample) */
 static float level_comp(const tanpura_t *m)
 {
     float sa = (float)(m->tuning.sa_cents + reg_offset(m));
-    float db = sa_jawari_grid(LEVEL_SA, 6, LEVEL_DB, sa, m->jawari);
+    float db = level_at_sa(LEVEL_SA, 6, LEVEL_DB, sa, jawari_column(m));
     return fm_exp2f(db * 0.166096405f);          /* 10^(db/20) */
 }
 #define PLUCK_AMP (-0.4f)          /* N, toward the bridge (the paper's) */
@@ -129,8 +135,6 @@ static float cycle_at(const tanpura_t *m, int j)
         return j == 0 ? 0.0f : j == 1 ? 0.20f : j == 2 ? 0.35f : j == 3 ? 0.50f : 0.65f;
     return j == 0 ? 0.0f : j == 4 ? 0.20f : j == 1 ? 0.35f : j == 2 ? 0.50f : 0.65f;
 }
-
-static int32_t clampi(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : v > hi ? hi : v; }
 
 static void lowpass_coefficients(float c[2][5], int32_t cutoff)
 {
@@ -163,7 +167,7 @@ void tanpura_default_config(tanpura_config_t *cfg)
     tuning_default(&cfg->tuning);
     cfg->fmax[0] = cfg->fmax[4] = 6000.0f, cfg->fmax[1] = cfg->fmax[2] = 8000.0f, cfg->fmax[3] = 3000.0f;   /* step 2b */
     for (j = 0; j < TANPURA_NSTR; j++)
-        cfg->maxm[j] = TSTRING_MAXM;
+        cfg->maxm[j] = TANPURA_MAXM;
     cfg->s0 = 0.4f;
     cfg->rc = 0.8f;
     cfg->seed = 0x2545F491u;
@@ -350,7 +354,7 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
         break;
     case TANPURA_P_FIRST:  m->first = clampi(v, 0, TANPURA_FIRST_MAX); stage(m, 0); break;
     case TANPURA_P_JAWARI:
-        m->jawari = clampi(v, 0, 100);
+        m->jawari = jawari_snap(v);
         for (j = 0; j < TANPURA_NSTR; j++)
             stage(m, j);
         break;

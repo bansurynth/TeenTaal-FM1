@@ -9,8 +9,9 @@ Regenerate the firmware tables:
 
 The probe renders the same string, body and output filters used by the firmware.
 The pitch is the power-weighted centroid within 80 cents of the requested
-fundamental, from 0.5 to 2.5 seconds after a pluck. This avoids choosing an
-arbitrary peak when the jawari splits the fundamental into nearby components.
+fundamental, averaged over the whole 6 seconds after a pluck. This avoids choosing
+an arbitrary peak when the jawari splits the fundamental into nearby components,
+and it does not depend on a window that falls in the decaying tail.
 """
 import argparse
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
@@ -42,12 +43,17 @@ UPPER_TABLES = (
     ("PITCH_FIRST_FLAT", "first_flat", UPPER_SWARAS),
     ("PITCH_FIRST_SHARP", "first_sharp", UPPER_SWARAS),
 )
+MEASURE_SECONDS = 6.0
+TARGET_CENTS = 0.1
+FAIL_CENTS = 0.5
+MAX_PROBES = 6
+SCAN_STEPS = 10
 
 
 def render_pitch(sa, reg, jawari, kind, selection, offset=0, fine=0, a4=4400, correction="auto"):
     args = [
         str(PROBE), str(sa), str(reg), str(jawari), kind, str(selection), str(fine), str(a4),
-        str(correction), "2.6", str(offset),
+        str(correction), str(MEASURE_SECONDS), str(offset),
     ]
     result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
     if result.returncode:
@@ -58,7 +64,6 @@ def render_pitch(sa, reg, jawari, kind, selection, offset=0, fine=0, a4=4400, co
     target, applied, fs = (float(value) for value in data[:3])
     samples = data[3::2].astype(np.float64)
     fs *= 0.5
-    samples = samples[int(0.5 * fs):int(2.5 * fs)]
     if not (math.isfinite(target) and target > 0 and math.isfinite(applied) and len(samples) > 0):
         raise RuntimeError(f"{' '.join(args)} returned invalid metadata")
     n = len(samples)
@@ -76,32 +81,43 @@ def render_pitch(sa, reg, jawari, kind, selection, offset=0, fine=0, a4=4400, co
 
 def calibrate(job):
     table, row, sa_index, jawari_index, sa, reg, jawari, kind, selection, offset = job
-    _, error = render_pitch(sa, reg, jawari, kind, selection, offset, correction=0)
-    measured = {0.0: error}
-    correction = round(error, 1)
-    for _ in range(5):
-        if measured and min(abs(value) for value in measured.values()) <= 1.0:
+    measured = {}
+
+    def error_at(correction):
+        if correction not in measured:
+            _, measured[correction] = render_pitch(sa, reg, jawari, kind, selection, offset, correction=correction)
+        return measured[correction]
+
+    def best():
+        return min(measured, key=lambda value: abs(measured[value]))
+
+    correction = 0.0
+    for _ in range(MAX_PROBES):
+        error = error_at(correction)
+        if abs(error) <= TARGET_CENTS:
             break
-        if correction in measured:
-            best = min(measured, key=lambda value: abs(measured[value]))
-            correction = round(best + (0.5 if measured[best] > 0 else -0.5), 1)
-        if correction in measured:
-            break
-        _, error = render_pitch(sa, reg, jawari, kind, selection, offset, correction=correction)
-        measured[correction] = error
-        positive = [(value, residual) for value, residual in measured.items() if residual > 0]
-        negative = [(value, residual) for value, residual in measured.items() if residual < 0]
-        if positive and negative:
-            a, fa = min(positive, key=lambda item: abs(item[1]))
-            b, fb = min(negative, key=lambda item: abs(item[1]))
-            correction = round(a + (b - a) * fa / (fa - fb), 1)
+        if len(measured) == 1:
+            proposal = correction + error
         else:
-            correction = round(correction + error, 1)
-    best = min(measured, key=lambda value: abs(measured[value]))
-    residual = measured[best]
-    if abs(residual) > 3.0:
-        raise RuntimeError(f"pitch calibration did not converge: {job}, best residual {residual:+.2f} cents")
-    return table, row, sa_index, jawari_index, best, residual
+            (c1, e1), (c2, e2) = sorted(measured.items(), key=lambda item: abs(item[1]))[:2]
+            slope = (e2 - e1) / (c2 - c1)
+            if not -1.5 < slope < -0.5:
+                slope = -1.0
+            proposal = c2 - e2 / slope
+        correction = round(proposal, 1)
+        if correction in measured:
+            break
+    # The measured centroid can jump by several tenths of a cent over 0.1 cent of correction
+    # (a mode enters or leaves the truncated series), so the secant may not reach a zero.
+    # Scan the 0.1-cent grid around the best estimate and keep the smallest error.
+    centre = best()
+    for step in range(1, SCAN_STEPS + 1):
+        if abs(measured[best()]) <= TARGET_CENTS:
+            break
+        error_at(round(centre + 0.1 * step, 1))
+        error_at(round(centre - 0.1 * step, 1))
+    chosen = best()
+    return table, row, sa_index, jawari_index, chosen, measured[chosen]
 
 
 def calibration_jobs(tables=TABLES):
@@ -133,7 +149,7 @@ def generate(output, jobs, cache_path, upper=False):
             tables[name + suffix] = np.empty((len(selections), len(sa_values), len(JAWARI)), dtype=np.int16)
     work = list(calibration_jobs(specs))
     signature = hashlib.sha256(PROBE.read_bytes()).hexdigest()
-    cache = {"version": 1, "probe": signature, "numpy": np.__version__, "results": {}}
+    cache = {"version": 2, "probe": signature, "numpy": np.__version__, "results": {}}
     if cache_path:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         if cache_path.exists():
@@ -144,9 +160,10 @@ def generate(output, jobs, cache_path, upper=False):
     done = 0
     worst = 0.0
     remaining = []
+    failed = []
     for job in work:
         key = "|".join(str(value) for value in job)
-        if key in cache["results"]:
+        if key in cache["results"] and abs(cache["results"][key][1]) <= FAIL_CENTS:
             value, residual = cache["results"][key]
             table, row, sa_index, jawari_index = job[:4]
             tables[table][row, sa_index, jawari_index] = int(round(10.0 * value))
@@ -167,6 +184,8 @@ def generate(output, jobs, cache_path, upper=False):
                 job = pending.pop(future)
                 table, row, sa_index, jawari_index, value, residual = future.result()
                 worst = max(worst, abs(residual))
+                if abs(residual) > FAIL_CENTS:
+                    failed.append((job, residual))
                 quantized = int(round(10.0 * value))
                 if not -32768 <= quantized <= 32767:
                     raise RuntimeError(f"pitch correction outside int16 range: {table} {value}")
@@ -182,10 +201,14 @@ def generate(output, jobs, cache_path, upper=False):
                     pending[pool.submit(calibrate, next_job)] = next_job
     if cache_path:
         save_cache(cache_path, cache)
+    if failed:
+        for job, residual in failed[:20]:
+            print(f"  not converged: {job} residual {residual:+.2f} cents", flush=True)
+        raise RuntimeError(f"{len(failed)} configurations exceed {FAIL_CENTS} cents; tables not written")
 
     lines = [
         "/* Generated by tools/reference/calibrate_pitch.py --generate.",
-        " * Audible fundamental, 0.5-2.5 s after a pluck. Values are 0.1 cent.",
+        " * Audible fundamental, power-weighted average over 0-6 s after a pluck. Values are 0.1 cent.",
         " * Standard rows use the effective Sa; LARGE rows use the player's Sa with the lower register.",
         " * Columns are jawari 0, 25, 50, 75, 100.",
     ]
@@ -256,7 +279,7 @@ def measure_examples():
     for name, sa, reg, jawari, kind, selection, fine, a4 in cases:
         applied, error = render_pitch(sa, reg, jawari, kind, selection, fine=fine, a4=a4)
         print(f"{name:18s}: {error:+7.2f} cents (correction {applied:+6.2f})")
-        failed |= abs(error) > 5.0
+        failed |= abs(error) > FAIL_CENTS
     return int(failed)
 
 

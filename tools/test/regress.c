@@ -132,7 +132,7 @@ static void tanpura_pct(const tanpura_t *t, double *lo, double *hi)
     *lo = instr * 1.0 / FM1_CYCLES_PER_SAMPLE * 100;
     *hi = instr * 1.3 / FM1_CYCLES_PER_SAMPLE * 100;
 }
-#define BUDGET_TANPURA_PCT 85.0                 /* CLAUDE.md §6: of the second core, all of it the tanpura's (step 2b) */
+#define BUDGET_TANPURA_PCT 85.0                 /* of the second core, all of it the tanpura's (CLAUDE.md §6); 105 % was tried and the device could not keep up */
 #define NSC ((int)(sizeof SC / sizeof SC[0]))
 
 static int fails;

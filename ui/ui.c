@@ -31,18 +31,23 @@ static const char *const UI_SWARA[TANPURA_FIRST_MAX + 1] = {"SA", "RE KOMAL", "R
                                            "GA KOMAL'", "GA'", "MA'"};
 enum { ROW_TEMPERAMENT, ROW_CYCLE, ROW_FIRST, ROW_EXTRA, ROW_TAN2_FIRST, ROW_TAN2_EXTRA, ROW_FINE0, ROW_FINE1, ROW_FINE2,
        ROW_FINE3, ROW_FINE4, ROW_TAN2_PHASE, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, ROW_BT, ROW_BT_DEV, ROW_BT_LINK,
-       ROW_BT_OUT, ROW_FILTER, NROWS };
+       ROW_BT_OUT, ROW_FILTER,
+       ROW_ECHO, ROW_ECHO_TIME, ROW_ECHO_FB, ROW_REVERB, ROW_REVERB_SIZE, ROW_DELAY, ROW_DELAY_TIME, ROW_DELAY_FB,
+       NROWS };                                /* ROW_ECHO..ROW_DELAY_FB map 1:1 onto FX_P_ECHO..FX_P_DELAY_FB (ui_fx_param) */
 static const char *const UI_TEMPERAMENT[TUNING_TEMPERAMENT_N] = {"EQUAL", "JUST 5", "JUST PYTH"};
 static const char *const ROW_NAME[NROWS] = {"TEMPERAMENT", "PLUCK CYCLE", "FIRST STRING", "EXTRA STRING",
                                             "2ND: FIRST STRING", "2ND: EXTRA STRING", "FINE: 1ST STRING", "FINE: EXTRA",
                                             "FINE: SA (2ND)", "FINE: SA (3RD)", "FINE: KHARAJ",
                                             "2ND: PHASE", "TANPURA IRREG.", "TABLA IRREG.", "TONE SWARA",
                                             "A REFERENCE", "BLUETOOTH", "BT SPEAKER", "BT LINK", "BT OUTPUT",
-                                            "TANPURA FILTER"};
+                                            "TANPURA FILTER", "ECHO", "ECHO TIME", "ECHO FEEDBACK", "REVERB",
+                                            "REVERB SIZE", "DELAY", "DELAY TIME", "DELAY FEEDBACK"};
 /* the FINE rows follow the pluck order (first, extra, Sa, Sa, kharaj): the string each row tunes; they tune both tanpuras */
 static const int UI_FINE_STRING[TANPURA_NFINE] = {0, 4, 1, 2, 3};
 static int ui_is_fine(int row) { return row >= ROW_FINE0 && row <= ROW_FINE4; }
 static int ui_fine_param(int row) { return TANPURA_P_FINE + UI_FINE_STRING[row - ROW_FINE0]; }
+static int ui_is_fx(int row) { return row >= ROW_ECHO && row < NROWS; }
+static int ui_fx_param(int row) { return FX_P_ECHO + row - ROW_ECHO; }
 /* the pluck cycle, in tenths of a second: steps of 0.1 s up to 10 s, then of 1 s, up to 60 s */
 static int32_t ui_cycle_step(int32_t v, int32_t d)
 {
@@ -81,6 +86,7 @@ typedef struct {
     int8_t temperament;                     /* TUNING_TEMPERAMENT_*: EQUAL, JUST 5-limit, JUST Pythagorean */
     uint32_t tan_filter_hz;
     uint16_t cycle;                         /* tenths of a second, for both tanpuras: 16 bits, up to 60 s */
+    uint8_t fx[FX_NPARAM];                  /* the effects' 0..100 values, in FX_P_ECHO order (fx.h) */
     uint32_t build;                         /* FM1B_BUILD: a record from another build is not used, so each flash starts from the defaults */
 } ui_settings_t;
 
@@ -96,7 +102,7 @@ static void ui_settings_now(ui_settings_t *p)
     int j;
     for (j = 0; j < (int)sizeof *p; j++)
         ((uint8_t *)p)[j] = 0;
-    p->magic = UI_SET_MAGIC, p->version = 5, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
+    p->magic = UI_SET_MAGIC, p->version = 6, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
     p->a4_dhz = ui_get(ENG_ALL, DSP_P_A4_DHZ);
     p->sa_cents = ui_get(ENG_ALL, DSP_P_SA_CENTS);
     p->first = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_FIRST);
@@ -122,6 +128,8 @@ static void ui_settings_now(ui_settings_t *p)
     p->extra2 = (int8_t)ui_get(ENG_TANPURA2, TANPURA_P_EXTRA);
     p->temperament = (int8_t)ui_get(ENG_ALL, DSP_P_TEMPERAMENT);
     p->tan_filter_hz = (uint16_t)ui_get(ENG_TANPURA, TANPURA_P_FILTER);
+    for (j = 0; j < FX_NPARAM; j++)
+        p->fx[j] = (uint8_t)ui_get(ENG_FX, FX_P_ECHO + j);
 }
 
 /* Sa on the device: the engine's whole range (tuning.h: F#2 .. G4, default A3): the tanpura plays at the note shown */
@@ -135,6 +143,11 @@ static void ui_settings_defaults(ui_settings_t *p)
         ((uint8_t *)p)[j] = 0;
     p->magic = UI_SET_MAGIC, p->version = 5, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
     p->a4_dhz = TUNING_A4_DHZ_DEFAULT, p->sa_cents = UI_SA_DEFAULT;
+    {   /* (fx_init's defaults: the sends off, the times and feedbacks as fx.c sets them) */
+        static const uint8_t fx_def[FX_NPARAM] = {0, 40, 40, 0, 50, 0, 20, 30};
+        for (j = 0; j < FX_NPARAM; j++)
+            p->fx[j] = fx_def[j];
+    }
     p->first = SW_PA, p->reg = 0;
     p->jawari = 50, p->cycle = 50, p->tan_human = 50, p->tabla_human = 30;
     p->tan2 = (int16_t)(0x8000u | ((uint32_t)ENGINE_TAN2_FIRST << 7) | ENGINE_TAN2_PHASE);
@@ -160,7 +173,7 @@ static int32_t ui_sa_clamp(int32_t c) { return c < UI_SA_MIN ? UI_SA_MIN : c > U
 static int ui_settings_valid(const ui_settings_t *p)
 {
     int j;
-    if (p->magic != UI_SET_MAGIC || p->version != 5 || p->size != sizeof *p || p->build != FM1B_BUILD)
+    if (p->magic != UI_SET_MAGIC || p->version != 6 || p->size != sizeof *p || p->build != FM1B_BUILD)
         return 0;
     if (p->a4_dhz < TUNING_A4_DHZ_MIN || p->a4_dhz > TUNING_A4_DHZ_MAX || p->sa_cents < TUNING_SA_MIN
         || p->sa_cents > TUNING_SA_MAX || p->first < 0 || p->first > TANPURA_FIRST_MAX || p->reg < 0 || p->reg > 1
@@ -180,6 +193,9 @@ static int ui_settings_valid(const ui_settings_t *p)
         return 0;
     if (p->tan_filter_hz < TANPURA_FILTER_MIN_HZ || p->tan_filter_hz > TANPURA_FILTER_MAX_HZ)
         return 0;
+    for (j = 0; j < FX_NPARAM; j++)
+        if (p->fx[j] > 100)
+            return 0;
     return 1;
 }
 
@@ -211,6 +227,8 @@ static void ui_settings_apply(const ui_settings_t *p)
     engine_set_param(ui_eng, ENG_MIXER, MIX_P_LEVEL + MIX_TANPURA, p->vol_tanpura);
     engine_set_param(ui_eng, ENG_MIXER, MIX_P_LEVEL + MIX_TABLA, p->vol_tabla);
     engine_set_param(ui_eng, ENG_REFTONE, REFTONE_P_VOLUME, p->vol_tone);
+    for (j = 0; j < FX_NPARAM; j++)
+        engine_set_param(ui_eng, ENG_FX, FX_P_ECHO + j, p->fx[j]);
 }
 
 static int ui_same(const ui_settings_t *a, const ui_settings_t *b)
@@ -544,6 +562,14 @@ static void ui_row_value(char *t, int row)
         if (ui_is_fine(row)) {
             ui_num(u, ui_get(ENG_TANPURA, ui_fine_param(row)), 1);
             ui_cat(t, u); ui_cat(t, " CENTS");
+        } else if (ui_is_fx(row)) {
+            int32_t v = ui_get(ENG_FX, ui_fx_param(row));
+            /* (the time rows show ms; same mapping as fx.c: echo 120..400 ms, delay 5..150 ms) */
+            if (row == ROW_ECHO_TIME) v = 120 + (28 * v + 5) / 10;
+            else if (row == ROW_DELAY_TIME) v = 5 + (145 * v + 50) / 100;
+            ui_num(u, v, 0);
+            ui_cat(t, u);
+            ui_cat(t, row == ROW_ECHO_TIME || row == ROW_DELAY_TIME ? " MS" : " %");
         }
         break;
     }
@@ -626,6 +652,10 @@ static void ui_edit_step(int row, int32_t d)
         ui_set(ENG_TANPURA, TANPURA_P_FILTER,
                clamp(ui_get(ENG_TANPURA, TANPURA_P_FILTER) + 100 * d,
                      TANPURA_FILTER_MIN_HZ, TANPURA_FILTER_MAX_HZ));
+        break;
+    case ROW_ECHO: case ROW_ECHO_TIME: case ROW_ECHO_FB: case ROW_REVERB: case ROW_REVERB_SIZE:
+    case ROW_DELAY: case ROW_DELAY_TIME: case ROW_DELAY_FB:
+        ui_set(ENG_FX, ui_fx_param(row), clamp(ui_get(ENG_FX, ui_fx_param(row)) + 5 * d, 0, 100));
         break;
     default:
         if (ui_is_fine(row)) {
@@ -886,7 +916,7 @@ static void ui_frame(void)
             ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_clamp(ui_get(ENG_ALL, DSP_P_SA_CENTS) + d));
     }
     if ((d = plat_enc(EN_ALGO)) != 0)
-        ui_set(ENG_TANPURA, TANPURA_P_JAWARI, ui_get(ENG_TANPURA, TANPURA_P_JAWARI) + 2 * d);
+        ui_set(ENG_TANPURA, TANPURA_P_JAWARI, ui_get(ENG_TANPURA, TANPURA_P_JAWARI) + TANPURA_JAWARI_STEP * d);
     if ((d = plat_enc(EN_K2)) != 0)
         ui_set(ENG_MIXER, MIX_P_LEVEL + MIX_TANPURA, clamp(ui_get(ENG_MIXER, MIX_P_LEVEL + MIX_TANPURA) + 5 * d, 0, 100));
     if ((d = plat_enc(EN_K4)) != 0)

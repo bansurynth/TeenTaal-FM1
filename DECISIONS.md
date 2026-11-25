@@ -4,6 +4,25 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
+### 2026-11-25 — Cutoff del tanpura a 1× (6000/8000/3000 Hz) con cap di 80 modi
+- **Decisione**: `fmax` torna ai valori del commit (6000/8000/3000 Hz, cutoff 1×). Il cap dei modi resta a 80 (`TANPURA_MAXM`). ElectroNick ha ascoltato il firmware su device con questa configurazione e ha confermato: "regge tutto".
+- **Misure**: costo peggiore del modello host 79,68 %, contro 84,72 % con 1,5× e cap 80. Con 2× e cap 80 il costo sale a 86,73 %, sopra il 85 %, quindi 2× è scartato. Sul device ElectroNick ha riportato CPU 99 con E3 (in precedenza E3 dava 105 %). Il tipo di lettura (CPU0 o TANPURA MEAN) non è stato specificato: da confermare.
+- **Stato noto**: 16 hash golden diversi da `golden.txt` (il cap è cambiato, non ancora rigenerati). 23 controlli di intonazione fuori di 5–11 cent: le tabelle `pitch_coefs.h` e `pitch_upper_coefs.h` sono calibrate su un cutoff diverso e non sono ancora rigenerate.
+- **Aperto**: `TANPURA_MAXM` è ancora un hook `#ifndef` sperimentale in `tanpura.h`. Va trasformato in costante fissa o tabella per registro. Il costo per Sa non è ancora spiegato dal modello (vedi la decisione del 2026-11-25 sotto).
+- **Alternative scartate**: 1,5× con cap 80 (84,72 %, margine troppo ridotto); 2× con cap 80 (86,73 %, sopra il budget).
+
+### 2026-11-25 — Budget del tanpura riportato all'85 % (il 105 % non regge sul device)
+- **Decisione**: `BUDGET_TANPURA_PCT` torna a 85 % (regress.c) e CLAUDE.md §6 torna a 85 %. Il limite a 105 % non è sostenibile: il dispositivo non regge il carico.
+- **Stato**: con il limite a 85 % il tanpura sfora in quasi tutti gli scenari (stima 75–101 % del secondo core; peggiore 100,83 %). Il tanpura va ridotto di circa il 16 % nel caso peggiore, con modifiche al DSP da approvare allo step 2b.
+- **Alternative scartate**: tenere 105 % (il device non regge); rimuovere il controllo di costo dal test (non accettabile).
+
+### 2026-11-24 — Jawari a valori discreti 0, 25, 50, 75, 100; valore per nota da ElectroNick
+- **Decisione**: il jawari usa le cinque colonne delle tabelle (0, 25, 50, 75, 100). Il valore per ogni nota lo fornisce ElectroNick. Fino ad allora il controllo resta in UI a cinque scatti. Nessuna modifica al codice in questo passo.
+- **Motivazione**: le colonne esistono già, quindi niente tabelle nuove. Un jawari fisso per nota toglie l'interpolazione sull'asse jawari, che è una possibile causa dell'errore fuori griglia (4,88 cent al massimo su 5.948 prove). La causa non è ancora verificata.
+- **Scartato per ora**: scegliere io il valore per nota (decide ElectroNick); togliere il controllo dalla UI (resta finché ElectroNick non decide).
+- **Nota**: la richiesta dice "4 valori" ma elenca cinque valori. Uso i cinque elencati.
+- **Target**: ±0,5 cent obbligatorio, ±0,1 cent se possibile.
+
 ### 2026-11-21 — TEMPERAMENT: EQUAL / JUST 5 / JUST PYTH, prima riga dell'EDIT
 - **Decisione**: nuova prima riga EDIT con tre opzioni. EQUAL resta il default e produce lo stesso suono di prima. Il Sa non cambia mai. Seguono la scelta la prima corda e la corda aggiuntiva di entrambi i tanpura, e il tono di riferimento (ARP e tasto da solo). Il pizzico FX dalla tastiera resta equabile, perché usa cents assoluti. Il tabla salva il campo senza usarlo.
 - **Tabelle** (cents sopra il Sa, dal Re al Ni): 5-limit 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 9/5, 15/8. Pitagorica 256/243, 9/8, 32/27, 81/64, 4/3, 729/512, 3/2, 128/81, 27/16, 16/9, 243/128. La deviazione dall'equabile arriva a circa ±18 cent.

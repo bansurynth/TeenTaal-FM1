@@ -14,7 +14,8 @@
  *   TANPURA_P_ON        0 / 1      1 starts the cycle; 0 stops plucking and fades out in 0.3 s
  *   TANPURA_P_MUTE      0 / 1      1: the output fades out in 20 ms, the strings keep plucking (the cycle stays in phase)
  *   TANPURA_P_FIRST     0..17      the first string's swara (SW_PA default; 12..17: the upper Sa .. Ma shuddha)
- *   TANPURA_P_JAWARI    0..100     the thread position: 0 = 4 mm (short jvari) .. 100 = 8 mm (long); 50 = 6 mm
+ * TANPURA_P_JAWARI  0, 25, 50, 75, 100  the thread position: 0 = 4 mm (short jvari) .. 100 = 8 mm (long); 50 = 6 mm.
+ *                              Any other value is taken as the nearest of the five (the tables have one column each)
  *   TANPURA_P_CYCLE     25..600    the cycle in tenths of a second (default 50: 5 s; 600: 60 s)
  *   TANPURA_P_PHASE     0..100     the plucks' offset in % of the cycle (default 0; moves a running cycle too)
  *   TANPURA_P_EXTRA     -1..17     optional extra string: -1 off, otherwise SW_SA..SW_NI and upper Sa..Ma (default off)
@@ -41,6 +42,10 @@
 #define TANPURA_FIRST_MAX 17                     /* the first string: SW_SA..SW_NI, then the upper Sa .. Ma shuddha */
 #define TANPURA_OS 2                             /* the strings run at DSP_FS / TANPURA_OS */
 #define TANPURA_FS (DSP_FS / (float)TANPURA_OS)
+#define TANPURA_JAWARI_STEP 25                   /* the jawari takes 0, 25, 50, 75 or 100: one table column each */
+#ifndef TANPURA_MAXM                             /* experiment override; the default cap is set in tanpura_default_config */
+#define TANPURA_MAXM 80
+#endif
 #define TANPURA_FILTER_MIN_HZ 2000
 #define TANPURA_FILTER_MAX_HZ 8500
 
@@ -63,7 +68,7 @@ enum {
 
 typedef struct {
     tuning_t tuning;
-    float fmax[TANPURA_NSTR];                    /* base cutoff, scaled from 1x at C4 to 2x at G4 */
+    float fmax[TANPURA_NSTR];                    /* base cutoff, scaled from 1x at C4 to 1.5x at G4 */
     int maxm[TANPURA_NSTR];                      /* and at most this many modes per string */
     float s0, rc;                                /* damping (step 2a final: 0.4 s^-1, 0.8 kg/s) */
     uint32_t seed;                               /* the irregularity's random sequence */

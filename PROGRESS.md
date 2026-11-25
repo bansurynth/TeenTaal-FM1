@@ -1,5 +1,86 @@
 # PROGRESS
 
+## Stato: tanpura a cutoff 1×, cap 80 (2026-11-25)
+
+### Fatto
+- `fmax` ripristinato al valore del commit (6000/8000/3000 Hz). Cap dei modi a 80.
+- `sh tools/fw.sh` ok: 614 938 B, RAM `.data+.bss` 67 936 di 98 304 B, pool 326 520 di 344 064 B.
+- Flash app-only (`fm1_install.py --no-resources`): device FM-1_7700 riavviato sul nuovo firmware.
+- ElectroNick ha ascoltato sul device: "regge tutto".
+
+### Misure
+- Regress host: costo peggiore 79,68 %, budget 85 %. 39 fallimenti: 16 hash golden (cap cambiato) e 23 controlli di intonazione fuori di 5–11 cent (tabelle non rigenerate per questo cutoff).
+
+### Aperto
+- Letture device: CPU 99 con E3 (tipo di lettura da confermare: CPU0 o TANPURA MEAN/MAX). Servono le letture a C3, D3, F3, A3 con tan2 spento.
+- Rigenerare le tabelle di pitch (std e upper) per il cutoff attuale, poi rigenerare i golden.
+- Trasformare l'hook `TANPURA_MAXM` in costante.
+- Pool margin ~5 % libero contro 25 % richiesto da CLAUDE.md.
+- Effetti (ECHO, REVERB, DELAY) non coperti da regress.
+- Modifiche non committate: nessun commit né push fatto.
+
+## Precisione dell'intonazione: 0,5 o 0,1 cent? Misure e domande (in attesa di ElectroNick)
+
+### Richiesta
+Note di riferimento (tono e semitono da Sa grave ad acuto su ogni scala) e tanpura entro ±0,5 cent, se possibile
+entro ±0,1 cent. Valutare anche un jawari fisso per nota.
+
+### Misure (host, nessuna modifica a firmware, tabelle o test)
+- Note di riferimento: errore −0,0002 cent nella regressione host (197 controlli, 0 errori). Sul dispositivo il limite è il clock audio:
+  1 ppm ≈ 0,0017 cent, quindi 0,1 cent corrisponde a circa 58 ppm. Non misurato.
+- Tabelle del tanpura: 1,50 cent sulla griglia; 4,88 cent al massimo su 5.948 prove fuori griglia (tutti i Sa,
+  registri, swara, jawari); 0,56 cent al massimo negli esempi di `calibrate_pitch.py`; −4,31 cent nel caso
+  upper-string della regressione. ±0,5 cent non è ancora garantito fuori griglia.
+- Riferimento DAFx-16 (`tools/reference/tanpura_ref`) a 44,1 kHz: offset +12 a +24 cent sull'asse Sa (C3, xc 6 mm),
+  con salti di 4–11 cent tra valori vicini. A 88,2 kHz l'offset è piatto (+12,7/+12,8 cent); a 176,4 kHz scende
+  a +11,6 cent, quindi non è ancora convergente. Il riferimento non è un oracolo a 0,1 cent.
+- Firmware, offset grezzo senza correzione di tabella (jawari 50, Sa −560…−240): liscio, da +31,2 a +36,2 cent.
+  Tra passi di 10 cent il centroide oscilla di 0,2–0,5 cent senza andamento fisico: lo scatter dello stimatore è
+  maggiore di 0,1 cent.
+- Asse jawari: colonne a 1 mm di xc (4–8 mm). L'errore di interpolazione lineare è di circa 0,3 cent a 7–8 mm.
+- Quantizzazione: le tabelle sono in decimi di cent, quindi ±0,05 cent di errore.
+
+### Valutazione
+- Note di riferimento: ±0,1 cent è raggiungibile sull'host; sul dispositivo dipende dal clock e dalla taratura di A4.
+- Tanpura, ±0,5 cent: richiede di ridurre i 4,88 cent fuori griglia.
+- Tanpura, ±0,1 cent: richiede tabelle in centesimi di cent, colonne jawari da 0,25 mm (17 colonne, circa 3,4 volte
+  la tabella attuale, ancora nel budget di flash) e uno stimatore con scatter sotto 0,1 cent. Non verificato.
+- Ascolto (ipotesi da verificare): a 130 Hz un battimento di 0,1 cent dura circa 132 s, sotto la soglia percettiva
+  per toni sostenuti. Con 0,5 cent il periodo è circa 26 s.
+
+### Domande per ElectroNick
+1. Target: ±0,5 cent (richiede di ridurre i 4,88 fuori griglia) oppure ±0,1 cent (richiede formato tabelle, misura
+   più stabile e un flash di verifica)?
+2. Jawari fisso per nota (una colonna per nota, senza interpolazione sul jawari): sì o no?
+3. Il riferimento DAFx-16 resta solo come controllo qualitativo, oppure lo teniamo come misura assoluta?
+
+### Verifica fuori griglia con il probe ricompilato (2026-11-24)
+`verify_pitch.py --all-notes` su 5.948 casi (probe ricompilato dal codice attuale, nessuna modifica):
+
+| Gruppo | Casi | Massimo | Sopra 5 cent |
+|---|---|---|---|
+| first (corda 1) | 5.036 | 4,88 cent | 0 |
+| sa (Sa e kharaj steel) | 356 | 3,06 cent | 0 |
+| kharaj | 356 | 1,78 cent | 0 |
+| preview | 200 | 1,12 cent | 0 |
+
+- Il limite di 5 cent dello script passa, ma il target di ±0,5 cent non è raggiunto: la corda 1 arriva a 4,88 cent.
+- Lo script stampa solo i casi sopra 5 cent, quindi non so ancora quale caso dà il 4,88 né se è dovuto al jawari
+  interpolato o al Sa fra due griglie. Da fare: trovare il caso peggiore per valore di jawari.
+- Ipotesi (non verificata): calibrare direttamente ogni nota scelta, con il suo jawari fisso, invece di interpolare.
+  Questo toglie l'errore di interpolazione. La calibrazione attuale si ferma a 1,0 cent e fa al massimo 5 iterazioni:
+  per 0,5 o 0,1 cent va stretta.
+- Registrazione: "197 controlli, 0 errori" è confermato (`build-host/regress`: 197 check `ok`, 0 falliti).
+  Il costo peggiore stimato è 79,68 % di un core.
+
+### Decisioni di ElectroNick (2026-11-24)
+- Jawari a valori discreti 0, 25, 50, 75, 100. Il messaggio dice "4 valori" ma ne elenca cinque: uso i cinque
+  elencati, che sono le colonne già presenti nelle tabelle. Non servono tabelle nuove.
+- Il valore di jawari per ogni nota lo fornisce ElectroNick.
+- Nel frattempo il controllo jawari resta in UI, a cinque scatti. Nessuna modifica al codice in questo passo.
+- Target: ±0,5 cent obbligatorio; ±0,1 cent se possibile.
+- Stato: STOP, in attesa dei valori per nota.
+
 ## TEMPERAMENT: EQUAL, JUST 5, JUST PYTH (ElectroNick, 2026-11-21) — **flash completato, identità non verificabile via `--info`**
 
 ### Richiesta
