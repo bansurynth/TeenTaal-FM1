@@ -27,7 +27,8 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 PROBE = ROOT / "build-host" / "pitch_probe"
-STANDARD_SA = (-1900, -1800, -1600, -1500, -1200, -1000, -800, -600, -500, -300, 0, 200, 350, 500, 700)
+STANDARD_SA = (-1900, -1800, -1700, -1600, -1500, -1400, -1300, -1200, -1100, -1000, -900, -800, -700,
+               -600, -500, -400, -300, -200, -100, 0, 100, 200, 300, 400, 500, 600, 700)
 LARGE_SA = (0, 100, 200, 300, 400, 500, 600, 700)
 JAWARI = (75, 100)
 SHIFTS = (-200, 0, 200)
@@ -45,9 +46,19 @@ UPPER_TABLES = (
 )
 MEASURE_SECONDS = 6.0
 TARGET_CENTS = 0.1
-FAIL_CENTS = 0.5
+FAIL_CENTS = 0.31
+PREVIEW_FAIL_CENTS = 0.5  # FX plucks: the 6 s centroid mixes transients, see DECISIONS.md
 MAX_PROBES = 6
 SCAN_STEPS = 10
+
+
+def fail_limit(kind):
+    return PREVIEW_FAIL_CENTS if kind == "preview" else FAIL_CENTS
+
+
+def within_limit(residual, kind):
+    # Compared at 0.01 cent, the resolution at which residuals are reported.
+    return round(abs(residual), 2) <= fail_limit(kind)
 
 
 def render_pitch(sa, reg, jawari, kind, selection, offset=0, fine=0, a4=4400, correction="auto"):
@@ -163,7 +174,7 @@ def generate(output, jobs, cache_path, upper=False):
     failed = []
     for job in work:
         key = "|".join(str(value) for value in job)
-        if key in cache["results"] and abs(cache["results"][key][1]) <= FAIL_CENTS:
+        if key in cache["results"] and within_limit(cache["results"][key][1], job[7]):
             value, residual = cache["results"][key]
             table, row, sa_index, jawari_index = job[:4]
             tables[table][row, sa_index, jawari_index] = int(round(10.0 * value))
@@ -184,7 +195,7 @@ def generate(output, jobs, cache_path, upper=False):
                 job = pending.pop(future)
                 table, row, sa_index, jawari_index, value, residual = future.result()
                 worst = max(worst, abs(residual))
-                if abs(residual) > FAIL_CENTS:
+                if not within_limit(residual, job[7]):
                     failed.append((job, residual))
                 quantized = int(round(10.0 * value))
                 if not -32768 <= quantized <= 32767:
@@ -279,7 +290,7 @@ def measure_examples():
     for name, sa, reg, jawari, kind, selection, fine, a4 in cases:
         applied, error = render_pitch(sa, reg, jawari, kind, selection, fine=fine, a4=a4)
         print(f"{name:18s}: {error:+7.2f} cents (correction {applied:+6.2f})")
-        failed |= abs(error) > FAIL_CENTS
+        failed |= not within_limit(error, kind)
     return int(failed)
 
 

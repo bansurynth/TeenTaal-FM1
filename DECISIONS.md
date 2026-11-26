@@ -4,6 +4,12 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
+### 2026-11-26 — Tabelle del tanpura: griglia Sa a 27 punti, gate 0,31 cent, limite di verifica 0,25 cent (opzione B di ElectroNick)
+- Causa degli errori di intonazione: gap di 200–300 cent sulla colonna Sa (350 mancante); righe FLAT/SHARP upper con blend lineare ±200; clamp inferiore per swara 0–1 quando nota+ref < 0.
+- Scelta: griglia Sa a 100 cent, −1900..700 (27 colonne), 350 tolto. Limite di verifica 0,25 cent, 0,5 per le anteprime FX (misura del centroide su 6 s). Gate di calibrazione 0,31 cent sul punto di griglia, accettato da ElectroNick per un punto a −0,3133.
+- Non risolto: reg 1 con Sa negativo non calibrata (0,82 cent); errori fuori griglia fino a 2,4 cent (ipotesi: interpolazione lineare in Sa). Righe sotto 0 cent e limite ±50 per upper non ancora fatti.
+- Alternative scartate: 0,5 cent come limite generale (ElectroNick ha chiesto 0,25). Griglia a 10 cent: non valutata sul budget flash.
+
 ### 2026-11-26 — Estensione di PITCH_PREVIEW a −3100..+700: FX + SEL sui tasti 0–11 (richiesta di ElectroNick)
 - Con FX + SEL i tasti 0–11 (F2–E3) cadono a −3100..−2000 cent rispetto a C4 (F1..E2, 43,65–82,41 Hz). La tabella
   copriva −1900..+700 e `pitch_compensation` si fermava al bordo: quelle note non erano misurate.

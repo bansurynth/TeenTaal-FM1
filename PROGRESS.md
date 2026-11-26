@@ -1,6 +1,24 @@
 # PROGRESS
 
-## Stato: tono assoluto su 27 tasti, FX + SEL un'ottava sotto, tabella PITCH_PREVIEW estesa a −3100..+700 (2026-11-26)
+## Stato: precisione del tanpura su F2–G4 — verifica NON superata, build flashato (2026-11-26)
+
+### Fatto
+- Tabelle di intonazione rigenerate con 27 punti di Sa su griglia da 100 cent (−1900..700; 350 tolto): `tanpura/pitch_coefs.h` (53 179 B) e `tanpura/pitch_upper_coefs.h` (12 339 B). Residuo massimo di griglia in calibrazione: 0,44 cent (anteprima), 0,29 (upper).
+- `tools/reference/calibrate_pitch.py` e `verify_pitch.py`: limite di verifica 0,25 cent, 0,5 per le anteprime FX. Gate di calibrazione 0,31 cent sul punto di griglia.
+- Build target: exit 0, pacchetto 614 938 B, contenuto diverso dal build precedente. Flash app-only completato, `--info`: FM-1_7700 [running].
+
+### Verifica (`build-host/verify_sa27.log`, VERIFY_EXIT=1) — NON superata
+- Griglia Sa, fine 0, A4 4400, tutte le note: first 0,31, sa 0,09, kharaj 0,10, preview 0,82 (un punto oltre 0,5).
+- Causa del 0,82: la reg 1 con Sa negativo (−600..−100) non è calibrata. La calibrazione copre reg 0 su `STANDARD_SA` e reg 1 solo su `LARGE_SA` (0..700). Reg 0 allo stesso indice effettivo dà −0,06.
+- Fuori griglia, raggiungibili dalla UI (PRESETS somma scatti a Sa in cent; fine −50..50): first 1,57, sa 5,06 (Sa 397, fine −10), preview 2,39, kharaj 0,93. Causa probabile: interpolazione lineare in Sa tra punti da 100 cent. Non confermata.
+
+### Aperto
+- Scelta da fare con ElectroNick (non disponibile durante la sessione): (a) calibrare reg 1 per Sa negativo, con colonne separate o diversa indicizzazione; (b) interpolazione cubica in Sa, senza costo sul device, da provare sul residuo; (c) asse Sa a 25 cent, con tabelle circa 4 volte più grandi, da verificare sul budget flash; (d) accettare 0,5 cent fuori griglia. Il limite di 0,25 non è stato abbassato.
+- Il build flashato contiene tabelle che non passano la verifica. Per tornare al build precedente: commit `3bd46be`, ricostruzione con `sh tools/fw.sh`, flash app-only.
+- Ascolto sul device del G3 e del tanpura con le nuove tabelle: non ancora fatto.
+- Commit: non fatto. Modifiche non committate: `tools/reference/calibrate_pitch.py`, `tools/reference/verify_pitch.py`, `tanpura/pitch_coefs.h`, `tanpura/pitch_upper_coefs.h`.
+
+## Stato precedente: tono assoluto su 27 tasti, FX + SEL un'ottava sotto, tabella PITCH_PREVIEW estesa a −3100..+700 (2026-11-26)
 
 ### Fatto
 - Estensione di `PITCH_PREVIEW` a −3100..+700 cent (39 righe). I tasti 0–11 con FX + SEL (F1–E2) ora cadono in tabella e sono misurati. Offset firmware +3100 in `tanpura/tanpura.c`. Le tabelle non preview sono byte-identiche alla versione precedente. Le nuove righe −3100..−1900 hanno errore massimo 0,16 cent (`build-host/verify_new_rows.log`).
