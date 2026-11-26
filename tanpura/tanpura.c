@@ -25,19 +25,20 @@ static const float LEVEL_DB[6][PITCH_JAWARI_N] = {
 
 static int32_t clampi(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : v > hi ? hi : v; }
 
-/* the jawari takes two values (no interpolation across them): 75 or 100, the nearer of the two */
+/* five UI steps; the tables stay calibrated at 75/100, and the three lower steps extrapolate linearly */
 static int32_t jawari_snap(int32_t v)
 {
-    return clampi(v, 0, 100) <= (TANPURA_JAWARI_LO + TANPURA_JAWARI_HI) / 2 ? TANPURA_JAWARI_LO : TANPURA_JAWARI_HI;
+    v = clampi(v, TANPURA_JAWARI_MIN, TANPURA_JAWARI_HI);
+    return (v + 12) / 25 * 25;
 }
 
-static int jawari_column(const tanpura_t *m)
+static float jawari_column(const tanpura_t *m)
 {
-    return m->jawari == TANPURA_JAWARI_HI;
+    return ((float)m->jawari - (float)TANPURA_JAWARI_LO) * (1.0f / 25.0f);
 }
 
 /* a loudness column at Sa: linear in Sa */
-static float level_at_sa(const float *sa_axis, int n_sa, const float table[][PITCH_JAWARI_N], float sa, int column)
+static float level_at_sa(const float *sa_axis, int n_sa, const float table[][PITCH_JAWARI_N], float sa, float column)
 {
     int i = 0;
     float fs;
@@ -45,11 +46,12 @@ static float level_at_sa(const float *sa_axis, int n_sa, const float table[][PIT
     while (i < n_sa - 2 && sa > sa_axis[i + 1])
         i++;
     fs = (sa - sa_axis[i]) / (sa_axis[i + 1] - sa_axis[i]);
-    return (1.0f - fs) * table[i][column] + fs * table[i + 1][column];
+    return (1.0f - fs) * (table[i][0] + column * (table[i][1] - table[i][0]))
+         + fs * (table[i + 1][0] + column * (table[i + 1][1] - table[i + 1][0]));
 }
 
 /* a pitch column at Sa, in cents: linear in Sa (the tables hold 0.1 cent) */
-static float pitch_at_sa(const float *axis, int n, const int16_t table[][PITCH_JAWARI_N], float sa, int column)
+static float pitch_at_sa(const float *axis, int n, const int16_t table[][PITCH_JAWARI_N], float sa, float column)
 {
     int i = 0;
     float fs;
@@ -57,7 +59,9 @@ static float pitch_at_sa(const float *axis, int n, const int16_t table[][PITCH_J
     while (i < n - 2 && sa > axis[i + 1])
         i++;
     fs = (sa - axis[i]) / (axis[i + 1] - axis[i]);
-    return 0.1f * ((1.0f - fs) * (float)table[i][column] + fs * (float)table[i + 1][column]);
+    float a0 = (float)table[i][0] + column * (float)(table[i][1] - table[i][0]);
+    float a1 = (float)table[i + 1][0] + column * (float)(table[i + 1][1] - table[i + 1][0]);
+    return 0.1f * ((1.0f - fs) * a0 + fs * a1);
 }
 
 enum { PITCH_PROFILE_FIRST, PITCH_PROFILE_STEEL, PITCH_PROFILE_KHARAJ, PITCH_PROFILE_PREVIEW };
@@ -70,7 +74,7 @@ static float pitch_compensation(const tanpura_t *m, int profile, float note, int
     float sa = (float)(m->tuning.sa_cents + (large ? 0 : reg_offset(m)));
     float ref = 1200.0f * fm_log2f((float)m->tuning.a4_dhz * (1.0f / 4400.0f));
     float position, fraction, a, b;
-    int column = jawari_column(m);
+    float column = jawari_column(m);
     const int16_t (*row0)[PITCH_JAWARI_N], (*row1)[PITCH_JAWARI_N];
     if (profile == PITCH_PROFILE_FIRST && swara >= PITCH_FIRST_SHIFT_START) {
         int index = swara - PITCH_FIRST_SHIFT_START;
@@ -292,7 +296,8 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
     else
         tanpura_default_config(&m->cfg);
     m->tuning = m->cfg.tuning;
-    m->on = 0, m->mute = 0, m->first = SW_PA, m->extra = -1, m->jawari = TANPURA_JAWARI_LO, m->cycle = 50, m->human = 50, m->reg = 1;
+    m->on = 0, m->mute = 0, m->first = SW_PA, m->extra = -1, m->jawari = TANPURA_JAWARI_LO;
+    m->cycle = 50, m->human = 50, m->pitchvar = 10, m->reg = 1;
     m->filter_hz = TANPURA_FILTER_MAX_HZ, m->lp_stage_ready = 0;
     lowpass_coefficients(m->lp_coef, m->filter_hz);
     m->start_req = m->extra_silence_req = 0;
@@ -367,6 +372,7 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
         break;
     case TANPURA_P_CYCLE:  m->cycle = clampi(v, 25, 600); break;
     case TANPURA_P_HUMAN:  m->human = clampi(v, 0, 100); break;
+    case TANPURA_P_PITCHVAR: m->pitchvar = clampi(v, 0, 100); break;
     case TANPURA_P_PHASE:  m->phase = clampi(v, 0, 100); break;
     case TANPURA_P_EXTRA:
         v = clampi(v, -1, TANPURA_FIRST_MAX);
@@ -470,6 +476,7 @@ int32_t tanpura_get_param(const tanpura_t *m, int id)
     case TANPURA_P_JAWARI: return m->jawari;
     case TANPURA_P_CYCLE:  return m->cycle;
     case TANPURA_P_HUMAN:  return m->human;
+    case TANPURA_P_PITCHVAR: return m->pitchvar;
     case TANPURA_P_REGISTER: return m->reg;
     case TANPURA_P_SA_NOW: return m->tuning.sa_cents + reg_offset(m);
     case TANPURA_P_PHASE:  return m->phase;
@@ -555,6 +562,7 @@ static void run_string(tanpura_t *m, int j, int n)
         }
         if (m->on && m->due[j] <= 0 && at < n) {
             float a = PLUCK_AMP * (float)m->vol[j] * 0.01f * (1.0f + 0.003f * (float)m->human * rnd_pm1(m));
+            tstring_set_pitch(s, m->pitchvar ? rnd_pm1(m) * (float)m->pitchvar * 0.1f : 0.0f);
             tstring_pluck(s, a, PLUCK_TAU, TANPURA_FS);
             m->nominal[j] += cycle_samples(m);
             m->due[j] = m->nominal[j] + jitter(m);

@@ -35,7 +35,7 @@ schermata. All'accensione è tutto spento; le impostazioni salvate tornano come 
 | **SELECT** | il taal; se i tabla suonano, il nuovo taal parte **alla fine del ciclo** |
 | **KNOB1** | il tempo, 1 matra al minuto per scatto (**SEL + KNOB1**: 10) |
 | **KNOB2 / KNOB3 / KNOB4** | volume di tanpura / tabla / tono |
-| **ALGORITHM** | jawari: la posizione del filo di cotone, 75 o 100. In senso orario 100, in antiorario 75 |
+| **ALGORITHM** | jawari T1 in cinque passi: 0, 25, 50, 75, 100. Con FX premuto regola invece il jawari T2 |
 | **OCT− / OCT+** | l'ottava del tono, da tre sotto a tre sopra il Sa (mandra, madhya, tar); con un tasto tenuto, sposta di ottave la nota di quel tasto |
 | **MASTER** | volume generale |
 | **EDIT** | le impostazioni (sotto); **HOME** torna indietro |
@@ -60,8 +60,10 @@ poi fa una pausa. Con EXTRA STRING attiva, la corda aggiuntiva viene pizzicata d
 seguono a 1,75, 2,5 e 3,25 secondi. Entrambi i tanpura sono spenti all'avvio. Ogni pressione di SEQ passa allo stato
 successivo: entrambi accesi; il secondo in MUTE (suona il primo); il primo in MUTE (suona il secondo); entrambi spenti.
 Un tanpura in MUTE continua il suo ciclo, quindi riparte in tempo; nella schermata principale compare MUTE al posto di ON.
-Il secondo tanpura ha la propria prima corda (NI di default), fase (20%) e corda aggiuntiva opzionale; il ciclo di
-pizzico e l'accordatura fine di ogni corda sono condivisi con il primo tanpura.
+Il secondo tanpura ha la propria prima corda (NI di default), fase (20%), accordatura fine della prima corda e corda
+aggiuntiva opzionale; il ciclo di pizzico e le altre accordature fini sono condivisi con il primo tanpura.
+Ha anche jawari indipendente: tieni **FX** mentre giri **ALGORITHM** per cambiare il tanpura 2; ALGORITHM da solo cambia
+il tanpura 1. Ogni scatto sposta di un gradino (0/25/50/75/100), e la schermata mostra il valore su ciascuna riga.
 
 ## Le impostazioni (EDIT)
 
@@ -75,9 +77,12 @@ dove sei nell'elenco.
 | FIRST STRING | la prima corda del tanpura: Pa (default), Ma, Ni o qualsiasi swara |
 | EXTRA STRING | OFF di default; scegli uno swara per aggiungere una corda dopo la prima e prima delle due corde Sa e del kharaj |
 | 2ND: FIRST STRING, 2ND: EXTRA STRING | la prima corda del secondo tanpura e la sua corda aggiuntiva indipendente, OFF di default |
-| FINE: 1ST STRING, EXTRA, SA (2ND), SA (3RD), KHARAJ | accordatura fine delle corde, ±50 cents; il secondo tanpura segue questi valori |
+| FINE: 1ST STRING T1 | accordatura fine della prima corda del tanpura 1, ±50 cent |
+| FINE: 1ST STRING T2 | accordatura fine della prima corda del tanpura 2, ±50 cent |
+| FINE: EXTRA, SA (2ND), SA (3RD), KHARAJ | accordatura fine condivisa delle altre quattro corde, ±50 cent |
 | 2ND: PHASE | la fase del secondo tanpura |
 | TANPURA IRREG. | quanto il pizzico è irregolare, come una mano vera |
+| TANPURA PITCH VAR | variazione casuale del pitch a ogni pizzico, default 10% (circa ±1 cent); 100% arriva a circa ±10 cent. Non cambia i FINE né il tono di riferimento |
 | TABLA IRREG. | lo stesso per i tabla (tempi e forza dei colpi) |
 | TONE SWARA | lo swara del tono acceso con ARP |
 | A REFERENCE | il La di riferimento, 415–466 Hz (default 440) |

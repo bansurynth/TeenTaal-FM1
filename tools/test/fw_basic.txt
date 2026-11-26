@@ -129,17 +129,32 @@ expect sa_cents 700
 expect tan_sa 700
 # jawari on ALGORITHM, the tanpura's volume on KNOB2
 turn ALGO 10
+turn ALGO -4
 turn K2 -4
 wait 200
-expect jawari 100
+expect jawari 0
+expect tan2_jawari 75
 expect tan_vol 80
+turn ALGO 4
 # ALGORITHM toggles the two jawari values: counter-clockwise 75, clockwise 100
-turn ALGO -10
+turn ALGO -1
 wait 100
 expect jawari 75
-turn ALGO 10
+expect tan2_jawari 75
+turn ALGO 1
 wait 100
 expect jawari 100
+press FX
+turn ALGO -3
+release FX
+wait 100
+expect jawari 100
+expect tan2_jawari 0
+press FX
+turn ALGO 4
+release FX
+wait 100
+expect tan2_jawari 100
 # the tone: ARP, its octave up
 tap ARP
 tap OCT+
@@ -228,6 +243,7 @@ shot main_ektaal.png
 # the tabla's irregularity: EDIT
 tap EDIT
 turn SELECT 11
+turn SELECT 1
 turn PRESET -2
 wait 200
 expect tabla_human 20
@@ -254,7 +270,7 @@ turn PRESET -1
 wait 50
 expect bta 0
 # both tanpuras' optional extra string: OFF by default; the row cycles through every swara and its upper octave
-turn SELECT -13
+turn SELECT -14
 expect extra -1
 turn PRESET 12
 expect extra 11
@@ -262,6 +278,7 @@ turn SELECT 2
 expect tan2_extra -1
 turn PRESET 17
 expect tan2_extra 16
+expect tan2_jawari 100
 tap HOME
 # off: PLAY; the strokes ring out
 tap PLAY
@@ -342,7 +359,17 @@ turn SELECT 6
 turn PRESET 7
 wait 100
 expect fine0 7
+expect tan2_fine0 0
+turn SELECT 1
+turn PRESET -9
+wait 100
+expect fine0 7
+expect tan2_fine0 -9
 turn SELECT 100
+turn PRESET 2
+wait 100
+expect tan_pitchvar 20
+turn SELECT -1
 turn PRESET -35
 wait 100
 expect tan_filter 5000
@@ -386,6 +413,8 @@ expect cycle 48
 expect tan2_cycle 48
 expect mpm 155
 expect fine0 7
+expect tan2_fine0 -9
+expect tan_pitchvar 20
 expect tan_filter 5000
 expect tan2_filter 5000
 expect temperament 1
@@ -396,6 +425,7 @@ expect tan2_on 0
 expect tab_vol 90
 expect sa_cents 700
 expect jawari 100
+expect tan2_jawari 100
 expect tan_on 0
 expect taal_on 0
 expect unsaved 0
@@ -436,12 +466,15 @@ expect first 7
 expect temperament 0
 expect register 0
 expect jawari 75
+expect tan2_jawari 75
 expect cycle 50
 expect tan2_cycle 50
 expect tan_human 50
+expect tan_pitchvar 10
 expect tabla_human 30
 expect tan2_first 11
 expect tan2_phase 20
+expect tan2_fine0 0
 expect taal 0
 expect mpm 120
 expect tan_vol 100
@@ -469,8 +502,10 @@ expect first 7
 expect cycle 50
 expect tan2_cycle 50
 expect tan_human 50
+expect tan_pitchvar 10
 expect tan2_first 11
 expect tan2_phase 20
+expect tan2_fine0 0
 expect taal 0
 expect mpm 120
 expect tan_filter 8500

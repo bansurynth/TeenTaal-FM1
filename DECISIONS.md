@@ -4,6 +4,31 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
+### 2026-11-26 — TANPURA PITCH VAR: variazione di pitch per pizzico, separata da IRREG.
+- Nuovo parametro `TANPURA_P_PITCHVAR` 0–100, comune a T1/T2 ma con sequenze casuali indipendenti. Default 10%:
+  deviazione massima circa ±1 cent; 100%: circa ±10 cent.
+- Il valore viene applicato solo quando la corda riceve un nuovo pizzico. I coefficienti della frequenza modale sono
+  ricalcolati con lo stesso smorzamento e contatto jawari; FINE, Sa, registro e anteprime FX restano invariati.
+- Il parametro è separato da `TANPURA IRREG.` (timing e dinamica), così la variazione di pitch può essere disattivata
+  indipendentemente con 0.
+- Record impostazioni v9. Il salvataggio conserva il nuovo valore; i record precedenti partono dai nuovi default.
+
+### 2026-11-26 — FINE della prima corda separato T1/T2; fase T2 20% (richiesta di ElectroNick)
+- `FINE: 1ST STRING` diventa `FINE: 1ST STRING T1`. La riga successiva `FINE: 1ST STRING T2` scrive direttamente
+  sul parametro FINE della prima corda del secondo tanpura.
+- T1 non propaga più il proprio FINE 0 a T2. EXTRA, Sa seconda/terza e kharaj continuano a essere condivisi, e i
+  relativi parametri restano propagati.
+- La fase predefinita di T2 resta 20%, come prima.
+- Record impostazioni v10 con campo `tan2_fine0`; i record precedenti vengono scartati. SAVE conserva i due FINE
+  separatamente. Questa build parte quindi dai default 0/0 e fase 20%.
+
+### 2026-11-26 — Jawari separato T1/T2, cinque passi 0/25/50/75/100
+- ALGORITHM senza modificatore cambia solo il jawari di T1; con FX premuto cambia solo quello di T2.
+- Ogni scatto cambia un gradino da 25. Il valore fisico del filo è 4, 5, 6, 7 o 8 mm.
+- Le tabelle di compensazione restano calibrate a 75/100: 0/25/50 usano estrapolazione lineare, 75/100 sono invariati.
+- Il setting è salvato separatamente (`tan2_jawari`) nel record impostazioni v10; default 75 per entrambi.
+- La schermata principale mostra J0/J25/J50/J75/J100 per T1 e T2. PH e CYC sono rimossi dalla riga T2.
+
 ### 2026-11-26 — Tabelle del tanpura: griglia Sa a 27 punti, gate 0,31 cent, limite di verifica 0,25 cent (opzione B di ElectroNick)
 - Causa degli errori di intonazione: gap di 200–300 cent sulla colonna Sa (350 mancante); righe FLAT/SHARP upper con blend lineare ±200; clamp inferiore per swara 0–1 quando nota+ref < 0.
 - Scelta: griglia Sa a 100 cent, −1900..700 (27 colonne), 350 tolto. Limite di verifica 0,25 cent, 0,5 per le anteprime FX (misura del centroide su 6 s). Gate di calibrazione 0,31 cent sul punto di griglia, accettato da ElectroNick per un punto a −0,3133.

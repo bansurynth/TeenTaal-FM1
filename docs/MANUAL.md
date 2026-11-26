@@ -36,7 +36,7 @@ silent; the saved settings come back as you left them.
 | **SELECT** | the taal; while the tabla play, the new taal starts **at the end of the cycle** |
 | **KNOB1** | tempo, 1 matra a minute per click (**SEL + KNOB1**: 10) |
 | **KNOB2 / KNOB3 / KNOB4** | volume of tanpura / tabla / tone |
-| **ALGORITHM** | jawari, the position of the cotton thread: 75 or 100. Clockwise sets 100, counter-clockwise 75 |
+| **ALGORITHM** | jawari T1 in five steps: 0, 25, 50, 75, 100; hold FX to control T2 |
 | **OCT− / OCT+** | the tone's octave, from three below to three above Sa (mandra, madhya, tar); with a key held, it shifts that key's note by octaves |
 | **MASTER** | overall volume |
 | **EDIT** | the settings page (below); **HOME** goes back |
@@ -60,9 +60,10 @@ The default tanpura cycle (5 seconds) plucks its first string, Sa, Sa and the lo
 then pauses. With EXTRA STRING enabled, it plucks after the first string; the two Sa strings and kharaj follow at 1.75,
 2.5 and 3.25 seconds. Both tanpuras start off. Each SEQ press moves to the next state: both tanpuras on; the second
 muted (the first plays); the first muted (the second plays); both off. A muted tanpura keeps its cycle running, so it
-comes back in time. While a tanpura is muted, the main page shows MUTE instead of ON. The second tanpura has its own
-first string (NI by default), phase (20%) and optional extra string; the pluck cycle and the fine tuning of each string
-are shared with the first tanpura.
+comes back in time. While a tanpura is muted, the main page shows MUTE instead of ON. The second tanpura has its own first string (NI by default), phase (20%), first-string fine tuning and optional extra
+string; the pluck cycle and the other fine tunings are shared with the first tanpura.
+Its jawari is independent too: hold **FX** while turning **ALGORITHM** to change tanpura 2; ALGORITHM alone changes
+tanpura 1. Each click moves one step (0/25/50/75/100), and the main screen shows that value on each tanpura line.
 
 ## Settings (EDIT)
 
@@ -75,9 +76,12 @@ SELECT picks the row, PRESETS changes the value, HOME goes back. The dots at the
 | FIRST STRING | the tanpura's first string: Pa (default), Ma, Ni or any swara |
 | EXTRA STRING | OFF by default; select a swara to add a string after the first string and before the two Sa strings and kharaj |
 | 2ND: FIRST STRING, 2ND: EXTRA STRING | the second tanpura's first string and its independent optional string, OFF by default |
-| FINE: 1ST STRING, EXTRA, SA (2ND), SA (3RD), KHARAJ | fine tuning of each string, ±50 cents; the second tanpura follows these |
+| FINE: 1ST STRING T1 | fine tuning of tanpura 1's first string, ±50 cents |
+| FINE: 1ST STRING T2 | fine tuning of tanpura 2's first string, ±50 cents |
+| FINE: EXTRA, SA (2ND), SA (3RD), KHARAJ | shared fine tuning of the other four strings, ±50 cents |
 | 2ND: PHASE | the phase of the second tanpura |
 | TANPURA IRREG. | how irregular the plucking is, like a real hand |
+| TANPURA PITCH VAR | per-pluck random pitch variation, default 10% (about ±1 cent); 100% reaches about ±10 cents. It does not change the FINE settings or the reference tone |
 | TABLA IRREG. | the same for the tabla (timing and strength of the strokes) |
 | TONE SWARA | the swara of the tone switched on with ARP |
 | A REFERENCE | the reference A, 415–466 Hz (default 440) |

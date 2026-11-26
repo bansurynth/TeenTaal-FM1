@@ -32,7 +32,7 @@ fisso e nessun menu; le impostazioni che si toccano di rado stanno in una pagina
 | **MASTER** | volume generale (come oggi) |
 | **SELECT** | taal: ruoti per scegliere (nome sullo schermo) |
 | **PRESETS** | Sa fine: ±1 cent per scatto |
-| **ALGORITHM** | jawari: 75 o 100 (in senso orario 100) |
+| **ALGORITHM** | jawari T1: 0 / 25 / 50 / 75 / 100, uno scatto per gradino; con FX cambia il jawari T2 |
 | **OCT− / OCT+** | ottava del tono di riferimento, da tre sotto a tre sopra il Sa (mandra / madhya / tar); con un tasto tenuto, sposta di ottave la nota di quel tasto |
 | **SCL + tasto** | Sa = la nota di quel tasto (i cents fini restano) |
 | **tasto da solo** | tono di riferimento sulla nota di quel tasto (F2–G4, temperamento equabile, indipendente dal Sa) finché è premuto; OCT− / OCT+ lo spostano di ottave (vedi domanda 2) |
@@ -100,6 +100,6 @@ cella della matra corrente accesa.
 |---|---|
 | **tasto da solo** | tono di riferimento su quello swara finché è premuto, nell'ottava impostata con OCT− / OCT+ (più tasti: l'ultimo premuto; poi il tono torna com'era) |
 | **SAVE** | salva le impostazioni (UNSAVED sullo schermo e luce di SAVE accesa finché ci sono modifiche) |
-| **EDIT** | 21 righe, scorrono: temperamento (EQUAL, JUST 5, JUST PYTH; prima riga), ciclo di pizzico (uno per entrambi i tanpura), prima corda, corda aggiuntiva, prima corda e corda aggiuntiva del secondo tanpura, accordatura fine di ogni corda (condivisa dai due tanpura), fase del secondo tanpura, irregolarità di tanpura e tabla, swara del tono, La di riferimento, Bluetooth, filtro |
+| **EDIT** | 23 righe: temperamento, ciclo condiviso, prime e corde aggiuntive dei due tanpura, FINE T1/T2, altri FINE condivisi, fase T2, irregolarità, pitch variation, tono, La, Bluetooth e filtro |
 
 Luci dei tasti: dal Sa in su, Sa e Pa accesi, Re Ga Ma Dha Ni tenui. Manuale d'uso: `docs/MANUAL.md`.

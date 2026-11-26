@@ -38,6 +38,7 @@ typedef struct {
 typedef struct {
     tstring_k_t k;
     float a[TSTRING_MAXM];           /* a*_i (eq. 33) */
+    float theta[TSTRING_MAXM];       /* modal discrete-time angle */
     float c2j[TSTRING_MAXM];         /* 2 / J_i */
     float gej[TSTRING_MAXM];         /* xi g_e,i / J_i */
     float gb[TSTRING_MAXM], gc[TSTRING_MAXM];
@@ -56,6 +57,7 @@ typedef struct {
     tstring_k_t c;                   /* the constants in force (the per-mode coefficients are in m[]) */
     tmode_t m[TSTRING_MAXM];
     float pluck_pos, pluck_step, pluck_amp;   /* the pluck table position, its step a sample, the force */
+    float pitch_cents;                /* current per-pluck pitch offset from the tuned coefficients */
     int plucking;
     float compress_max;              /* the deepest compression into the bridge seen (m, a report) */
 } tstring_t;
@@ -67,6 +69,7 @@ void tstring_init(tstring_t *s, const tstring_coefs_t *c);
 void tstring_take(tstring_t *s, const tstring_coefs_t *c);
 /* start a pluck: amp in newtons (negative: toward the bridge, as in the paper), tau_e seconds */
 void tstring_pluck(tstring_t *s, float amp, float tau_e, float fs);
+void tstring_set_pitch(tstring_t *s, float cents);  /* smooth coefficient retune for the next pluck */
 /* n samples: adds the bridge force into fd[] and the nut force into fn[] */
 void tstring_run(tstring_t *s, float *fd, float *fn, int n);
 /* the numerical energy (eq. 49) without the contact terms, for the tests */

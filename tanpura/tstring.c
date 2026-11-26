@@ -79,6 +79,7 @@ void tstring_coefs(tstring_coefs_t *c, const tstring_par_t *p, float fs)
             break;
         /* eq. 33 without cancellation: 1 - 2 R cos + R^2 = (1 - R)^2 + 2 R (1 - cos), 1 - cos = 2 sin^2(w dt / 2) */
         R = fm_expf(-alpha * dt);
+        c->theta[i] = w * dt;
         omR = one_minus_exp_neg(alpha * dt);
         s = sin_rel(0.5f * w * dt);
         omO = 2.0f * s * s;
@@ -134,12 +135,14 @@ void tstring_take(tstring_t *s, const tstring_coefs_t *c)
         if (i < c->k.M) {
             m->a = c->a[i], m->c2j = c->c2j[i], m->gb = c->gb[i], m->gc = c->gc[i];
             m->eb = c->eb[i], m->ec = c->ec[i], m->cn = c->cn[i], m->gej = c->gej[i];
+            m->pad = c->theta[i];
         } else {
             m->y = m->q = m->ub = 0.0f;
             m->a = m->c2j = m->gb = m->gc = m->eb = m->ec = m->cn = m->gej = 0.0f;
+            m->pad = 0.0f;
         }
-        m->pad = 0.0f;
     }
+    s->pitch_cents = 0.0f;
 }
 
 void tstring_init(tstring_t *s, const tstring_coefs_t *c)
@@ -147,6 +150,43 @@ void tstring_init(tstring_t *s, const tstring_coefs_t *c)
     tstring_silence(s);
     tstring_take(s, c);
     s->compress_max = 0.0f;
+}
+
+void tstring_set_pitch(tstring_t *s, float cents)
+{
+    float ratio = fm_exp2f((cents - s->pitch_cents) * (1.0f / 1200.0f));
+    float thbb = 0.0f, thbc = 0.0f, thcc = 0.0f, gbe = 0.0f, gce = 0.0f, th;
+    int i;
+    if (fm_fabsf(cents - s->pitch_cents) < 0.001f)
+        return;
+    for (i = 0; i < s->c.M; i++) {
+        tmode_t *m = &s->m[i];
+        float b = 2.0f / m->c2j - 1.0f - m->a;
+        float theta = fm_clampf(m->pad * ratio, 1e-6f, FM_PI - 1e-6f);
+        float c = fm_cosf(theta), disc = 4.0f - b * b * (1.0f - c * c);
+        float R = (-b * c + fm_sqrtf(disc > 0.0f ? disc : 0.0f)) / (b + 2.0f);
+        float R2 = R * R, x = 1.0f - c, num = 1.0f - 2.0f * R + R2 + 2.0f * R * x;
+        float den = 1.0f + 2.0f * R + R2 - 2.0f * R * x;
+        float a = num / den, bn = 2.0f * (1.0f - R2) / den;
+        float c2j = 2.0f / (1.0f + a + bn), scale = c2j / m->c2j;
+        m->a = a, m->c2j = c2j, m->eb *= scale, m->ec *= scale, m->gej *= scale;
+        m->pad = theta;
+        thbb += m->gb * m->eb;
+        thbc += m->gb * m->ec;
+        thcc += m->gc * m->ec;
+        gbe += m->gb * m->gej;
+        gce += m->gc * m->gej;
+    }
+    s->c.thbc = thbc, s->c.thcc = thcc;
+    s->c.vden = 1.0f / (1.0f + s->c.phic * thcc);
+    s->c.bc = s->c.phic * thbc * s->c.vden;
+    s->c.gbe = gbe, s->c.gce = gce;
+    th = thbb - s->c.bc * thbc;
+    s->c.ph = 0.5f * th * s->c.kb;
+    s->c.inv1ph = 1.0f / (1.0f + s->c.ph);
+    s->c.inv21ph = 0.5f * s->c.inv1ph;
+    s->c.invth = 1.0f / th;
+    s->pitch_cents = cents;
 }
 
 void tstring_pluck(tstring_t *s, float amp, float tau_e, float fs)

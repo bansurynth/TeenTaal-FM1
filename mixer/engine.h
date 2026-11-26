@@ -18,7 +18,8 @@
 enum { ENG_ALL, ENG_TANPURA, ENG_TABLA, ENG_REFTONE, ENG_MIXER, ENG_TAAL, ENG_TANPURA2 };
 
 /* The second tanpura follows the first in Sa, jawari, cycle, register, irregularity and volumes. It has its own first
- * string (default Ni), phase (20%), extra string and on/off state. Both are summed into the mixer's tanpura source at
+ * string (default Ni), its first-string fine tuning, phase (20%), extra string and on/off state. Both are summed into
+ * the mixer's tanpura source at
  * 0.75 each. */
 #define ENGINE_TAN2_FIRST SW_NI
 #define ENGINE_TAN2_PHASE 20

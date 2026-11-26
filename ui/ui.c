@@ -16,7 +16,7 @@
  *   FX + key   with both tanpuras off, pluck the key's note, F2..G4 (up to 4 at once)
  *   SEL + OCT-/+  Sa an octave down / up
  *   PRESETS    Sa by a cent
- *   ALGORITHM  jawari 75 / 100 (right: 100, left: 75)
+ *   ALGORITHM  jawari T1 75 / 100; FX + ALGORITHM changes T2
  *   KNOB2      tanpura volume, KNOB3 tabla volume, KNOB4 tone volume
  *   OCT- / OCT+  the tone's octave
  *   EDIT       the EDIT page
@@ -31,20 +31,28 @@ enum { UI_FX_SEL_CENTS = -1200 };       /* FX + SEL: the pluck an octave lower *
 static const char *const UI_SWARA[TANPURA_FIRST_MAX + 1] = {"SA", "RE KOMAL", "RE", "GA KOMAL", "GA", "MA", "MA TIVRA", "PA",
                                            "DHA KOMAL", "DHA", "NI KOMAL", "NI", "SA'", "RE KOMAL'", "RE'",
                                            "GA KOMAL'", "GA'", "MA'"};
-enum { ROW_TEMPERAMENT, ROW_CYCLE, ROW_FIRST, ROW_EXTRA, ROW_TAN2_FIRST, ROW_TAN2_EXTRA, ROW_FINE0, ROW_FINE1, ROW_FINE2,
+enum { ROW_TEMPERAMENT, ROW_CYCLE, ROW_FIRST, ROW_EXTRA, ROW_TAN2_FIRST, ROW_TAN2_EXTRA, ROW_FINE0, ROW_TAN2_FINE0,
+       ROW_FINE1, ROW_FINE2,
        ROW_FINE3, ROW_FINE4, ROW_TAN2_PHASE, ROW_HUMAN, ROW_TABLA_HUMAN, ROW_TONE, ROW_A4, ROW_BT, ROW_BT_DEV, ROW_BT_LINK,
-       ROW_BT_OUT, ROW_FILTER, NROWS };
+       ROW_BT_OUT, ROW_FILTER, ROW_PITCHVAR, NROWS };
 static const char *const UI_TEMPERAMENT[TUNING_TEMPERAMENT_N] = {"EQUAL", "JUST 5", "JUST PYTH"};
 static const char *const ROW_NAME[NROWS] = {"TEMPERAMENT", "PLUCK CYCLE", "FIRST STRING", "EXTRA STRING",
-                                            "2ND: FIRST STRING", "2ND: EXTRA STRING", "FINE: 1ST STRING", "FINE: EXTRA",
+                                            "2ND: FIRST STRING", "2ND: EXTRA STRING", "FINE: 1ST STRING T1",
+                                            "FINE: 1ST STRING T2", "FINE: EXTRA",
                                             "FINE: SA (2ND)", "FINE: SA (3RD)", "FINE: KHARAJ",
                                             "2ND: PHASE", "TANPURA IRREG.", "TABLA IRREG.", "TONE SWARA",
                                             "A REFERENCE", "BLUETOOTH", "BT SPEAKER", "BT LINK", "BT OUTPUT",
-                                            "TANPURA FILTER"};
-/* the FINE rows follow the pluck order (first, extra, Sa, Sa, kharaj): the string each row tunes; they tune both tanpuras */
+                                            "TANPURA FILTER", "TANPURA PITCH VAR"};
+/* the FINE rows follow the pluck order; the first string is separate on T1/T2, all other strings remain shared */
 static const int UI_FINE_STRING[TANPURA_NFINE] = {0, 4, 1, 2, 3};
 static int ui_is_fine(int row) { return row >= ROW_FINE0 && row <= ROW_FINE4; }
-static int ui_fine_param(int row) { return TANPURA_P_FINE + UI_FINE_STRING[row - ROW_FINE0]; }
+static int ui_fine_param(int row)
+{
+    if (row == ROW_FINE0 || row == ROW_TAN2_FINE0)
+        return TANPURA_P_FINE;
+    return TANPURA_P_FINE + UI_FINE_STRING[row - ROW_TAN2_FINE0];
+}
+static int ui_fine_target(int row) { return row == ROW_TAN2_FINE0 ? ENG_TANPURA2 : ENG_TANPURA; }
 /* the pluck cycle, in tenths of a second: steps of 0.1 s up to 10 s, then of 1 s, up to 60 s */
 static int32_t ui_cycle_step(int32_t v, int32_t d)
 {
@@ -76,8 +84,8 @@ typedef struct {
     uint32_t magic;
     uint16_t version, size;
     int32_t a4_dhz, sa_cents;
-    int8_t first, reg, tone_swara, tone_oct, fine[TANPURA_NFINE];
-    uint8_t jawari, tan_human, tabla_human, taal, vol_tanpura, vol_tabla, vol_tone;
+    int8_t first, reg, tone_swara, tone_oct, fine[TANPURA_NFINE], tan2_fine0;
+    uint8_t jawari, tan2_jawari, tan_human, tan_pitchvar, tabla_human, taal, vol_tanpura, vol_tabla, vol_tone;
     int16_t mpm, tan2;                      /* tan2: bit 15 set = valid; bits 7..11 first string, bits 0..6 phase */
     int8_t extra, extra2;
     int8_t temperament;                     /* TUNING_TEMPERAMENT_*: EQUAL, JUST 5-limit, JUST Pythagorean */
@@ -98,16 +106,19 @@ static void ui_settings_now(ui_settings_t *p)
     int j;
     for (j = 0; j < (int)sizeof *p; j++)
         ((uint8_t *)p)[j] = 0;
-    p->magic = UI_SET_MAGIC, p->version = 7, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
+    p->magic = UI_SET_MAGIC, p->version = 10, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
     p->a4_dhz = ui_get(ENG_ALL, DSP_P_A4_DHZ);
     p->sa_cents = ui_get(ENG_ALL, DSP_P_SA_CENTS);
     p->first = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_FIRST);
     p->reg = 0;                     /* (the tanpura plays at the note shown: no register) */
     for (j = 0; j < TANPURA_NFINE; j++)
         p->fine[j] = (int8_t)ui_get(ENG_TANPURA, TANPURA_P_FINE + j);
+    p->tan2_fine0 = (int8_t)ui_get(ENG_TANPURA2, TANPURA_P_FINE);
     p->jawari = (uint8_t)ui_get(ENG_TANPURA, TANPURA_P_JAWARI);
+    p->tan2_jawari = (uint8_t)ui_get(ENG_TANPURA2, TANPURA_P_JAWARI);
     p->cycle = (uint16_t)ui_get(ENG_TANPURA, TANPURA_P_CYCLE);
     p->tan_human = (uint8_t)ui_get(ENG_TANPURA, TANPURA_P_HUMAN);
+    p->tan_pitchvar = (uint8_t)ui_get(ENG_TANPURA, TANPURA_P_PITCHVAR);
     p->tabla_human = (uint8_t)ui_get(ENG_TAAL, TAAL_P_HUMAN);
     p->tan2 = (int16_t)(0x8000 | (ui_get(ENG_TANPURA2, TANPURA_P_FIRST) << 7)
                         | ui_get(ENG_TANPURA2, TANPURA_P_PHASE));
@@ -133,10 +144,12 @@ static void ui_settings_defaults(ui_settings_t *p)
     int j;
     for (j = 0; j < (int)sizeof *p; j++)
         ((uint8_t *)p)[j] = 0;
-    p->magic = UI_SET_MAGIC, p->version = 7, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
+    p->magic = UI_SET_MAGIC, p->version = 10, p->size = (uint16_t)sizeof *p, p->build = FM1B_BUILD;
     p->a4_dhz = TUNING_A4_DHZ_DEFAULT, p->sa_cents = UI_SA_DEFAULT;
     p->first = SW_PA, p->reg = 0;
     p->jawari = TANPURA_JAWARI_LO, p->cycle = 50, p->tan_human = 50, p->tabla_human = 30;
+    p->tan2_jawari = TANPURA_JAWARI_LO;
+    p->tan_pitchvar = 10;
     p->tan2 = (int16_t)(0x8000u | ((uint32_t)ENGINE_TAN2_FIRST << 7) | ENGINE_TAN2_PHASE);
     p->taal = 0, p->mpm = 120;
     p->tone_swara = SW_SA, p->tone_oct = 0;
@@ -152,12 +165,14 @@ static int32_t ui_sa_clamp(int32_t c) { return c < UI_SA_MIN ? UI_SA_MIN : c > U
 static int ui_settings_valid(const ui_settings_t *p)
 {
     int j;
-    if (p->magic != UI_SET_MAGIC || p->version != 7 || p->size != sizeof *p || p->build != FM1B_BUILD)
+    if (p->magic != UI_SET_MAGIC || p->version != 10 || p->size != sizeof *p || p->build != FM1B_BUILD)
         return 0;
     if (p->a4_dhz < TUNING_A4_DHZ_MIN || p->a4_dhz > TUNING_A4_DHZ_MAX || p->sa_cents < TUNING_SA_MIN
         || p->sa_cents > TUNING_SA_MAX || p->first < 0 || p->first > TANPURA_FIRST_MAX || p->reg < 0 || p->reg > 1
-        || (p->jawari != TANPURA_JAWARI_LO && p->jawari != TANPURA_JAWARI_HI) || p->cycle < 25 || p->cycle > 600
-        || p->tan_human > 100 || p->tabla_human > 100
+        || p->jawari % 25 != 0 || p->jawari > TANPURA_JAWARI_HI
+        || p->cycle < 25 || p->cycle > 600
+        || p->tan2_jawari % 25 != 0 || p->tan2_jawari > TANPURA_JAWARI_HI
+        || p->tan_human > 100 || p->tan_pitchvar > 100 || p->tabla_human > 100
         || p->taal >= taal_count() || p->mpm < TAAL_MPM_MIN || p->mpm > TAAL_MPM_MAX || p->tone_swara < 0
         || p->tone_swara >= SW_N || p->tone_oct < REFTONE_OCT_MIN || p->tone_oct > REFTONE_OCT_MAX || p->vol_tanpura > 100 || p->vol_tabla > 100
         || p->vol_tone > 100)
@@ -167,6 +182,8 @@ static int ui_settings_valid(const ui_settings_t *p)
     for (j = 0; j < TANPURA_NFINE; j++)
         if (p->fine[j] < -50 || p->fine[j] > 50)
             return 0;
+    if (p->tan2_fine0 < -50 || p->tan2_fine0 > 50)
+        return 0;
     if (p->extra < -1 || p->extra > TANPURA_FIRST_MAX || p->extra2 < -1 || p->extra2 > TANPURA_FIRST_MAX)
         return 0;
     if (p->temperament < 0 || p->temperament >= TUNING_TEMPERAMENT_N)
@@ -185,9 +202,12 @@ static void ui_settings_apply(const ui_settings_t *p)
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_FIRST, p->first);
     for (j = 0; j < TANPURA_NFINE; j++)
         engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_FINE + j, p->fine[j]);
+    engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_FINE, p->tan2_fine0);
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_JAWARI, p->jawari);
+    engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_JAWARI, p->tan2_jawari);
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_CYCLE, p->cycle);
     engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_HUMAN, p->tan_human);
+    engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_PITCHVAR, p->tan_pitchvar);
     if (p->tan2 & 0x8000) {                 /* (a record from 1.0 has none: the defaults stay) */
         engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_FIRST, (p->tan2 >> 7) & 31);
         engine_set_param(ui_eng, ENG_TANPURA2, TANPURA_P_PHASE, p->tan2 & 127);
@@ -405,8 +425,7 @@ static void ui_main(void)
     cv_text(84, 15, &FONT_XS, ton ? (mute ? "MUTE" : "ON") : "OFF", ton && !mute ? C_HI : ton ? C_GRAY : C_DIM);
     t[0] = 0;
     ui_cat(t, UI_SWARA[ui_get(ENG_TANPURA2, TANPURA_P_FIRST)]);
-    ui_cat(t, "  PH "); ui_num(u, ui_get(ENG_TANPURA2, TANPURA_P_PHASE), 0); ui_cat(t, u); ui_cat(t, "%");
-    ui_cat(t, "  CYC "); ui_dec1(u, ui_get(ENG_TANPURA, TANPURA_P_CYCLE)); ui_cat(t, u);
+    ui_cat(t, "  J"); ui_num(u, ui_get(ENG_TANPURA2, TANPURA_P_JAWARI), 0); ui_cat(t, u);
     cv_text(120, 15, &FONT_XS, t, C_WHITE);
     cv_text(10, 30, &FONT_XS, "TONE", C_GRAY);
     cv_text(84, 30, &FONT_XS, on ? "ON" : "OFF", on ? C_HI : C_DIM);
@@ -523,6 +542,7 @@ static void ui_row_value(char *t, int row)
     case ROW_TAN2_FIRST: ui_cat(t, UI_SWARA[ui_get(ENG_TANPURA2, TANPURA_P_FIRST)]); break;
     case ROW_TAN2_PHASE: ui_num(u, ui_get(ENG_TANPURA2, TANPURA_P_PHASE), 0); ui_cat(t, u); ui_cat(t, " %"); break;
     case ROW_HUMAN:    ui_num(u, ui_get(ENG_TANPURA, TANPURA_P_HUMAN), 0); ui_cat(t, u); ui_cat(t, " %"); break;
+    case ROW_PITCHVAR: ui_num(u, ui_get(ENG_TANPURA, TANPURA_P_PITCHVAR), 0); ui_cat(t, u); ui_cat(t, " %"); break;
     case ROW_TONE:     ui_cat(t, UI_SWARA[ui_get(ENG_REFTONE, REFTONE_P_SWARA)]); break;
     case ROW_BT:       ui_cat(t, ui_bt_on ? "ON" : "OFF"); break;
     case ROW_BT_DEV:   ui_bt_name(t, ui_bt_dev); break;
@@ -540,7 +560,7 @@ static void ui_row_value(char *t, int row)
     case ROW_TABLA_HUMAN: ui_num(u, ui_get(ENG_TAAL, TAAL_P_HUMAN), 0); ui_cat(t, u); ui_cat(t, " %"); break;
     default:
         if (ui_is_fine(row)) {
-            ui_num(u, ui_get(ENG_TANPURA, ui_fine_param(row)), 1);
+            ui_num(u, ui_get(ui_fine_target(row), ui_fine_param(row)), 1);
             ui_cat(t, u); ui_cat(t, " CENTS");
         }
         break;
@@ -607,6 +627,7 @@ static void ui_edit_step(int row, int32_t d)
         break;
     case ROW_TAN2_PHASE: ui_set(ENG_TANPURA2, TANPURA_P_PHASE, ui_get(ENG_TANPURA2, TANPURA_P_PHASE) + 5 * d); break;
     case ROW_HUMAN:    ui_set(ENG_TANPURA, TANPURA_P_HUMAN, ui_get(ENG_TANPURA, TANPURA_P_HUMAN) + 5 * d); break;
+    case ROW_PITCHVAR: ui_set(ENG_TANPURA, TANPURA_P_PITCHVAR, ui_get(ENG_TANPURA, TANPURA_P_PITCHVAR) + 5 * d); break;
     case ROW_TONE:
         ui_set(ENG_REFTONE, REFTONE_P_SWARA, clamp(ui_get(ENG_REFTONE, REFTONE_P_SWARA) + d, 0, SW_N - 1));
         break;
@@ -628,7 +649,8 @@ static void ui_edit_step(int row, int32_t d)
     default:
         if (ui_is_fine(row)) {
             int id = ui_fine_param(row);
-            ui_set(ENG_TANPURA, id, clamp(ui_get(ENG_TANPURA, id) + d, -50, 50));
+            int target = ui_fine_target(row);
+            ui_set(target, id, clamp(ui_get(target, id) + d, -50, 50));
         }
         break;
     }
@@ -872,7 +894,11 @@ static void ui_frame(void)
             ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_clamp(ui_get(ENG_ALL, DSP_P_SA_CENTS) + d));
     }
     if ((d = plat_enc(EN_ALGO)) != 0)
-        ui_set(ENG_TANPURA, TANPURA_P_JAWARI, d > 0 ? TANPURA_JAWARI_HI : TANPURA_JAWARI_LO);
+    {
+        int target = fx ? ENG_TANPURA2 : ENG_TANPURA;
+        ui_set(target, TANPURA_P_JAWARI, clamp(ui_get(target, TANPURA_P_JAWARI) + 25 * d,
+                                               TANPURA_JAWARI_MIN, TANPURA_JAWARI_HI));
+    }
     if ((d = plat_enc(EN_K2)) != 0)
         ui_set(ENG_MIXER, MIX_P_LEVEL + MIX_TANPURA, clamp(ui_get(ENG_MIXER, MIX_P_LEVEL + MIX_TANPURA) + 5 * d, 0, 100));
     if ((d = plat_enc(EN_K4)) != 0)

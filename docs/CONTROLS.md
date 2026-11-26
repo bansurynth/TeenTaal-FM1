@@ -18,7 +18,7 @@ settings live on one separate page (EDIT).
 | OCT− / OCT+ | the tone's octave, from three below to three above Sa; with a key held, shifts that key's note by octaves | — |
 | SELECT | the taal (round the list); while playing, the change waits for the end of the cycle | the row |
 | PRESETS | Sa by one cent | the row's value |
-| ALGORITHM | jawari: 75 or 100 (clockwise 100, counter-clockwise 75) | the same |
+| ALGORITHM | jawari T1: 0 / 25 / 50 / 75 / 100, one step per detent; FX + ALGORITHM controls T2 | the same |
 | KNOB1 | tempo (SEL: ×10) | tempo |
 | KNOB2, KNOB3, KNOB4 | tanpura, tabla, tone volume | the same |
 | EDIT / HOME | to the EDIT page / back | temperament, cycle, first string, tuning, irregularity, shared tanpura low-pass cutoff (2.0-8.5 kHz), and other settings |

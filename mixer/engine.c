@@ -27,14 +27,16 @@ void engine_set_param(engine_t *e, int target, int id, int32_t v)
         tanpura_set_param(&e->tanpura, id, v);
         if (id == TANPURA_P_ON) {
             e->tan_on = v != 0;
-        } else if (id != TANPURA_P_FIRST && id != TANPURA_P_PHASE && id != TANPURA_P_EXTRA && id != TANPURA_P_MUTE)
+        } else if (id != TANPURA_P_FIRST && id != TANPURA_P_PHASE && id != TANPURA_P_EXTRA && id != TANPURA_P_MUTE
+                   && id != TANPURA_P_FINE && id != TANPURA_P_JAWARI)
             tanpura_set_param(&e->tanpura2, id, v);
     }
     if (target == ENG_TANPURA2) {
         if (id == TANPURA_P_ON) {
             e->tan2_on = v != 0;
             tanpura_set_param(&e->tanpura2, id, e->tan2_on);
-        } else if (id == TANPURA_P_FIRST || id == TANPURA_P_PHASE || id == TANPURA_P_EXTRA || id == TANPURA_P_MUTE)
+        } else if (id == TANPURA_P_FIRST || id == TANPURA_P_PHASE || id == TANPURA_P_EXTRA || id == TANPURA_P_MUTE
+                   || id == TANPURA_P_FINE || id == TANPURA_P_JAWARI)
             tanpura_set_param(&e->tanpura2, id, v);
     }
     if (target == ENG_ALL || target == ENG_TABLA)

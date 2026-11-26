@@ -1,5 +1,30 @@
 # PROGRESS
 
+## Stato: FINE separato della prima corda T1/T2 e pitch variation (2026-11-26)
+
+### TANPURA PITCH VAR
+- Nuovo setting separato, range 0–100%, default 10%. A 100 la variazione casuale massima è circa ±10 cent;
+  al default 10 è circa ±1 cent.
+- Si applica a ogni pizzico del ciclo, indipendentemente su T1 e T2. FINE, Sa e l'anteprima FX non cambiano.
+- I coefficienti modali vengono riaccordati al nuovo pizzico senza retune sulla coda esistente. A 0 il percorso audio
+  è identico al comportamento precedente.
+- Jawari separato T1/T2: ALGORITHM cambia T1; FX + ALGORITHM cambia T2, in passi 0/25/50/75/100. La schermata principale
+  mostra J per entrambi e non mostra più PH/CYC sulla riga T2.
+
+### Piano e verifica
+- In EDIT: `FINE: 1ST STRING T1` regola solo T1; subito dopo `FINE: 1ST STRING T2` regola solo T2.
+  EXTRA, SA (2ND), SA (3RD) e KHARAJ restano FINE condivisi.
+- La fase predefinita del secondo tanpura resta al 20%.
+- Versione impostazioni 10: FINE T1/T2, jawari T1/T2 e pitch variation sono salvati separatamente/dedicatamente.
+- Verifiche: T1 +7 con T2 0; T2 −9 con T1 +7; entrambi ritrovati dopo power cycle; RESET → entrambi 0 e fase 20%.
+
+### Misure
+- Simulatore host: tutti i controlli passano.
+- Regressione audio: aggiornati solo gli hash degli scenari che includono il T2 sfasato. Rimane il solo fallimento
+  preesistente `tan_preview_G4_large` (+6,96 cent). Costo peggiore invariato: 79,68% contro budget 85%.
+- Build `0A914A31`: exit 0, app 429 152 B, `.data+.bss` 67 904 B, pool 200 308 B.
+- Flash app-only completato al 100%; `FM-1_7700 [running]`.
+
 ## Stato: precisione del tanpura su F2–G4 — verifica NON superata, build flashato (2026-11-26)
 
 ### Fatto

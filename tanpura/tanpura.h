@@ -14,13 +14,13 @@
  *   TANPURA_P_ON        0 / 1      1 starts the cycle; 0 stops plucking and fades out in 0.3 s
  *   TANPURA_P_MUTE      0 / 1      1: the output fades out in 20 ms, the strings keep plucking (the cycle stays in phase)
  *   TANPURA_P_FIRST     0..17      the first string's swara (SW_PA default; 12..17: the upper Sa .. Ma shuddha)
- * TANPURA_P_JAWARI  75 or 100  the thread position: 75 = 7 mm, 100 = 8 mm (long jvari, the default is 75).
- *                              Any other value is taken as the nearer of the two (the tables have one column each)
+ * TANPURA_P_JAWARI  0..100 in steps of 25; 0/25/50/75/100 = 4/5/6/7/8 mm (default 75)
  *   TANPURA_P_CYCLE     25..600    the cycle in tenths of a second (default 50: 5 s; 600: 60 s)
  *   TANPURA_P_PHASE     0..100     the plucks' offset in % of the cycle (default 0; moves a running cycle too)
  *   TANPURA_P_EXTRA     -1..17     optional extra string: -1 off, otherwise SW_SA..SW_NI and upper Sa..Ma (default off)
  *   TANPURA_P_FILTER    2000..8500 shared low-pass cutoff in Hz (default 8500)
  *   TANPURA_P_HUMAN     0..100     irregularity: 100 = plucks +-50 ms and +-30 % (default 50)
+ *   TANPURA_P_PITCHVAR  0..100     per-pluck pitch variation: 100 = +-10 cents (default 0)
  *   TANPURA_P_FINE + j  -50..50    strings 0..4 fine tuning in cents (4: the extra string)
  *   TANPURA_P_VOL + j   0..100     string j's volume (taken at its next pluck: the model is exactly linear in it)
  *   TANPURA_P_REGISTER  0 / 1      1 (default): the tanpura an octave under the player's Sa ("large"), when that stays
@@ -42,7 +42,8 @@
 #define TANPURA_FIRST_MAX 17                     /* the first string: SW_SA..SW_NI, then the upper Sa .. Ma shuddha */
 #define TANPURA_OS 2                             /* the strings run at DSP_FS / TANPURA_OS */
 #define TANPURA_FS (DSP_FS / (float)TANPURA_OS)
-#define TANPURA_JAWARI_LO 75                     /* the jawari takes 75 or 100: one table column each */
+#define TANPURA_JAWARI_MIN 0
+#define TANPURA_JAWARI_LO 75                     /* 25 / 50 are extrapolated from the calibrated 75/100 tables */
 #define TANPURA_JAWARI_HI 100
 #define REG_LOWEST_CENTS (-1800)                 /* the register applies while its Sa (an octave under) stays at or above this */
 #ifndef TANPURA_MAXM                             /* experiment override; the default cap is set in tanpura_default_config */
@@ -58,6 +59,7 @@ enum {
     TANPURA_P_JAWARI,
     TANPURA_P_CYCLE,
     TANPURA_P_HUMAN,
+    TANPURA_P_PITCHVAR,
     TANPURA_P_FINE,                              /* + string 0..4 */
     TANPURA_P_VOL = TANPURA_P_FINE + TANPURA_NFINE,   /* + string 0..4 */
     TANPURA_P_REGISTER = TANPURA_P_VOL + TANPURA_NSTR,
@@ -99,7 +101,7 @@ typedef struct {
 typedef struct {
     tanpura_config_t cfg;
     tuning_t tuning;
-    int32_t on, mute, first, extra, jawari, cycle, human, reg, phase, phase_done, filter_hz;
+    int32_t on, mute, first, extra, jawari, cycle, human, pitchvar, reg, phase, phase_done, filter_hz;
     int32_t fine[TANPURA_NFINE], vol[TANPURA_NSTR];
     volatile int32_t start_req, extra_silence_req; /* main-loop changes taken between render blocks */
     tstring_t str[TANPURA_NSTR];

@@ -148,12 +148,14 @@ int app_expect(const char *what, int *got)
     else if (!strcmp(what, "cycle")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_CYCLE);
     else if (!strcmp(what, "tan2_cycle")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_CYCLE);
     else if (!strcmp(what, "tan_human")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_HUMAN);
+    else if (!strcmp(what, "tan_pitchvar")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_PITCHVAR);
     else if (!strcmp(what, "tan2_first")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_FIRST);
     else if (!strcmp(what, "tan2_phase")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_PHASE);
     else if (!strcmp(what, "tan_filter")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_FILTER);
     else if (!strcmp(what, "tan2_filter")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_FILTER);
     else if (!strcmp(what, "tan_sa")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_SA_NOW);
     else if (!strcmp(what, "jawari")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_JAWARI);
+    else if (!strcmp(what, "tan2_jawari")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_JAWARI);
     else if (!strcmp(what, "first")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_FIRST);
     else if (!strcmp(what, "extra")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_EXTRA);
     else if (!strcmp(what, "tan2_extra")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_EXTRA);
@@ -171,6 +173,7 @@ int app_expect(const char *what, int *got)
     else if (!strcmp(what, "unsaved")) *got = ui_unsaved;
     else if (!strcmp(what, "loaded")) *got = ui_loaded;
     else if (!strcmp(what, "fine0")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_FINE);
+    else if (!strcmp(what, "tan2_fine0")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_FINE);
     else if (!strcmp(what, "kt_key")) *got = ui_kt_key;
     else if (!strcmp(what, "tone_note")) *got = (int)engine_get_param(&eng, ENG_REFTONE, REFTONE_P_NOTE);
     else if (!strcmp(what, "page")) *got = ui_page;
