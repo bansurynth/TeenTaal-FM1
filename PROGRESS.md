@@ -19,7 +19,8 @@
 - Simulatore host (`sh tools/fw.sh --host`, `fw_basic.txt`): 204 ok, 0 FAIL.
 - Build target (`sh tools/fw.sh`, Docker via Colima): exit 0, nessuna riga di errore o warning. Immagine app 421 020 B. `.ram_text` 5 800 / 32 768 B. `.data+.bss` 67 920 / 98 304 B. Pool 178 848 / 344 064 B (circa 48 % libero). Pacchetto `build/teentaal.fwsc` 614 938 B, identità FM-1_7700, build C47533FE.
 - Controlli su simboli: nessuna routine soft-double, accesso ai registri solo tramite felucca-bsp, stack Bluetooth proprio.
-- Nessun flash in questa tornata. L'ultimo flash è quello già confermato da ElectroNick ("così va bene, regge tutto").
+- Commit locale `46a69ef` (`step2b: F2-G4 keyboard, jawari 75/100, effects removed, tables regenerated`), pushato sul fork `bansurynth/main` (fast-forward, senza force). `origin` resta a 403.
+- Flash app-only (`fm1_install.py --no-resources`) del pacchetto `build/teentaal.fwsc` (11:09): exit 0, device riavviato, `--info` mostra `FM-1_7700 [running]`. Bootloader, SPL e OTA non toccati. Da verificare all'ascolto: intonazione F2–G4, jawari 75/100, etichette dei tasti.
 
 ### Aperto
 - `tools/test/cpu_baseline.txt` è obsoleto: contiene ancora `cpu/tan_Fs2_j0_Ma`. Il controllo CPU usa `perf_event_open`, disponibile solo su Linux. Su WSL va eseguito `BUDGET_UPDATE=1 ./build-host/regress` per rigenerarlo. Fino ad allora `tan_Fs2_j75_Ma` e gli scenari tanpura cambiati falliscono il controllo CPU su WSL.
