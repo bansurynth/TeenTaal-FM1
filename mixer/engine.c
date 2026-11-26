@@ -7,6 +7,7 @@ void engine_init(engine_t *e)
     sine_init();
     tanpura_config_t cfg;
     tanpura_init(&e->tanpura, 0);
+    tanpura_attach_preview(&e->tanpura, &e->preview);
     tanpura_default_config(&cfg);
     cfg.seed ^= 0x9E3779B9u;                     /* its own irregularity */
     tanpura_init(&e->tanpura2, &cfg);

@@ -26,6 +26,7 @@ enum { ENG_ALL, ENG_TANPURA, ENG_TABLA, ENG_REFTONE, ENG_MIXER, ENG_TAAL, ENG_TA
 typedef struct {
     tanpura_t tanpura;
     tanpura_t tanpura2;
+    tanpura_preview_t preview;         /* the FX voices: on the tanpura only */
     volatile int32_t tan_on, tan2_on;   /* the independent on/off states */
     tabla_t tabla;
     taal_t taal;                       /* its events go to the tabla, sub-block by sub-block */

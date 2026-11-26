@@ -50,6 +50,7 @@
 #endif
 #define TANPURA_FILTER_MIN_HZ 2000
 #define TANPURA_FILTER_MAX_HZ 8500
+#define TANPURA_PREVIEW_VOICES 4                 /* FX + key: up to four plucked Sa strings at once */
 
 enum {
     TANPURA_P_ON = DSP_P_MODULE,
@@ -77,6 +78,24 @@ typedef struct {
     int eq;                                      /* the brightness correction (UPS_EQ): 1 on; off by default (step 2b) */
 } tanpura_config_t;
 
+/* one FX pluck: a Sa-model string with its own envelope. req: a new note waits until the voice has faded (tanpura_take
+ * starts it). The main loop writes stage, amp and order only while req is 0, and sets req last */
+typedef struct {
+    tstring_t str;
+    tstring_coefs_t stage;
+    volatile int32_t req, sounding;
+    float amp, gain;                             /* pluck amplitude; the envelope (1 while held) */
+    int32_t left, cut;                           /* hold left (output-rate samples); cut: fading out now (20 ms) */
+    uint32_t order;                              /* press order: the oldest sounding voice is the one stolen */
+} tanpura_voice_t;
+
+typedef struct {
+    tanpura_voice_t v[TANPURA_PREVIEW_VOICES];
+    uint32_t presses;
+    volatile int32_t cancel;                     /* the tanpura was switched on: every voice fades (tanpura_take) */
+    float sfd[DSP_BLOCK / TANPURA_OS], sfn[DSP_BLOCK / TANPURA_OS];   /* one voice's forces, before its envelope */
+} tanpura_preview_t;
+
 typedef struct {
     tanpura_config_t cfg;
     tuning_t tuning;
@@ -86,10 +105,9 @@ typedef struct {
     tstring_t str[TANPURA_NSTR];
     tstring_coefs_t stage[TANPURA_NSTR];         /* retunes prepared by set_param, taken by render */
     volatile int32_t stage_ready[TANPURA_NSTR];
-    tstring_t preview;
-    tstring_coefs_t preview_stage;
-    volatile int32_t preview_ready, preview_cancel;
-    int32_t preview_left, preview_active, preview_cents_above_c4;
+    tanpura_preview_t *pv;                       /* the FX voices (tanpura_attach_preview); NULL: none */
+    volatile int32_t strings_live;               /* the strings are computed (on, or fading out): set by set_param, cleared by render */
+    int32_t preview_cents_above_c4;
     int32_t due[TANPURA_NSTR], nominal[TANPURA_NSTR];   /* samples to the next pluck: actual, on the grid */
     uint32_t rng;
     float gain;                                  /* output fade (on/off, large retunes) */
@@ -109,6 +127,8 @@ void tanpura_default_config(tanpura_config_t *cfg);
 void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg);   /* cfg NULL: the defaults */
 void tanpura_set_param(tanpura_t *m, int param_id, int32_t value);
 int32_t tanpura_get_param(const tanpura_t *m, int param_id);
-void tanpura_preview(tanpura_t *m, int32_t cents_above_c4);    /* one-shot on a single Sa-model string */
+void tanpura_attach_preview(tanpura_t *m, tanpura_preview_t *pv);   /* the FX voices' pool: once, after tanpura_init */
+void tanpura_preview(tanpura_t *m, int32_t cents_above_c4);    /* an FX pluck (a Sa-model string at this pitch): a free voice, else the oldest; dropped while the tanpura plays or fades */
+int32_t tanpura_preview_count(const tanpura_t *m);             /* the FX voices sounding or waiting */
 void tanpura_take(tanpura_t *m);                /* pending starts and retunes in: where no render runs (see above) */
 void tanpura_render(tanpura_t *m, int32_t *out, int n_samples);   /* adds into out; n even, <= DSP_BLOCK */

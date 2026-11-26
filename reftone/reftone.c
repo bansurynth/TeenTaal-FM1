@@ -7,7 +7,10 @@ static int32_t clampi(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : 
 
 float reftone_hz(const reftone_t *m)
 {
-    return tuning_hz(&m->tuning, tuning_swara_cents(&m->tuning, m->swara) + 1200.0f * (float)m->octave);
+    if (m->note == REFTONE_NOTE_SWARA)
+        return tuning_hz(&m->tuning, tuning_swara_cents(&m->tuning, m->swara) + 1200.0f * (float)m->octave);
+    /* tuning_hz is from Sa: note - sa_cents puts the note at its own pitch whatever Sa is */
+    return tuning_hz(&m->tuning, (float)(m->note - m->tuning.sa_cents) + 1200.0f * (float)m->octave);
 }
 
 static void retune(reftone_t *m)
@@ -24,6 +27,7 @@ void reftone_init(reftone_t *m, const reftone_config_t *cfg)
     m->on = 0;
     m->swara = SW_SA;
     m->octave = 0;
+    m->note = REFTONE_NOTE_SWARA;
     m->volume = 70;
     m->phase = 0;
     m->gain = 0.0f;
@@ -41,6 +45,10 @@ void reftone_set_param(reftone_t *m, int id, int32_t v)
     case REFTONE_P_SWARA:  m->swara = clampi(v, 0, SW_N - 1); retune(m); break;
     case REFTONE_P_OCTAVE: m->octave = clampi(v, REFTONE_OCT_MIN, REFTONE_OCT_MAX); retune(m); break;
     case REFTONE_P_VOLUME: m->volume = clampi(v, 0, 100); break;
+    case REFTONE_P_NOTE:
+        m->note = v == REFTONE_NOTE_SWARA ? v : clampi(v, REFTONE_NOTE_MIN, REFTONE_NOTE_MAX);
+        retune(m);
+        break;
     default: break;
     }
 }
@@ -55,6 +63,7 @@ int32_t reftone_get_param(const reftone_t *m, int id)
     case REFTONE_P_SWARA:  return m->swara;
     case REFTONE_P_OCTAVE: return m->octave;
     case REFTONE_P_VOLUME: return m->volume;
+    case REFTONE_P_NOTE:   return m->note;
     default:               return 0;
     }
 }

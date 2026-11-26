@@ -7,7 +7,7 @@ expect register 0
 expect tan_on 0
 expect tan2_on 0
 expect peak 0
-# SEL always sets Sa (keys 0..26 = F2..G4); FX + C4-G4 (keys 19..26) previews one string an octave lower (C3..G3) while both tanpuras are off
+# SEL always sets Sa (keys 0..26 = F2..G4, C4 = key 19). FX + any key from F2 to G4 (keys 0..26) plucks that key's own pitch, up to 4 at once, while both tanpuras are off
 peakreset
 press SEL
 tapkey 6
@@ -23,27 +23,70 @@ wait 100
 expect sa_cents -1200
 expect tan_preview 0
 expect peak 0
+# the whole keyboard plucks: F2 (key 0), then G4 (key 26); each voice ends after its hold
 press FX
-tapkey 7
+tapkey 0
 release FX
 wait 100
-expect tan_preview 0
-press FX
-tapkey 19
-release FX
-wait 100
-expect sa_cents -1200
 expect tan_preview 1
-expect tan_preview_cents -1200
-expect kt_key -1
-expect peak >0
+expect tan_preview_cents -1900
+wait 5800
+expect tan_preview 0
 press FX
 tapkey 26
 release FX
 wait 100
-expect sa_cents -1200
 expect tan_preview 1
-expect tan_preview_cents -500
+expect tan_preview_cents 700
+wait 5800
+expect tan_preview 0
+expect peak 0
+# FX + B2 (key 6) plucks B2; the key tone stays off
+press FX
+tapkey 6
+release FX
+wait 100
+expect tan_preview 1
+expect tan_preview_cents -1300
+expect kt_key -1
+expect peak >0
+# four keys at once (B2 held, then D3, F3, G3); a fifth (A3) steals the oldest
+press FX
+tapkey 9
+tapkey 12
+tapkey 14
+release FX
+wait 100
+expect tan_preview 4
+press FX
+tapkey 16
+release FX
+wait 100
+expect tan_preview 4
+expect tan_preview_cents -300
+# the voices end after the 5 s hold and the 0.3 s release
+wait 5800
+expect tan_preview 0
+expect peak 0
+# FX + SEL plucks an octave lower (C3 here) and leaves Sa alone
+press FX
+press SEL
+tapkey 19
+release SEL
+release FX
+wait 100
+expect tan_preview 1
+expect tan_preview_cents -1200
+expect sa_cents -1200
+wait 5800
+expect tan_preview 0
+# C4 plucks again; SEQ then starts the tanpuras and cancels it
+press FX
+tapkey 19
+release FX
+wait 100
+expect tan_preview 1
+expect tan_preview_cents 0
 # the tanpuras on: SEQ starts both
 tap SEQ
 wait 3000
@@ -53,7 +96,7 @@ expect peak >200000
 expect tan_preview 0
 expect jobs >400
 shot main_tanpura_on.png
-# With a tanpura on, SEL still sets Sa and FX + C4-G4 does not preview
+# With a tanpura on, SEL still sets Sa and FX does not pluck (C4 here)
 press SEL
 tapkey 8
 release SEL
@@ -225,28 +268,29 @@ tap PLAY
 wait 2500
 expect taal_on 0
 expect peak 0
-# step 8: a key alone sounds the tone on its swara while held (Sa is G4 here: key 26 = G4 = Sa, key 16 = A3 = Re an octave down, key 0 = F2 three octaves down)
+# step 8: a key alone sounds its absolute note while held, whatever Sa is (key 26 = G4, key 16 = A3, key 0 = F2, in cents above C4); the octave stays the one set with OCT
 expect unsaved 1
 expect octave 1
 key 26 down
 wait 200
 expect ref_on 1
+expect tone_note 700
 expect swara 0
-expect octave 0
+expect octave 1
 expect kt_key 26
 key 16 down
 wait 200
-expect swara 2
-expect octave -1
+expect tone_note -300
+expect octave 1
 leds
 key 16 up
 wait 100
-expect swara 0
+expect tone_note 700
 expect kt_key 26
 key 0 down
 wait 200
-expect swara 10
-expect octave -3
+expect tone_note -1900
+expect octave 1
 expect kt_key 0
 key 0 up
 wait 100
@@ -256,6 +300,41 @@ wait 300
 expect ref_on 0
 expect octave 1
 expect kt_key -1
+# OCT pressed while a key is held: the octave stays on release; OCT spans -3..+3
+key 26 down
+wait 200
+tap OCT-
+wait 100
+expect octave 0
+key 26 up
+wait 300
+expect ref_on 0
+expect octave 0
+expect kt_key -1
+tap OCT-
+tap OCT-
+tap OCT-
+tap OCT-
+wait 100
+expect octave -3
+tap OCT+
+tap OCT+
+tap OCT+
+tap OCT+
+tap OCT+
+tap OCT+
+wait 100
+expect octave 3
+tap OCT-
+tap OCT-
+tap OCT-
+tap OCT-
+wait 100
+expect octave -1
+tap OCT+
+tap OCT+
+wait 100
+expect octave 1
 # the first string's fine tuning (EDIT, row 6), then SAVE, a change, and a power cycle: the saved values come back
 tap EDIT
 turn SELECT -100

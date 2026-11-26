@@ -31,7 +31,7 @@ STANDARD_SA = (-1900, -1800, -1600, -1500, -1200, -1000, -800, -600, -500, -300,
 LARGE_SA = (0, 100, 200, 300, 400, 500, 600, 700)
 JAWARI = (75, 100)
 SHIFTS = (-200, 0, 200)
-PREVIEW_NOTES = tuple(range(-1300, 101, 100))
+PREVIEW_NOTES = tuple(range(-3100, 701, 100))  # FX + SEL plucks F2..E3 one octave down, from -3100 cents
 UPPER_SWARAS = tuple(range(11, 18))
 TABLES = (
     ("PITCH_FIRST", "first", tuple(range(18))),

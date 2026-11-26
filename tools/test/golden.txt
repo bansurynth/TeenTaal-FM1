@@ -9,6 +9,8 @@ render/ref_pa_tar d2ef20f760a383af
 render/ref_ni_k_mandra 359c0d34292c83cf
 render/ref_onoff 7bf4d651c9f5e0bf
 render/ref_changes bca62885fe75784b
+render/ref_note_G4_sa_A3 b682bb193e2cce07
+render/ref_note_F2_oct_sa_G4 438db5ffc9bf5c2b
 render/tan_single_A2 770c1c412df0458b
 render/tan2_phase0_Ma c04200fae6fdfa5b
 render/tan_A2_default 5ea3bfeaf48a7e4b
@@ -19,7 +21,7 @@ render/tan_G4_Ma_high 56eeb10105efbdcb
 render/tan_G4_extra 7216ed2fba97572f
 render/tan_G3_cycle c526c40120e10317
 render/tan_G3_cycle_human a2f528ae5333e47b
-render/tan_preview_G3 c6a5fdf59d8c6457
+render/tan_preview_G3 a3ea06a6a3de7d3b
 render/tan_Fs2_j75_Ma cfbc68ea7c130fe3
 render/tan_G4_j100_Ni 8e435cf308828313
 render/tan_retune ff44d3a2d660df43

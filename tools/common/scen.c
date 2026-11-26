@@ -78,6 +78,10 @@ int scen_parse(const char *s, scen_ev_t *ev)
         ev->target = ENG_REFTONE, ev->id = REFTONE_P_SWARA;
         if (swara_index(val, &ev->v) == 0)
             return 0;
+    } else if (!strcmp(name, "ref.note")) {
+        ev->target = ENG_REFTONE, ev->id = REFTONE_P_NOTE;
+        if (note_cents(val, &ev->v) == 0)
+            return 0;
     } else if (!strcmp(name, "ref.on"))  ev->target = ENG_REFTONE, ev->id = REFTONE_P_ON;
     else if (!strcmp(name, "ref.oct"))   ev->target = ENG_REFTONE, ev->id = REFTONE_P_OCTAVE;
     else if (!strcmp(name, "ref.vol"))   ev->target = ENG_REFTONE, ev->id = REFTONE_P_VOLUME;

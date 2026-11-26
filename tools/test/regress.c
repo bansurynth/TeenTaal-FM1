@@ -58,6 +58,10 @@ static scenario_t SC[] = {
     {"ref_changes", 6, {"0:sa=C#3", "0:ref.vol=100", "0:ref.on=1", "0.5:ref.swara=Pa", "1.0:ref.oct=1",
                         "1.5:ref.swara=Ni", "2.0:ref.vol=30", "2.5:sa=E3", "3.0:ref.vol=100", "3.5:ref.on=0",
                         "3.7:ref.on=1", "4.0:master=1000", "4.5:mix.ref=50", "5.0:ref.on=0"}, 0, 0, 5.1, 0, 0},
+    /* the absolute tone (ref.note): the frequency is set by the note alone, not by Sa */
+    {"ref_note_G4_sa_A3", 4, {"0:sa=A3", "0:ref.note=G4", "0:ref.vol=100", "0:ref.on=1"}, 0, 0, -1, 0, 0},
+    {"ref_note_F2_oct_sa_G4", 4, {"0:sa=G4", "0:ref.note=F2", "0:ref.oct=1", "0:ref.vol=100", "0:ref.on=1"},
+     0, 0, -1, 0, 0},
     /* the tanpura (step 2b) */
     {"tan_single_A2", 8, {"0:sa=A2", "0:tan2.on=0", "0:tan.on=1"}, 0, 0, -1, 1, 0},
     {"tan2_phase0_Ma", 8, {"0:sa=A2", "0:tan2.phase=0", "0:tan2.first=Ma", "0:tan2.on=1", "0:tan.on=1"},
@@ -118,17 +122,26 @@ static scenario_t SC[] = {
 /* the tanpura's cost on the FM-1, estimated from what it computes: 31.6 pi32v2 instructions per mode and string
  * step (the merged loop, 31, and the per-call setup, 20 / 32, from the disassembly), the strings at half rate, plus
  * the per-step contact solution (~90 a string), the body (24 sections, ~14 each) and the upsampler (~40), all at
- * 1.0..1.3 cycles an instruction (not measured yet: step 3) */
+ * 1.0..1.3 cycles an instruction (not measured yet: step 3). The four strings count while computed (on, or fading
+ * out), the body and upsampler while active, and each FX voice that sounds costs its modes, its contact and ~8 a step */
 static void tanpura_pct(const tanpura_t *t, double *lo, double *hi)
 {
-    double steps = 0, instr;
+    double steps = 0, instr = 0;
     int contact_strings = TANPURA_NSTR - 1 + (t->extra >= 0);
-    int j;
-    for (j = 0; j < TANPURA_NSTR; j++)
-        if (j != TANPURA_NSTR - 1 || t->extra >= 0)
-            steps += t->str[j].c.M;
-    steps /= TANPURA_OS;
-    instr = steps * 31.6 + (contact_strings * 90 + 24 * 14) / (double)TANPURA_OS + 40;
+    int j, v;
+    if (t->strings_live) {
+        for (j = 0; j < TANPURA_NSTR; j++)
+            if (j != TANPURA_NSTR - 1 || t->extra >= 0)
+                steps += t->str[j].c.M;
+        steps /= TANPURA_OS;
+        instr += steps * 31.6 + contact_strings * 90 / (double)TANPURA_OS;
+    }
+    if (t->pv)
+        for (v = 0; v < TANPURA_PREVIEW_VOICES; v++)
+            if (t->pv->v[v].sounding)
+                instr += (t->pv->v[v].str.c.M * 31.6 + 90 + 8) / (double)TANPURA_OS;
+    if (t->active)
+        instr += 24 * 14 / (double)TANPURA_OS + 40;
     *lo = instr * 1.0 / FM1_CYCLES_PER_SAMPLE * 100;
     *hi = instr * 1.3 / FM1_CYCLES_PER_SAMPLE * 100;
 }
@@ -212,6 +225,70 @@ static void tanpura_mute_checks(void)
     snprintf(buf, sizeof buf, "playing %ld, muted %ld, back %ld",
              (long)on_peak, (long)muted_peak, (long)back_peak);
     check("tan_mute", "muted output is exact silence", on_peak > 0 && muted_peak == 0 && back_peak > 0, buf);
+}
+
+/* renders blocks, the main loop's tanpura_take before each one as on the device, tracking the peak and the
+ * samples at full scale */
+static void tanpura_poly_render(tanpura_t *t, int blocks, int32_t *peak, int *clips)
+{
+    int32_t out[DSP_BLOCK];
+    int b, k;
+    for (b = 0; b < blocks; b++) {
+        memset(out, 0, sizeof out);             /* tanpura_render adds into out */
+        tanpura_take(t);
+        tanpura_render(t, out, DSP_BLOCK);
+        for (k = 0; k < DSP_BLOCK; k++) {
+            int32_t a = out[k] < 0 ? -out[k] : out[k];
+            if (a > *peak)
+                *peak = a;
+            if (a >= DSP_Q23_MAX)
+                (*clips)++;
+        }
+    }
+}
+
+/* four presses sound together, a press with all four still waiting is dropped, a fifth press with all four
+ * sounding steals the oldest, and the voices end in exact silence */
+static void tanpura_poly_checks(void)
+{
+    static tanpura_t t;
+    static tanpura_preview_t pv;
+    static const int32_t cents[5] = {-1300, -1000, -700, -500, -300};
+    const int per_s = (int)((double)DSP_FS / DSP_BLOCK);
+    int32_t peak = 0, end_peak = 0;
+    int clips = 0, end_clips = 0, i, dropped, four, stolen, end_count;
+    double lo, hi;
+    char buf[128];
+
+    tanpura_init(&t, 0);
+    tanpura_attach_preview(&t, &pv);
+    for (i = 0; i < 4; i++)
+        tanpura_preview(&t, cents[i]);
+    tanpura_preview(&t, cents[4]);
+    dropped = pv.presses == 4 && tanpura_preview_count(&t) == 4;
+    tanpura_take(&t);
+    four = tanpura_preview_count(&t);
+    tanpura_poly_render(&t, per_s, &peak, &clips);           /* 1 s with all four sounding */
+    tanpura_pct(&t, &lo, &hi);
+    tanpura_preview(&t, cents[4]);
+    tanpura_take(&t);
+    stolen = pv.presses == 5 && tanpura_preview_count(&t) == 4;
+    tanpura_poly_render(&t, 6 * per_s, &peak, &clips);       /* to 7 s: the voices hold, fade, and go quiet */
+    tanpura_poly_render(&t, per_s / 2, &end_peak, &end_clips);
+    end_count = tanpura_preview_count(&t);
+
+    snprintf(buf, sizeof buf, "%d voices sounding", four);
+    check("tan_poly", "four presses take four voices", four == 4, buf);
+    check("tan_poly", "fifth press dropped while all wait", dropped, NULL);
+    check("tan_poly", "fifth press steals the oldest", stolen, NULL);
+    snprintf(buf, sizeof buf, "peak %.1f dBFS", peak > 0 ? 20.0 * log10(peak / DSP_Q23_F) : -999.0);
+    check("tan_poly", "four voices audible", peak > 0, buf);
+    snprintf(buf, sizeof buf, "%d samples at full scale", clips);
+    check("tan_poly", "four voices: no full-scale sample", clips == 0 && end_clips == 0, buf);
+    snprintf(buf, sizeof buf, "%.1f-%.1f %% of the second core", lo, hi);
+    check("tan_poly", "four voices within cost budget", hi <= BUDGET_TANPURA_PCT, buf);
+    snprintf(buf, sizeof buf, "%d voices, last 0.5 s peak %ld", end_count, (long)end_peak);
+    check("tan_poly", "voices end in exact silence", end_count == 0 && end_peak == 0, buf);
 }
 
 static double goertzel_power(const float *x, const double *window, int n, double fs, double target, double cents)
@@ -327,11 +404,13 @@ static double just_cents(int s, int temperament)
 static void tanpura_preview_pitch_check(const char *name, int sa_cents, int reg, int jawari, int preview_cents)
 {
     static tanpura_t t;
+    static tanpura_preview_t pv;
     char detail[128];
     double target = 440.0 * pow(2.0, ((double)preview_cents - 900.0) / 1200.0);
     double measured;
     int j;
     tanpura_init(&t, 0);
+    tanpura_attach_preview(&t, &pv);
     tanpura_set_param(&t, DSP_P_SA_CENTS, sa_cents);
     tanpura_set_param(&t, TANPURA_P_REGISTER, reg);
     tanpura_set_param(&t, TANPURA_P_JAWARI, jawari);
@@ -386,7 +465,15 @@ static void tanpura_pitch_checks(void)
     tanpura_preview_pitch_check("tan_preview_Ma", -800, 0, 75, -300);
     tanpura_preview_pitch_check("tan_preview_G3", -500, 1, 100, -500);
     tanpura_preview_pitch_check("tan_preview_C4", -1800, 0, 75, 0);
+    tanpura_preview_pitch_check("tan_preview_B2", -1300, 0, 75, -1300);
     tanpura_preview_pitch_check("tan_preview_F2", -1900, 0, 75, -1900);
+    tanpura_preview_pitch_check("tan_preview_F1", -1900, 0, 75, -3100);
+    tanpura_preview_pitch_check("tan_preview_F1_sa-300", -300, 0, 100, -3100);
+    tanpura_preview_pitch_check("tan_preview_F1_sa700", 700, 0, 100, -3100);
+    tanpura_preview_pitch_check("tan_preview_B1", -300, 0, 75, -2500);
+    tanpura_preview_pitch_check("tan_preview_G4", 0, 0, 100, 700);
+    tanpura_preview_pitch_check("tan_preview_G4_large", 700, 1, 100, 700);
+    tanpura_preview_pitch_check("tan_preview_Cs4", 0, 0, 100, 100);
 }
 
 /* each JUST swara on the first string, and the high Ma, against the target of its ratio */
@@ -587,9 +674,15 @@ int main(int argc, char **argv)
         SC[s].f_max = SC[s].f_expect;
     SC[7].f_max = SC[2].f_expect;                   /* Sa C#3 throughout */
     SC[8].f_max = ref_hz(440, -800, pow(2, 11 / 12.0), 1);   /* Ni, tar, Sa = E3: the highest the scenario reaches */
+    /* the absolute tone: ref_hz with the note in place of Sa (independent of Sa) */
+    SC[9].f_expect = ref_hz(440, 700, 1, 0);                  /* G4 = 392.00 Hz */
+    SC[10].f_expect = ref_hz(440, -1900, 1, 1);               /* F2 an octave up = F3 = 174.61 Hz */
+    SC[9].f_max = SC[9].f_expect;
+    SC[10].f_max = SC[10].f_expect;
 
     tanpura_cycle_checks();
     tanpura_mute_checks();
+    tanpura_poly_checks();
     tanpura_pitch_checks();
     tanpura_just_pitch_checks();
     for (s = 0; s < NSC; s++) {

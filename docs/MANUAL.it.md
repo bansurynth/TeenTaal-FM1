@@ -16,7 +16,7 @@ schermata. All'accensione è tutto spento; le impostazioni salvate tornano come 
  X       2       0       3                 ← il ciclo: una casella per matra, divise in vibhag
  ■ □ □ □ □ □ □ □ ■ □ □ □ □ □ □ □
  TANPURA ON     PA J75 V100                ← prima corda, jawari, volume
- TONE    OFF    SA V70                     ← swara del tono, ottava, volume
+ TONE    OFF    SA V70                     ← swara del tono, ottava, volume (con un tasto tenuto: nome della nota)
  CPU …  TABLA V100
 ```
 
@@ -27,16 +27,16 @@ schermata. All'accensione è tutto spento; le impostazioni salvate tornano come 
 | **SEQ** | tanpura: entrambi accesi / 2° in MUTE / 1° in MUTE / entrambi spenti |
 | **PLAY** | tabla: partono dal sam / si fermano (luce verde mentre suonano) |
 | **ARP** | tono di riferimento acceso / spento |
-| **un tasto** | il tono su quello swara **finché lo tieni premuto** (come un harmonium) |
+| **un tasto** | il tono sulla nota di quel tasto (da F2 a G4, temperamento equabile, indipendente dal Sa) **finché lo tieni premuto** (come un harmonium); OCT− / OCT+ lo spostano di ottave |
 | **SEL + un tasto** | imposta Sa alla nota (i cents restano) |
-| **FX + un tasto da C4 a G4** | con entrambi i tanpura spenti, pizzica una corda un'ottava sotto la nota premuta, senza cambiare Sa |
+| **FX + un tasto** (tutti i 27 tasti, da F2 a G4) | con entrambi i tanpura spenti, pizzica una corda sulla nota del tasto, fino a quattro note insieme, senza cambiare Sa. Con FX e SEL insieme, un'ottava sotto |
 | **SEL + OCT− / OCT+** | il Sa un'ottava sotto / sopra |
 | **PRESETS** | il Sa di un cent per scatto |
 | **SELECT** | il taal; se i tabla suonano, il nuovo taal parte **alla fine del ciclo** |
 | **KNOB1** | il tempo, 1 matra al minuto per scatto (**SEL + KNOB1**: 10) |
 | **KNOB2 / KNOB3 / KNOB4** | volume di tanpura / tabla / tono |
 | **ALGORITHM** | jawari: la posizione del filo di cotone, 75 o 100. In senso orario 100, in antiorario 75 |
-| **OCT− / OCT+** | l'ottava del tono (mandra, madhya, tar) |
+| **OCT− / OCT+** | l'ottava del tono, da tre sotto a tre sopra il Sa (mandra, madhya, tar); con un tasto tenuto, sposta di ottave la nota di quel tasto |
 | **MASTER** | volume generale |
 | **EDIT** | le impostazioni (sotto); **HOME** torna indietro |
 | **SAVE** | salva le impostazioni (scompare UNSAVED) |
@@ -49,9 +49,11 @@ la tastiera mostra dove sono gli swara rispetto al Sa scelto.
 Il Sa di default è **La3 (220 Hz)**, adatto a un bansuri in La (il Sa del flauto è un'ottava sopra). Per un bansuri
 in Sol: **SEL + il tasto del Sol3** (196 Hz). I 27 tasti danno da F2 a G4, una nota per tasto; SEL + OCT− / OCT+ sposta il Sa di un'ottava. Il tanpura suona sulla nota del Sa che vedi (di default La3). Il dayan dei tabla si accorda da solo sul Sa.
 
-Con entrambi i tanpura spenti, tieni premuto FX e premi un tasto da C4 a G4: parte una sola corda del primo tanpura
-un'ottava sotto la nota premuta, senza cambiare Sa. Se uno dei tanpura è acceso, la combinazione FX non avvia la corda;
-SEL + un tasto imposta sempre Sa.
+Con entrambi i tanpura spenti, tieni premuto FX e premi uno dei 27 tasti, da F2 a G4: parte una corda del primo
+tanpura sulla nota del tasto, senza cambiare Sa. Suonano insieme fino a quattro note; la quinta sostituisce la più
+vecchia. Ogni nota dura circa 5 secondi, poi sfuma in 0,3 secondi. Se uno dei tanpura è acceso, la combinazione FX non
+pizzica e i tasti restano muti; SEL + un tasto imposta sempre Sa. Tenendo premuti insieme FX e SEL, il pizzico del
+tasto suona un'ottava sotto (e Sa non cambia).
 
 Il ciclo predefinito del tanpura (5 secondi) pizzica la prima corda, Sa, Sa e la kharaj grave a 0, 1,0, 1,75 e 2,5 secondi,
 poi fa una pausa. Con EXTRA STRING attiva, la corda aggiuntiva viene pizzicata dopo la prima; le due corde Sa e la kharaj

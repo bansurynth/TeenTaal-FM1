@@ -4,6 +4,53 @@ Formato: data — decisione — motivazione — alternative scartate.
 
 ## Decisioni
 
+### 2026-11-26 — Estensione di PITCH_PREVIEW a −3100..+700: FX + SEL sui tasti 0–11 (richiesta di ElectroNick)
+- Con FX + SEL i tasti 0–11 (F2–E3) cadono a −3100..−2000 cent rispetto a C4 (F1..E2, 43,65–82,41 Hz). La tabella
+  copriva −1900..+700 e `pitch_compensation` si fermava al bordo: quelle note non erano misurate.
+- `PITCH_PREVIEW` e `PITCH_PREVIEW_LARGE` passano da 27 a 39 righe. Le 27 righe precedenti sono invariate (offset 12).
+  Offset firmware +3100 (`pitch_compensation` in `tanpura/tanpura.c`). Tutte le altre tabelle sono byte-identiche.
+- Calibrazione: `calibrate_pitch.py --generate --jobs 4`, 2898 job, residuo massimo ai punti di griglia 0,31 cent.
+- Verifica delle note nuove (`−3100..−1900`, 27 Sa, due registri, due jawari, 108 casi per nota): massimo 0,16 cent,
+  nessun caso sopra 0,5 cent. `tan_preview_F1` misura +0,33 cent.
+- Regressione: un solo FAIL, `tan_preview_G4_large` (+6,96 cent, già noto). Hash golden invariati. Host: 226 ok, 0 FAIL.
+- Controllo completo (`verify_pitch.py --all-notes`, log `build-host/verify_pitch.log`): casi sopra 0,5 cent in tutte
+  le categorie (`first` 71 casuali / 35 a griglia, `preview` 13 / 41, `sa` 9 / 2, `kharaj` 11 / 3). Il massimo è
+  2,39 cent (`preview`, nota +700, Sa −1815, A4 4320). Il log mostra solo i 50 casi più alti, quindi non dice se ce ne
+  siano sulle note nuove. Su quelle il controllo mirato dà zero casi sopra 0,5 cent (`build-host/verify_new_rows.log`).
+  Il controllo esce con codice 1. Il limite di 0,5 cent non è stato cambiato.
+- Causa degli errori non ancora chiusa. Per i casi a griglia (Sa multipli di 100) gli errori sopra 1 cent sono su Sa
+  non di colonna (−1400, −1300, −1100, −200, −100, 100), dove `PITCH_STANDARD_SA` (non uniforme) è interpolato
+  linearmente. Ma nel run casuale `first` supera 1 cent anche su colonne esatte (Sa 0, 350, 500), con A4 e fine diversi
+  da 4400 e 0. Quindi l'interpolazione non spiega tutto. Non ho ancora verificato la causa (ipotesi: ramo flat/sharp di
+  `PITCH_FIRST` o asse `fine`). Questo punto va chiarito prima di decidere il limite.
+- Scelte aperte per ElectroNick: fissare la causa e correggerla, oppure infittire le colonne Sa, oppure accettare il
+  residuo e alzare il limite (errori fino a circa 2,4 cent).
+- Alternativa scartata: tabella separata solo per F1..E2. Un'unica tabella con offset è più semplice e usa la stessa
+  interpolazione.
+
+### 2026-11-26 — Tono di riferimento assoluto sui 27 tasti (richiesta di ElectroNick)
+- Il tasto da solo suona la nota del tasto (F2–G4) in modo assoluto, non lo swara rispetto al Sa: stesso tasto, stessa
+  nota, qualunque sia il Sa. ElectroNick ha scelto `mapping = abs` e `low_keys = keep` (intonazione vera anche dove
+  l'altoparlante è debole).
+- Tasto k = (k − 19) · 100 cent sopra C4, da −1900 a +700 (`REFTONE_NOTE_MIN/MAX`). Il calcolo è
+  `tuning_hz(t, nota − sa_cents + 1200 · oct)`, quindi la nota non dipende dal Sa.
+- Temperamento equabile, come il pizzico FX. L'impostazione TEMPERAMENT non si applica ai tasti.
+- OCT− / OCT+ sposta la nota del tasto di ottave, da −3 a +3, senza clamp. A OCT−3 F2 sta a circa 11 Hz, quasi
+  inudibile; i tasti più bassi scendono sotto il DO0 (da qui la divisione per difetto in `ui_note`). Da confermare.
+- La riga TONE mostra il nome della nota con l'ottava mentre un tasto è tenuto, poi lo swara come prima. Non si
+  salva nulla di nuovo: la nota dei tasti non è un'impostazione.
+- Alternative scartate: tono relativo al Sa (la versione precedente, udibile solo sulle 12 note centrali); clamp di OCT
+  alle ottave del tasto (l'ottava resta un'azione esplicita).
+
+### 2026-11-26 — FX + SEL: pizzico di un'ottava sotto, Sa invariato
+- Con FX e SEL insieme il pizzico FX suona un'ottava sotto (`UI_FX_SEL_CENTS = −1200`). Il pizzico non cambia Sa.
+  SEL premuto con un tasto continua a impostare Sa.
+- Ipotesi da confermare con ElectroNick: Sa invariato con FX + SEL.
+- I tasti F2–E3 (0–11) con FX + SEL cadono sotto −1900 cent, fuori dalla tabella originale. Superato dall'estensione di
+  `PITCH_PREVIEW` a −3100 (voce del 2026-11-26 più in alto): quei tasti ora sono misurati in host.
+
+- Alternativa scartata: FX + SEL che cambia Sa (si confonderebbe con SEL + tasto).
+
 ### 2026-11-25 — Cutoff del tanpura a 1× (6000/8000/3000 Hz) con cap di 80 modi
 - **Decisione**: `fmax` torna ai valori del commit (6000/8000/3000 Hz, cutoff 1×). Il cap dei modi resta a 80 (`TANPURA_MAXM`). ElectroNick ha ascoltato il firmware su device con questa configurazione e ha confermato: "regge tutto".
 - **Misure**: costo peggiore del modello host 79,68 %, contro 84,72 % con 1,5× e cap 80. Con 2× e cap 80 il costo sale a 86,73 %, sopra il 85 %, quindi 2× è scartato. Sul device ElectroNick ha riportato CPU 99 con E3 (in precedenza E3 dava 105 %). Il tipo di lettura (CPU0 o TANPURA MEAN) non è stato specificato: da confermare.
@@ -104,15 +151,56 @@ Formato: data — decisione — motivazione — alternative scartate.
 - `tools/reference/pitch_grid.py` misura ora i residui usando il renderer compensato; il profilo di anteprima usa invece
   il modello grezzo senza compensazione. I residui del renderer non rigenerano direttamente le tabelle originali.
 
+### 2026-11-26 — Tono di riferimento: il tasto imposta lo swara, OCT l'ottava (richiesta di ElectroNick)
+- Tasto da solo: imposta lo swara e accende il tono. L'ottava è quella impostata con OCT− / OCT+, non quella della
+  posizione del tasto.
+- Range di OCT: da −3 a +3 rispetto al Sa (`REFTONE_OCT_MIN/MAX`). Scelta di ElectroNick (opzione "pm3").
+- Motivo: ogni pressione di un tasto salvava l'ottava e la ripristinava al rilascio. Un OCT premuto mentre si teneva un
+  tasto andava perso. Ora il tasto non tocca l'ottava, quindi OCT resta.
+- Alternative scartate: il tasto che imposta anche l'ottava (comportamento precedente, con OCT perso durante la
+  pressione); OCT limitato a ±1 (troppo poco per i tasti F2–G4 con Sa a F2).
+- Il comando SEL + OCT (cambio di Sa di un'ottava) non cambia.
+
+### 2026-11-26 — Anteprima FX su tutti i 27 tasti, F2–G4 (richiesta di ElectroNick)
+- Superato in parte: l'estensione del 2026-11-26 (più in alto) porta `PITCH_PREVIEW` a −3100..+700 (39 righe, offset
+  +3100). Il testo qui sotto descrive lo stato precedente.
+- FX + un tasto qualsiasi pizzica una corda alla nota del tasto. `PITCH_PREVIEW` copre −1900..+700 cent rispetto a C4
+  (27 righe), offset firmware +1900, range UI 0..26. Tabelle rigenerate con `calibrate_pitch.py`: residuo 0,31 cent.
+- Questa voce supera per il range la voce "Anteprima FX: nota del tasto, quattro voci" (B2..C#4).
+- Metrica aperta: `tan_preview_G4_large` (regress) misura +6,96 cent contro tolleranza 5. Il centroide di 6 s legge circa
+  0 per tutte le configurazioni. Il picco per secondo legge circa +2 cent per le note standard e circa +7 cent per LARGE
+  a Sa 500–700, stabile nel tempo. Tabelle, metrica e soglia non sono cambiate: ElectroNick ascolta prima di decidere.
+  Opzioni: allargare la finestra per LARGE a Sa alto e documentarlo; ricalibrare LARGE sul picco; tenere il centroide e
+  documentarlo.
+
 ### 2026-11-26 — Tastiera F2–G4: un tasto, una nota (richiesta di ElectroNick)
 - SEL + tasto imposta il Sa alla nota del tasto: tasto 0 = F2, tasto 26 = G4, un tasto per semitono (27 tasti). Prima
   i tasti erano ripiegati su C3–B3. I cents fini restano.
 - Il tono del singolo tasto prende l'ottava rispetto al Sa centrale. Con Sa tra −1900 e +700 cents l'ottava va da −3 a
   +2, quindi la clamp del tono di riferimento è ±3 (`REFTONE_OCT_MIN/MAX`). I pulsanti OCT− / OCT+ restano entro ±1.
-- Anteprima FX (con entrambi i tanpura spenti): tasto da C4 a G4 pizzica una corda un'ottava sotto la nota del tasto
-  (C4..G4 → C3..G3). Sotto C4 non c'è anteprima, come prima.
+  Superato: il tasto non imposta più l'ottava (vedi "Tono di riferimento" più sopra), e OCT va da −3 a +3.
+- Anteprima FX: superata, vedi "Anteprima FX: nota del tasto, quattro voci" più sotto.
 - La base (`platform/fm1-base/include/plat.h`) chiama i 27 tasti F3…G5. Il firmware segue la richiesta F2–G4. Da
   verificare sul device: se le etichette fisiche sono F3–G5, la mappatura va rivista.
+
+### 2026-11-26 — Anteprima FX: nota del tasto, quattro voci (richiesta di ElectroNick)
+- Superato: il pizzico usa la tabella `PITCH_PREVIEW` calibrata da −1300 a +100 cent rispetto a C4 (intervallo
+  B2..C#4, tasti 6..20). Con l'estensione a −3100..+700 il range copre tutti i 27 tasti (voce del 2026-11-26 più in alto).
+  Il testo qui sotto descrive lo stato precedente.
+- FX + tasto pizzica una corda alla nota del tasto, non più un'ottava sotto. Il pizzico usa la tabella `PITCH_PREVIEW`,
+  calibrata da −1300 a +100 cent rispetto a C4: intervallo B2..C#4 (tasti 6..20). Fuori da questo intervallo
+  `pitch_compensation` si fermerebbe ai bordi della tabella e suonerebbe la nota sbagliata, quindi il tasto non pizzica.
+  Coprire tutti i 27 tasti richiede una nuova calibrazione. Da decidere con ElectroNick.
+- Polifonia: quattro voci (`TANPURA_PREVIEW_VOICES`). Un tasto nuovo prende una voce libera. Con tutte occupate ruba la
+  più vecchia: rampa in uscita di 20 ms, poi riparte. Se tutte e quattro sono in attesa, la pressione viene scartata.
+- Rilascio: ogni voce tiene la nota per 5 s, poi sfuma in 0,3 s. Il guadagno globale resta a 1 finché una voce suona, quindi
+  il corpo risuona circa 0,6 s invece di 0,3 s.
+- Il pizzico resta rifiutato se un tanpura è acceso o ha ancora corde attive (come prima).
+- Golden `tan_preview_G3` cambiato (`a3ea06a6a3de7d3b`). Il render è identico bit per bit fino a 5,0 s. La differenza è
+  nella coda: massimo 26 LSB a 24 bit (circa −110 dBFS), picchi finali uguali (−58,2 dBFS), stesso massimo salto
+  campione (4085). Nessun click nuovo.
+- Costo a quattro voci: stima 44,5–57,8 % del secondo core, budget 85 %. Non misurato sul device. Con un accordo di prova
+  il picco è −3,8 dBFS senza campioni a fondo scala. Altri accordi e livelli non sono ancora provati.
 
 ### 2026-11-26 — Jawari a due valori: 75 e 100 (richiesta di ElectroNick)
 - Il jawari è 75 (LO) o 100 (HI), non più un valore libero. Le tabelle di intonazione hanno due colonne (standard e

@@ -33,13 +33,13 @@ fisso e nessun menu; le impostazioni che si toccano di rado stanno in una pagina
 | **SELECT** | taal: ruoti per scegliere (nome sullo schermo) |
 | **PRESETS** | Sa fine: ±1 cent per scatto |
 | **ALGORITHM** | jawari: 75 o 100 (in senso orario 100) |
-| **OCT− / OCT+** | ottava del tono di riferimento (mandra / madhya / tar) |
+| **OCT− / OCT+** | ottava del tono di riferimento, da tre sotto a tre sopra il Sa (mandra / madhya / tar); con un tasto tenuto, sposta di ottave la nota di quel tasto |
 | **SCL + tasto** | Sa = la nota di quel tasto (i cents fini restano) |
-| **tasto da solo** | tono di riferimento sullo swara di quel tasto, rispetto al Sa (vedi domanda 2) |
+| **tasto da solo** | tono di riferimento sulla nota di quel tasto (F2–G4, temperamento equabile, indipendente dal Sa) finché è premuto; OCT− / OCT+ lo spostano di ottave (vedi domanda 2) |
 | **EDIT** | pagina delle impostazioni (sotto) |
 | **HOME** | torna alla schermata principale |
 | **SAVE** | salva le impostazioni (vedi domanda 4) |
-| FX + un tasto da C4 a G4 | con entrambi i tanpura spenti, pizzica una corda un'ottava sotto la nota del tasto (vedi MANUAL.it.md) |
+| FX + un tasto (tutti i 27 tasti, da F2 a G4) | con entrambi i tanpura spenti, pizzica una corda sulla nota del tasto, fino a quattro insieme (vedi MANUAL.it.md); con FX + SEL, un'ottava sotto |
 | ENV, LFO, GLO, REC | non usati |
 
 I tasti dalla nota del Sa in su si illuminano sui swara della scala (Sa e Pa più accesi), così la tastiera
@@ -98,7 +98,7 @@ cella della matra corrente accesa.
 
 | Controllo | Funzione |
 |---|---|
-| **tasto da solo** | tono di riferimento su quello swara finché è premuto (più tasti: l'ultimo premuto; poi il tono torna com'era) |
+| **tasto da solo** | tono di riferimento su quello swara finché è premuto, nell'ottava impostata con OCT− / OCT+ (più tasti: l'ultimo premuto; poi il tono torna com'era) |
 | **SAVE** | salva le impostazioni (UNSAVED sullo schermo e luce di SAVE accesa finché ci sono modifiche) |
 | **EDIT** | 21 righe, scorrono: temperamento (EQUAL, JUST 5, JUST PYTH; prima riga), ciclo di pizzico (uno per entrambi i tanpura), prima corda, corda aggiuntiva, prima corda e corda aggiuntiva del secondo tanpura, accordatura fine di ogni corda (condivisa dai due tanpura), fase del secondo tanpura, irregolarità di tanpura e tabla, swara del tono, La di riferimento, Bluetooth, filtro |
 

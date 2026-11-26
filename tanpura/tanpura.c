@@ -89,7 +89,8 @@ static float pitch_compensation(const tanpura_t *m, int profile, float note, int
         position = (note + ref) * (1.0f / 100.0f);
     } else if (profile == PITCH_PROFILE_PREVIEW) {
         rows = PITCH_PREVIEW_N;
-        position = (note + ref + 1300.0f) * (1.0f / 100.0f);
+        /* row 0 of PITCH_PREVIEW sits at -3100 cents above C4 */
+        position = (note + ref + 3100.0f) * (1.0f / 100.0f);
     } else {
         rows = PITCH_SHIFT_N;
         position = (note + ref + 200.0f) * (1.0f / 200.0f);
@@ -128,6 +129,14 @@ static float level_comp(const tanpura_t *m)
 #define PLUCK_TAU 0.05f            /* s */
 #define FADE_OUT_S 0.3f
 #define PREVIEW_HOLD_S 5.0f
+/* g moved toward target over a secs-long fade, by the n output samples of a block */
+static float gain_ramp(float g, float target, float secs, int n)
+{
+    float step = (float)n / (secs * DSP_FS);
+    if (g < target)
+        return g + step > target ? target : g + step;
+    return g - step < target ? target : g - step;
+}
 static float cycle_at(const tanpura_t *m, int j)
 {
     if (m->extra < 0)
@@ -287,8 +296,7 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
     m->filter_hz = TANPURA_FILTER_MAX_HZ, m->lp_stage_ready = 0;
     lowpass_coefficients(m->lp_coef, m->filter_hz);
     m->start_req = m->extra_silence_req = 0;
-    m->preview_ready = m->preview_cancel = 0;
-    m->preview_left = m->preview_active = m->preview_cents_above_c4 = 0;
+    m->pv = 0, m->strings_live = 0, m->preview_cents_above_c4 = 0;
     m->phase = m->phase_done = 0;
     for (j = 0; j < TANPURA_NFINE; j++)
         m->fine[j] = 0;
@@ -302,7 +310,6 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
         tstring_init(&m->str[j], &m->stage[j]);
         m->stage_ready[j] = 0;
     }
-    tstring_init(&m->preview, &m->stage[1]);
     for (k = 0; k < 32; k++)
         m->bw1[k] = m->bw2[k] = 0.0f;
     m->xd1 = m->xn1 = 0.0f;
@@ -337,10 +344,11 @@ void tanpura_set_param(tanpura_t *m, int id, int32_t v)
     switch (id) {
     case TANPURA_P_ON:
         v = v != 0;
-        if (v && !m->on)
+        if (v && !m->on) {
             m->start_req = 1;                    /* (tanpura_take starts the cycle: the render may be running) */
-        m->preview_cancel = 1;
-        m->preview_ready = 0;
+            if (m->pv)
+                m->pv->cancel = 1;               /* and fades out the FX voices */
+        }
         m->on = v;
         break;
     case TANPURA_P_MUTE:
@@ -388,15 +396,64 @@ void tanpura_preview_par(const tanpura_t *m, int32_t cents_above_c4, tstring_par
                       - pitch_compensation(m, PITCH_PROFILE_PREVIEW, (float)cents_above_c4, 0));
 }
 
+void tanpura_attach_preview(tanpura_t *m, tanpura_preview_t *pv)
+{
+    int v;
+    m->pv = pv;
+    if (!pv)
+        return;
+    pv->presses = 0;
+    pv->cancel = 0;
+    for (v = 0; v < TANPURA_PREVIEW_VOICES; v++) {
+        tanpura_voice_t *a = &pv->v[v];
+        tstring_silence(&a->str);
+        a->req = a->sounding = 0;
+        a->amp = a->gain = 0.0f;
+        a->left = a->cut = 0;
+        a->order = 0;
+    }
+}
+
 void tanpura_preview(tanpura_t *m, int32_t cents_above_c4)
 {
+    tanpura_preview_t *pv = m->pv;
+    tanpura_voice_t *a = 0, *oldest = 0;
     tstring_par_t p;
-    m->preview_cents_above_c4 = cents_above_c4;
-    m->preview_cancel = 0;
-    m->preview_ready = 0;
+    int v;
+    if (!pv || m->on || m->strings_live)         /* the FX plucks need the tanpura off and its strings silent */
+        return;
+    for (v = 0; v < TANPURA_PREVIEW_VOICES; v++) {
+        tanpura_voice_t *c = &pv->v[v];
+        if (c->req)
+            continue;
+        if (!c->sounding) {
+            a = c;
+            break;
+        }
+        if (!oldest || c->order < oldest->order)
+            oldest = c;
+    }
+    if (!a)
+        a = oldest;
+    if (!a)                                      /* all four are waiting to start: drop the press */
+        return;
     tanpura_preview_par(m, cents_above_c4, &p);
-    tstring_coefs(&m->preview_stage, &p, TANPURA_FS);
-    m->preview_ready = 1;
+    tstring_coefs(&a->stage, &p, TANPURA_FS);
+    a->amp = PLUCK_AMP * (float)m->vol[1] * 0.01f;
+    a->order = ++pv->presses;
+    m->preview_cents_above_c4 = cents_above_c4;
+    a->req = 1;
+}
+
+int32_t tanpura_preview_count(const tanpura_t *m)
+{
+    int32_t n = 0;
+    int v;
+    if (!m->pv)
+        return 0;
+    for (v = 0; v < TANPURA_PREVIEW_VOICES; v++)
+        n += (m->pv->v[v].req || m->pv->v[v].sounding) != 0;
+    return n;
 }
 
 int32_t tanpura_get_param(const tanpura_t *m, int id)
@@ -424,7 +481,7 @@ int32_t tanpura_get_param(const tanpura_t *m, int id)
 
 void tanpura_take(tanpura_t *m)
 {
-    int j;
+    int j, v;
     if (m->lp_stage_ready) {
         int k, i;
         for (k = 0; k < 2; k++)
@@ -432,7 +489,7 @@ void tanpura_take(tanpura_t *m)
                 m->lp_coef[k][i] = m->lp_stage[k][i];
         m->lp_stage_ready = 0;
     }
-    if (m->restart && (m->gain == 0.0f || !m->active)) {   /* a large retune, faded out (or silent): afresh */
+    if (m->restart && (m->gain == 0.0f || !m->active || !m->strings_live)) {   /* a large retune, faded out or silent: afresh */
         for (j = 0; j < TANPURA_NSTR; j++)
             tstring_silence(&m->str[j]);
         start_cycle(m);
@@ -459,19 +516,25 @@ void tanpura_take(tanpura_t *m)
         m->active = 1;
         m->start_req = 0;
     }
-    if (m->preview_cancel) {
-        tstring_silence(&m->preview);
-        m->preview_active = 0;
-        m->preview_left = 0;
-        m->preview_cancel = 0;
-    }
-    if (m->preview_ready && !m->restart) {
-        tstring_init(&m->preview, &m->preview_stage);
-        tstring_pluck(&m->preview, PLUCK_AMP * (float)m->vol[1] * 0.01f, PLUCK_TAU, TANPURA_FS);
-        m->preview_left = (int32_t)(PREVIEW_HOLD_S * DSP_FS);
-        m->preview_active = 1;
-        m->active = 1;
-        m->preview_ready = 0;
+    if (m->on)                                   /* (here, not in set_param: the render must not pluck a stale cycle) */
+        m->strings_live = 1;
+    if (m->pv) {
+        tanpura_preview_t *pv = m->pv;
+        if (pv->cancel) {                        /* the tanpura was switched on: the FX voices fade out (20 ms) */
+            for (v = 0; v < TANPURA_PREVIEW_VOICES; v++)
+                pv->v[v].req = 0, pv->v[v].left = 0, pv->v[v].cut = 1;
+            pv->cancel = 0;
+        }
+        for (v = 0; v < TANPURA_PREVIEW_VOICES; v++) {
+            tanpura_voice_t *a = &pv->v[v];
+            if (a->req && a->gain <= 0.0f) {     /* a voice that has faded (or was free): plucked now */
+                tstring_init(&a->str, &a->stage);
+                tstring_pluck(&a->str, a->amp, PLUCK_TAU, TANPURA_FS);
+                a->gain = 1.0f, a->sounding = 1, a->cut = 0, a->req = 0;
+                a->left = (int32_t)(PREVIEW_HOLD_S * DSP_FS);
+                m->active = 1;
+            }
+        }
     }
 }
 
@@ -499,21 +562,56 @@ static void run_string(tanpura_t *m, int j, int n)
     }
 }
 
+/* the FX voices, summed into the forces (fd, fn) before the body. n output samples, ns string-rate. Returns the voices still sounding */
+static int32_t voices_run(tanpura_t *m, int ns, int n)
+{
+    tanpura_preview_t *pv = m->pv;
+    int32_t live = 0;
+    int v, i;
+    if (!pv)
+        return 0;
+    for (v = 0; v < TANPURA_PREVIEW_VOICES; v++) {
+        tanpura_voice_t *a = &pv->v[v];
+        float g0 = a->gain, g1, dg, e;
+        if (!a->sounding)
+            continue;
+        if (!a->req && !a->cut && a->left > 0) {  /* holding the note */
+            g1 = 1.0f;
+            a->left = a->left > n ? a->left - n : 0;
+        } else
+            g1 = gain_ramp(g0, 0.0f, (a->req || a->cut) ? 0.02f : FADE_OUT_S, n);
+        for (i = 0; i < ns; i++)
+            pv->sfd[i] = pv->sfn[i] = 0.0f;
+        tstring_run(&a->str, pv->sfd, pv->sfn, ns);
+        dg = (g1 - g0) / (float)ns;
+        for (i = 0; i < ns; i++) {
+            e = g0 + dg * (float)(i + 1);
+            m->fd[i] += pv->sfd[i] * e;
+            m->fn[i] += pv->sfn[i] * e;
+        }
+        a->gain = g1;
+        a->sounding = g1 > 0.0f;
+        live += a->sounding;
+    }
+    return live;
+}
+
 void tanpura_render(tanpura_t *m, int32_t *out, int n)
 {
     float g0 = m->gain, g1, dg, *x = m->up + 2 * UPS_K;   /* x[-2K..-1]: the history, x[0..ns-1]: this block */
     float c0 = m->comp, c1 = m->comp_target, dc;
     int i, j, k, ns = n / TANPURA_OS;
+    int32_t live;
     dc = (c1 - c0) / (float)ns;
     if (!m->active)
         return;
     for (i = 0; i < ns; i++)
         m->fd[i] = m->fn[i] = 0.0f;
-    for (j = 0; j < TANPURA_NSTR; j++)
-        if (j != TANPURA_NSTR - 1 || m->extra >= 0)
-            run_string(m, j, ns);
-    if (m->preview_active)
-        tstring_run(&m->preview, m->fd, m->fn, ns);
+    if (m->strings_live)
+        for (j = 0; j < TANPURA_NSTR; j++)
+            if (j != TANPURA_NSTR - 1 || m->extra >= 0)
+                run_string(m, j, ns);
+    live = voices_run(m, ns, n);
     /* the body at the strings' rate: parallel sections with shared poles, the bridge and nut forces in */
     for (i = 0; i < ns; i++) {
         float xd = m->fd[i], xn = m->fn[i], p = BODY_D_BRIDGE * xd + BODY_D_NUT * xn;
@@ -541,14 +639,14 @@ void tanpura_render(tanpura_t *m, int32_t *out, int n)
     }
     m->comp = c1;
     /* up to the FM-1's rate (upsample_coefs.h), with the on/off fade */
-    if (m->restart)                              /* a large retune: out in 20 ms */
-        g1 = g0 - (float)n / (0.02f * DSP_FS) < 0.0f ? 0.0f : g0 - (float)n / (0.02f * DSP_FS);
-    else if ((m->on && !m->mute) || (m->preview_active && m->preview_left > 0))
-        g1 = g0 + (float)n / (0.02f * DSP_FS) > 1.0f ? 1.0f : g0 + (float)n / (0.02f * DSP_FS);
+    if (m->restart && m->strings_live)           /* a large retune: out in 20 ms */
+        g1 = gain_ramp(g0, 0.0f, 0.02f, n);
     else if (m->on)                              /* muted: out in 20 ms, the strings keep plucking */
-        g1 = g0 - (float)n / (0.02f * DSP_FS) < 0.0f ? 0.0f : g0 - (float)n / (0.02f * DSP_FS);
+        g1 = gain_ramp(g0, m->mute ? 0.0f : 1.0f, 0.02f, n);
+    else if (live > 0)                           /* the FX voices sound: in 20 ms */
+        g1 = gain_ramp(g0, 1.0f, 0.02f, n);
     else
-        g1 = g0 - (float)n / (FADE_OUT_S * DSP_FS) < 0.0f ? 0.0f : g0 - (float)n / (FADE_OUT_S * DSP_FS);
+        g1 = gain_ramp(g0, 0.0f, FADE_OUT_S, n);
     dg = (g1 - g0) / (float)n;
     for (i = 0; i < ns; i++) {
         const float *c = x + i - UPS_K;           /* the centre: out[2i] = c[0] */
@@ -564,21 +662,19 @@ void tanpura_render(tanpura_t *m, int32_t *out, int n)
     for (k = 0; k < 2 * UPS_K; k++)              /* keep the last 2K inputs as the next block's history */
         m->up[k] = x[ns - 2 * UPS_K + k];
     m->gain = g1;
-    if (m->preview_active && m->preview_left > 0)
-        m->preview_left = m->preview_left > n ? m->preview_left - n : 0;
-    if (!m->on && g1 == 0.0f) {                  /* faded out: silence and stop computing */
+    if (!m->on && g1 == 0.0f) {                  /* faded out: the strings stop computing */
         for (j = 0; j < TANPURA_NSTR; j++)
             tstring_silence(&m->str[j]);
-        tstring_silence(&m->preview);
-        m->preview_active = 0;
-        m->preview_left = 0;
-        for (k = 0; k < 32; k++)
-            m->bw1[k] = m->bw2[k] = 0.0f;
-        m->xd1 = m->xn1 = 0.0f;
-        for (k = 0; k < (int)(sizeof m->up / sizeof m->up[0]); k++)
-            m->up[k] = 0.0f;
-        m->lp[0][0] = m->lp[0][1] = m->lp[1][0] = m->lp[1][1] = 0.0f;
-        m->eqs[0] = m->eqs[1] = 0.0f;
-        m->active = 0;
+        m->strings_live = 0;
+        if (!live) {                             /* and the body, once no FX voice sounds */
+            for (k = 0; k < 32; k++)
+                m->bw1[k] = m->bw2[k] = 0.0f;
+            m->xd1 = m->xn1 = 0.0f;
+            for (k = 0; k < (int)(sizeof m->up / sizeof m->up[0]); k++)
+                m->up[k] = 0.0f;
+            m->lp[0][0] = m->lp[0][1] = m->lp[1][0] = m->lp[1][1] = 0.0f;
+            m->eqs[0] = m->eqs[1] = 0.0f;
+            m->active = 0;
+        }
     }
 }

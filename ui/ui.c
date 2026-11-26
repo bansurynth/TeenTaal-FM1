@@ -11,9 +11,9 @@
  *                                                            tanpura and tabla irregularity, tone swara, A reference,
  *                                                            bluetooth, tanpura filter
  *   KNOB1      tempo, 1 matra/min a step (SEL+KNOB1: 10)
- *   key        the reference tone on that key's swara while held (like an harmonium; ElectroNick, step 1)
+ *   key        the reference tone on that key's swara while held (its octave is the one set with OCT-/+)
  *   SEL + key  Sa = that key's note (cents kept)
- *   FX + C4..G4  with both tanpuras off, pluck the string an octave below the key
+ *   FX + key   with both tanpuras off, pluck the key's note, F2..G4 (up to 4 at once)
  *   SEL + OCT-/+  Sa an octave down / up
  *   PRESETS    Sa by a cent
  *   ALGORITHM  jawari 75 / 100 (right: 100, left: 75)
@@ -25,6 +25,8 @@
 #include <stddef.h>
 
 enum { UI_KEY_C4 = 19 };                /* keys 0..26 are F2 .. G4, one semitone each: C4 is key 19 */
+enum { UI_FX_KEY_LO = 0, UI_FX_KEY_HI = 26 };   /* FX plucks F2 .. G4; with SEL, keys 0..11 reach F1 .. E2 (PITCH_PREVIEW rows from -3100 cents) */
+enum { UI_FX_SEL_CENTS = -1200 };       /* FX + SEL: the pluck an octave lower */
 
 static const char *const UI_SWARA[TANPURA_FIRST_MAX + 1] = {"SA", "RE KOMAL", "RE", "GA KOMAL", "GA", "MA", "MA TIVRA", "PA",
                                            "DHA KOMAL", "DHA", "NI KOMAL", "NI", "SA'", "RE KOMAL'", "RE'",
@@ -89,7 +91,7 @@ typedef struct {
 #endif
 static ui_settings_t ui_kept;               /* as loaded or last saved */
 static int ui_unsaved, ui_kt_key = -1;      /* the key whose tone sounds (-1 none) */
-static int32_t ui_kt_saved[3];              /* the tone's on, swara, octave before a key took it */
+static int32_t ui_kt_on;                    /* the tone's on before a key took it */
 
 static void ui_settings_now(ui_settings_t *p)
 {
@@ -111,10 +113,8 @@ static void ui_settings_now(ui_settings_t *p)
                         | ui_get(ENG_TANPURA2, TANPURA_P_PHASE));
     p->taal = (uint8_t)ui_get(ENG_TAAL, TAAL_P_TAAL);
     p->mpm = (int16_t)ui_get(ENG_TAAL, TAAL_P_MPM);
-    if (ui_kt_key >= 0)                     /* (a key's tone is not a setting: what it will go back to) */
-        p->tone_swara = (int8_t)ui_kt_saved[1], p->tone_oct = (int8_t)ui_kt_saved[2];
-    else
-        p->tone_swara = (int8_t)ui_get(ENG_REFTONE, REFTONE_P_SWARA), p->tone_oct = (int8_t)ui_get(ENG_REFTONE, REFTONE_P_OCTAVE);
+    p->tone_swara = (int8_t)ui_get(ENG_REFTONE, REFTONE_P_SWARA);
+    p->tone_oct = (int8_t)ui_get(ENG_REFTONE, REFTONE_P_OCTAVE);
     p->vol_tanpura = (uint8_t)ui_get(ENG_MIXER, MIX_P_LEVEL + MIX_TANPURA);
     p->vol_tabla = (uint8_t)ui_get(ENG_MIXER, MIX_P_LEVEL + MIX_TABLA);
     p->vol_tone = (uint8_t)ui_get(ENG_REFTONE, REFTONE_P_VOLUME);
@@ -263,10 +263,11 @@ static void ui_note(char *b, int32_t c, int cents)
 {
     static const char *const N[12] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
     int32_t semi = (c >= 0 ? c + 50 : c - 49) / 100, off = c - 100 * semi, n = semi + 48;   /* 48: C4 */
+    int32_t oct = n >= 0 ? n / 12 : -((11 - n) / 12);   /* floor(n / 12): below C0 too */
     char t[12];
     b[0] = 0;
     ui_cat(b, N[(n % 12 + 12) % 12]);
-    ui_num(t, n / 12, 0);
+    ui_num(t, oct, 0);
     ui_cat(b, t);
     if (cents && off) {
         ui_cat(b, " ");
@@ -410,8 +411,12 @@ static void ui_main(void)
     cv_text(10, 30, &FONT_XS, "TONE", C_GRAY);
     cv_text(84, 30, &FONT_XS, on ? "ON" : "OFF", on ? C_HI : C_DIM);
     t[0] = 0;
-    ui_cat(t, UI_SWARA[sw < 0 || sw >= SW_N ? 0 : sw]);
-    ui_cat(t, oct < 0 ? " MANDRA" : oct > 0 ? " TAR" : "");
+    if (ui_kt_key >= 0) {                   /* a key sounds its own note: the name, the octave in the number */
+        ui_note(t, (ui_kt_key - UI_KEY_C4) * 100 + 1200 * oct, 0);
+    } else {
+        ui_cat(t, UI_SWARA[sw < 0 || sw >= SW_N ? 0 : sw]);
+        ui_cat(t, oct < 0 ? " MANDRA" : oct > 0 ? " TAR" : "");
+    }
     ui_cat(t, "  V"); ui_num(u, ui_get(ENG_REFTONE, REFTONE_P_VOLUME), 0); ui_cat(t, u);
     cv_text(120, 30, &FONT_XS, t, C_WHITE);
     cv_blit(0, 162);
@@ -632,7 +637,7 @@ static void ui_edit_step(int row, int32_t d)
 static int ui_preview_keys(uint32_t keys)
 {
     int k;
-    for (k = UI_KEY_C4; k < NKEYS; k++)
+    for (k = UI_FX_KEY_LO; k <= UI_FX_KEY_HI; k++)
         if (keys >> k & 1u)
             return 1;
     return 0;
@@ -653,26 +658,20 @@ static int32_t ui_sa_semi(void)
     return (sa >= 0 ? sa + 50 : sa - 49) / 100;
 }
 
-/* a key alone: the tone on its swara (and octave, from the middle Sa) while it is held; then the tone as it was */
+/* a key alone: the tone on that key's note while it is held (the octave is the one set with OCT); then the tone as it was */
 static void ui_key_tone(int k)
 {
-    int32_t rel = (k - UI_KEY_C4) - ui_sa_semi(), sw = (rel % 12 + 12) % 12, oct = (rel - sw) / 12;
-    if (ui_kt_key < 0) {
-        ui_kt_saved[0] = ui_get(ENG_REFTONE, REFTONE_P_ON);
-        ui_kt_saved[1] = ui_get(ENG_REFTONE, REFTONE_P_SWARA);
-        ui_kt_saved[2] = ui_get(ENG_REFTONE, REFTONE_P_OCTAVE);
-    }
+    if (ui_kt_key < 0)
+        ui_kt_on = ui_get(ENG_REFTONE, REFTONE_P_ON);
     ui_kt_key = k;
-    ui_set(ENG_REFTONE, REFTONE_P_SWARA, sw);
-    ui_set(ENG_REFTONE, REFTONE_P_OCTAVE, clamp(oct, REFTONE_OCT_MIN, REFTONE_OCT_MAX));
+    ui_set(ENG_REFTONE, REFTONE_P_NOTE, (k - UI_KEY_C4) * 100);
     ui_set(ENG_REFTONE, REFTONE_P_ON, 1);
 }
 
 static void ui_key_tone_end(void)
 {
-    ui_set(ENG_REFTONE, REFTONE_P_ON, ui_kt_saved[0]);
-    ui_set(ENG_REFTONE, REFTONE_P_SWARA, ui_kt_saved[1]);
-    ui_set(ENG_REFTONE, REFTONE_P_OCTAVE, ui_kt_saved[2]);
+    ui_set(ENG_REFTONE, REFTONE_P_ON, ui_kt_on);
+    ui_set(ENG_REFTONE, REFTONE_P_NOTE, REFTONE_NOTE_SWARA);
     ui_kt_key = -1;
 }
 
@@ -745,6 +744,7 @@ static void ui_reset(void)
         engine_set_param(ui_eng, ENG_TABLA, TABLA_P_STOP, 0);
         engine_set_param(ui_eng, ENG_REFTONE, REFTONE_P_ON, 0);
         ui_kt_key = -1;
+        engine_set_param(ui_eng, ENG_REFTONE, REFTONE_P_NOTE, REFTONE_NOTE_SWARA);
         ui_settings_apply(&defaults);
         engine_set_param(ui_eng, ENG_TANPURA, TANPURA_P_REGISTER, 0);
         ui_kept = defaults;
@@ -765,8 +765,8 @@ static void ui_frame(void)
     int32_t d;
     ui_btn_was = btn;
     ui_keys_was = keys;
-    preview_chord = fx && !sel && ui_preview_keys(kp);
-    preview_held = fx && !sel && ui_preview_keys(keys);
+    preview_chord = fx && ui_preview_keys(kp);
+    preview_held = fx && ui_preview_keys(keys);
     ui_frames++;
     if (pressed & (1u << B_EDIT))
         ui_page = 1, ui_dirty = 1;
@@ -826,28 +826,26 @@ static void ui_frame(void)
     if (pressed & (1u << B_OCTDN)) {
         if (sel)
             ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_clamp(ui_get(ENG_ALL, DSP_P_SA_CENTS) - 1200));
-        else if (ui_get(ENG_REFTONE, REFTONE_P_OCTAVE) > -1)
+        else if (ui_get(ENG_REFTONE, REFTONE_P_OCTAVE) > REFTONE_OCT_MIN)
             ui_set(ENG_REFTONE, REFTONE_P_OCTAVE, ui_get(ENG_REFTONE, REFTONE_P_OCTAVE) - 1);
     }
     if (pressed & (1u << B_OCTUP)) {
         if (sel)
             ui_set(ENG_ALL, DSP_P_SA_CENTS, ui_sa_clamp(ui_get(ENG_ALL, DSP_P_SA_CENTS) + 1200));
-        else if (ui_get(ENG_REFTONE, REFTONE_P_OCTAVE) < 1)
+        else if (ui_get(ENG_REFTONE, REFTONE_P_OCTAVE) < REFTONE_OCT_MAX)
             ui_set(ENG_REFTONE, REFTONE_P_OCTAVE, ui_get(ENG_REFTONE, REFTONE_P_OCTAVE) + 1);
     }
-    if (sel && kp) {
+    if (sel && !fx && kp) {
         for (k = 0; k < NKEYS; k++)
             if (kp >> k & 1u) {
                 ui_sa_key(k);
                 break;
             }
     } else if (preview_chord) {
-        for (k = UI_KEY_C4; k < NKEYS; k++)
-            if (kp >> k & 1u) {
-                if (!ui_get(ENG_TANPURA, TANPURA_P_ON) && !ui_get(ENG_TANPURA2, TANPURA_P_ON))
-                    engine_tanpura_preview(ui_eng, (k - UI_KEY_C4) * 100 - 1200);
-                break;
-            }
+        int32_t oct = sel ? UI_FX_SEL_CENTS : 0;
+        for (k = UI_FX_KEY_LO; k <= UI_FX_KEY_HI; k++)
+            if ((kp >> k & 1u) && !ui_get(ENG_TANPURA, TANPURA_P_ON) && !ui_get(ENG_TANPURA2, TANPURA_P_ON))
+                engine_tanpura_preview(ui_eng, (k - UI_KEY_C4) * 100 + oct);
     }
     if (!sel && kp && !preview_chord) {          /* a key alone: the tone there (the last key pressed wins) */
         for (k = NKEYS - 1; k >= 0; k--)

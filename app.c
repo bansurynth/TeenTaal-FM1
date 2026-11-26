@@ -143,7 +143,7 @@ int app_expect(const char *what, int *got)
     else if (!strcmp(what, "tan2_on")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_ON);
     else if (!strcmp(what, "tan_mute")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_MUTE);
     else if (!strcmp(what, "tan2_mute")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_MUTE);
-    else if (!strcmp(what, "tan_preview")) *got = eng.tanpura.preview_active;
+    else if (!strcmp(what, "tan_preview")) *got = tanpura_preview_count(&eng.tanpura);
     else if (!strcmp(what, "tan_preview_cents")) *got = eng.tanpura.preview_cents_above_c4;
     else if (!strcmp(what, "cycle")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_CYCLE);
     else if (!strcmp(what, "tan2_cycle")) *got = (int)engine_get_param(&eng, ENG_TANPURA2, TANPURA_P_CYCLE);
@@ -172,6 +172,7 @@ int app_expect(const char *what, int *got)
     else if (!strcmp(what, "loaded")) *got = ui_loaded;
     else if (!strcmp(what, "fine0")) *got = (int)engine_get_param(&eng, ENG_TANPURA, TANPURA_P_FINE);
     else if (!strcmp(what, "kt_key")) *got = ui_kt_key;
+    else if (!strcmp(what, "tone_note")) *got = (int)engine_get_param(&eng, ENG_REFTONE, REFTONE_P_NOTE);
     else if (!strcmp(what, "page")) *got = ui_page;
     else if (!strcmp(what, "cpu2")) *got = cpu2_started && app_cpu2_on();
     else if (!strcmp(what, "jobs")) *got = (int)jobs_done;

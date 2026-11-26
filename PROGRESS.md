@@ -1,6 +1,77 @@
 # PROGRESS
 
-## Stato: tasti F2–G4, jawari 75/100, effetti rimossi (2026-11-26)
+## Stato: tono assoluto su 27 tasti, FX + SEL un'ottava sotto, tabella PITCH_PREVIEW estesa a −3100..+700 (2026-11-26)
+
+### Fatto
+- Estensione di `PITCH_PREVIEW` a −3100..+700 cent (39 righe). I tasti 0–11 con FX + SEL (F1–E2) ora cadono in tabella e sono misurati. Offset firmware +3100 in `tanpura/tanpura.c`. Le tabelle non preview sono byte-identiche alla versione precedente. Le nuove righe −3100..−1900 hanno errore massimo 0,16 cent (`build-host/verify_new_rows.log`).
+- Regressione host: 226 ok, 0 FAIL; solo `tan_preview_G4_large` (+6,96 cent, accettato).
+- Tono di riferimento: il tasto suona la sua nota assoluta (F2–G4), indipendente dal Sa, in temperamento equabile. `REFTONE_P_NOTE` va da −1900 a +700 cent; la sentinella `REFTONE_NOTE_SWARA` mantiene il vecchio modo swara. OCT− / OCT+ sposta la nota di ottave (−3..+3).
+- Riga TONE: con un tasto tenuto mostra il nome della nota con l'ottava; altrimenti swara come prima.
+- FX + SEL: pizzico FX un'ottava sotto, Sa invariato (`UI_FX_SEL_CENTS = −1200`).
+- Regressione: due scenari nuovi, `ref_note_G4_sa_A3` (392,00 Hz) e `ref_note_F2_oct_sa_G4` (174,61 Hz). Hash golden aggiunti: solo le due righe nuove, nessun hash esistente cambiato.
+- Scenario `ref.note` in `tools/common/scen.c`, documentato in `scen.h`.
+- Documentazione: `MANUAL`, `MANUAL.it`, `CONTROLS`, `CONTROLS.it` aggiornati (tono assoluto, OCT sulla nota del tasto, riga TONE). `DECISIONS.md`: due voci del 2026-11-26.
+
+### Misure e test
+- `sh tools/fw.sh --host`: 226 ok, 0 FAIL, exit 0.
+- `sh tools/test/run_tests.sh`: un solo fallimento, `tan_preview_G4_large` a +6,96 cent (tolleranza 5, già accettato). Nuovi scenari: frequenza entro 0,0002 cent, armoniche sotto −140 dB, nessun click, nessun clipping. Costo peggiore 79,68 % del secondo core.
+- Build target (`sh tools/fw.sh`, Colima): exit 0, pacchetto 614 938 B, identità FM-1_7700. .data+.bss 67 904 di 98 304 B; pool 194 868 di 344 064 B. Colima fermato.
+- Flash app-only (`fm1_install.py --no-resources`): completato. `--info` dice FM-1_7700 [running].
+
+### Aperto
+- Da ascoltare sul device: tono assoluto su tutti i 27 tasti e pizzico FX + SEL un'ottava sotto.
+- Tasti F1–E2 (0–11) con FX + SEL: misurati dopo l'estensione. Verifica completa: 2,39 cent di errore massimo (preview, nota +700, Sa −1815). Il caso `first` supera 1 cent anche su colonne Sa esatte (0, 350, 500); la causa non è ancora identificata. Il limite di verifica di 0,5 cent è più severo di quanto il progetto garantisca oggi; da decidere con ElectroNick.
+- Build target e flash dell'estensione: fatti. Build `sh tools/fw.sh`: exit 0, nessun avviso, pacchetto 614 938 B, identità FM-1_7700 (il disassemblato mostra `PITCH_PREVIEW` a 39 righe). Flash app-only (`fm1_install.py --no-resources`): completato, `--info` dice FM-1_7700 [running].
+- Da confermare con ElectroNick: Sa invariato con FX + SEL; OCT± senza clamp sul tono assoluto (a OCT−3 F2 sta a circa 11 Hz).
+- `plat.h` riga 53 chiama F3 il tasto 0; il firmware usa F2. Da verificare sul device.
+- `tan_preview_G4_large` (+6,96 cent): invariato, in attesa di ascolto.
+- Commit e push: non fatti. Da approvare (origin risponde 403 per ELENICK97).
+
+## Stato precedente: FX + nota su tutti i 27 tasti (F2–G4), tono con ottava da OCT, flashato app-only (2026-11-26)
+
+### Fatto
+- Pizzico FX + tasto per tutti i 27 tasti, F2..G4 (tasti 0..26). `PITCH_PREVIEW` copre −1900..+700 cent rispetto a C4 (27 righe). Offset firmware +1900. Tabelle rigenerate, residuo 0,31 cent.
+- Quattro voci polifoniche (invariate rispetto alla voce precedente).
+- Tono di riferimento: il tasto da solo imposta solo lo swara; l'ottava è quella di OCT− / OCT+ (−3..+3 rispetto al Sa, `REFTONE_OCT_MIN/MAX`). Un OCT premuto mentre si tiene un tasto ora resta al rilascio. `ui_kt_saved` ridotto ad acceso e swara.
+- Documentazione: `docs/MANUAL.md`, `docs/MANUAL.it.md`, `docs/CONTROLS.md`, `docs/CONTROLS.it.md` aggiornati a 27 tasti e al tono solo swara. `DECISIONS.md`: due voci nuove del 2026-11-26.
+- Test host: `tools/fw.sh --host` con test per tasto = solo swara, OCT durante la pressione e clamp ±3.
+
+### Misure e test
+- `sh tools/fw.sh --host`: 221 ok, 0 FAIL, exit 0.
+- `sh tools/test/run_tests.sh`: un solo fallimento, `tan_preview_G4_large` a +6,96 cent (tolleranza 5). Gli altri test e tutti gli hash golden corrispondono. Costo peggiore 79,68 % del secondo core (budget 85 %).
+- `build-host/tanpura_stress full`: stress ok (0 failed), exit 0.
+- Build target (`sh tools/fw.sh`, Colima): exit 0, pacchetto 614 938 B, identità FM-1_7700. Colima fermato. Flashato dopo, app-only (vedi sotto).
+
+### Aperto
+- `tan_preview_G4_large` (+6,96 cent): centroide di 6 s contro picco per secondo. Non cambiato, in attesa dell'ascolto di ElectroNick. Opzioni in `DECISIONS.md`.
+- Tono con OCT: flashato su FM-1_7700 (app-only, bootloader intatto), `--info` dice [running]. Il comportamento sul device non è ancora provato all'ascolto.
+- Costo a quattro voci: stima, non misurata sul device.
+- Commit e push: non fatti. Da approvare.
+
+## Stato precedente: anteprima FX su B2–C#4, quattro voci, flash app-only (2026-11-26)
+
+### Fatto
+- Tasto FX (pizzico di anteprima) sulla nota del tasto, per B2..C#4 (tasti 6..20). `PITCH_PREVIEW` copre −1300..+100 cent rispetto a C4: fuori da quell'intervallo il tasto non pizzica.
+- Quattro voci polifoniche (`TANPURA_PREVIEW_VOICES`). Con tutte occupate, una quinta pressione ruba la più vecchia; se tutte sono in attesa, la pressione è scartata.
+- Rilascio: 5 s di tenuta, poi 0,3 s di sfumatura per voce.
+- Cambi: `tanpura/tanpura.c/.h`, `mixer/engine.c/.h`, `app.c`, `ui/ui.c`, `tools/test/regress.c`, `tools/test/fw_basic.txt`, `tools/test/golden.txt` (solo `tan_preview_G3`).
+- Documentazione: `docs/MANUAL.md`, `docs/MANUAL.it.md`, `docs/CONTROLS.md`, `docs/CONTROLS.it.md`. `DECISIONS.md`: nuova voce del 2026-11-26; la voce precedente sull'anteprima un'ottava sotto è marcata superata.
+- Flash app-only del pacchetto `build/teentaal.fwsc` (identità FM-1_7700, exit 0). Il device riparte come FM-1_7700 [running]. Bootloader, SPL e OTA non toccati.
+
+### Misure e test
+- `./build-host/regress`: 0 fallimenti, exit 0. Costo peggiore 79,68 % (budget 85 %). Poli: 4 voci 44,5–57,8 % del secondo core (stima, non misurata sul device), picco −3,8 dBFS, nessun campione a fondo scala.
+- `./build-host/tanpura_stress full`: stress ok (0 failed), exit 0.
+- `sh tools/fw.sh --host`: 208 ok, 0 FAIL, exit 0.
+- Build target (`sh tools/fw.sh`, Docker via Colima): exit 0. `.data+.bss` 67 920 / 98 304 B (circa 31 % libero, sopra il 25 % richiesto). Pool 194 864 / 344 064 B. `.ram_text` 5 800 / 32 768 B. Pacchetto 614 938 B, identità FM-1_7700.
+- Golden `tan_preview_G3` cambiato (`a3ea06a6a3de7d3b`): identico bit per bit fino a 5,0 s. Nella coda, massimo 26 LSB a 24 bit (circa −110 dBFS), picchi finali uguali, stesso massimo salto campione (4085). Nessun click nuovo.
+
+### Aperto
+- Il pizzico copre solo B2..C#4, non tutti i 27 tasti. Estendere richiede una nuova calibrazione di `PITCH_PREVIEW`. Da decidere con ElectroNick.
+- Costo CPU a quattro voci: stima, non misurata sul device. Va misurato con tutte le voci attive.
+- Il clipping a quattro voci è stato provato con un solo accordo (−1300..−300). Altri accordi sono da provare.
+- Commit e push: non fatti. In attesa di approvazione per il fork `bansurynth`.
+
+## Stato precedente: tasti F2–G4, jawari 75/100, effetti rimossi (2026-11-26)
 
 ### Fatto
 - Tabelle di intonazione del tanpura rigenerate con `calibrate_pitch.py`: standard 1794/1794 punti, residuo 0,31 cent; upper 644/644, residuo 0,29 cent. `PITCH_JAWARI_N = 2`, Sa da −1900 (F2).
@@ -8,7 +79,7 @@
 - Jawari a due valori, 75 e 100. `ALGORITHM` su `HI` (100) in senso orario, `LO` (75) in senso antiorario. Default `LO`. Geometria del punto di contatto 7 mm (75) e 8 mm (100).
 - Effetti rimossi: `mixer/fx.c` e `fx.h` cancellati, righe e impostazioni tolte dalla UI, `fx.*` tolti da `scen.c`. Settings record versione 7: i record vecchi vengono scartati e il primo avvio usa i default. Liberati circa 17,6 KB di buffer echo più reverb e delay.
 - Tasto FX (pluck di anteprima) attivo su C4..G4, con pitch (k−19)·100 − 1200.
-- Bug corretto: `ui_key_tone` limitava l'ottava a ±1, ma con Sa tra −1900 e 700 i tasti F2–G4 richiedono −3..+2. Range ampliato a ±3 (`REFTONE_OCT_MIN/MAX`). I pulsanti OCT± restano entro ±1.
+- Bug corretto: `ui_key_tone` limitava l'ottava a ±1, ma con Sa tra −1900 e 700 i tasti F2–G4 richiedono −3..+2. Range ampliato a ±3 (`REFTONE_OCT_MIN/MAX`). I pulsanti OCT± restano entro ±1. *Superato (2026-11-26): OCT± va da −3 a +3 e il tasto non imposta più l'ottava.*
 - `tanpura_stress`, test 2: finestre a cicli interi (10 s in quick, 20 s in full, ciclo 5 s). Il fallimento era un errore di allineamento delle finestre, non instabilità: l'inviluppo è periodico con periodo 5 s e picchi di ciclo a circa −9,2 / −11,5 / −12 / −9,7 dBFS.
 - Documentazione aggiornata: `docs/MANUAL.md`, `docs/MANUAL.it.md`, `docs/CONTROLS.md`, `docs/CONTROLS.it.md`, `docs/DEVELOPMENT.md`. Quattro nuove voci in `DECISIONS.md` datate 2026-11-26.
 

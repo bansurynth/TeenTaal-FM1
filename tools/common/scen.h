@@ -4,6 +4,7 @@
  *   a4=440.0             reference A4 in Hz (one decimal)
  *   sa=C#3  sa=C#3+25  sa=-1100     Sa: a note name with optional cents, or cents above C4
  *   ref.on=1  ref.swara=Pa (or 0..11)  ref.oct=-1..1  ref.vol=0..100
+ *   ref.note=G4 (a note name, or cents above C4)  the tone at this absolute pitch, whatever Sa is
  *   mix.tanpura= mix.tabla= mix.ref=   0..100
  *   master=0..4096       MASTER's gain as the platform passes it (default 4096)
  *   tan.on=1  tan.first=Pa (or 0..11)  tan.jawari=0..100  tan.cycle=25..600 (tenths of s)  tan.human=0..100

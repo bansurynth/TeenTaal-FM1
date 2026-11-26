@@ -11,11 +11,11 @@ settings live on one separate page (EDIT).
 | PLAY | tabla (taal) on / off, from the sam; green light | — |
 | SEQ | cycle: both tanpuras on, 2nd muted, 1st muted, both off | — |
 | ARP | reference tone on / off | — |
-| key | the tone on that swara while held (the last key pressed wins) | — |
+| key | the tone on that key's note (F2 to G4, equal temperament, independent of Sa) while held; OCT− / OCT+ shift it by octaves (the last key pressed wins) | — |
 | SEL + key | Sa = that key's note, cents kept | — |
-| FX + a key from C4 to G4 | with both tanpuras off, pluck one string an octave below the key without changing Sa | — |
+| FX + a key (all 27 keys, F2 to G4) | with both tanpuras off, pluck the key's note (up to four at once) without changing Sa; with FX + SEL, one octave lower | — |
 | SEL + OCT− / OCT+ | Sa an octave down / up | — |
-| OCT− / OCT+ | the tone's octave | — |
+| OCT− / OCT+ | the tone's octave, from three below to three above Sa; with a key held, shifts that key's note by octaves | — |
 | SELECT | the taal (round the list); while playing, the change waits for the end of the cycle | the row |
 | PRESETS | Sa by one cent | the row's value |
 | ALGORITHM | jawari: 75 or 100 (clockwise 100, counter-clockwise 75) | the same |

@@ -20,7 +20,7 @@ def cases():
     for kind, count in (("first", 500), ("sa", 200), ("kharaj", 200), ("preview", 200)):
         for _ in range(count):
             sa, reg, jawari = rng.randint(-1900, 700), rng.randrange(2), rng.choice(JAWARI_VALUES)
-            selection = rng.randrange(18) if kind == "first" else rng.randrange(-12, 1) * 100 if kind == "preview" else 0
+            selection = rng.randrange(18) if kind == "first" else rng.randrange(-31, 8) * 100 if kind == "preview" else 0
             fine = 0 if kind == "preview" else rng.randint(-50, 50)
             a4 = rng.choice((4150, 4320, 4400, 4460, 4660, rng.randint(4150, 4660)))
             yield kind, sa, reg, jawari, selection, fine, a4
@@ -44,6 +44,9 @@ def all_note_cases():
             yield "first", sa, reg, jawari, swara, 0, 4400
         yield "sa", sa, reg, jawari, 0, 0, 4400
         yield "kharaj", sa, reg, jawari, 0, 0, 4400
+    for sa, reg, jawari, note in itertools.product(range(-1900, 701, 100), (0, 1), JAWARI_VALUES,
+                                                   range(-3100, 701, 100)):
+        yield "preview", sa, reg, jawari, note, 0, 4400
 
 
 def report(results):
