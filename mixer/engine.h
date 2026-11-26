@@ -11,12 +11,11 @@
 #include "taal/taal.h"
 #include "reftone/reftone.h"
 #include "mixer/mixer.h"
-#include "mixer/fx.h"
 
 #define ENGINE_MAXN 256                /* frames in one engine_render at most (the platform's block) */
 
 /* where a parameter goes */
-enum { ENG_ALL, ENG_TANPURA, ENG_TABLA, ENG_REFTONE, ENG_MIXER, ENG_TAAL, ENG_TANPURA2, ENG_FX };
+enum { ENG_ALL, ENG_TANPURA, ENG_TABLA, ENG_REFTONE, ENG_MIXER, ENG_TAAL, ENG_TANPURA2 };
 
 /* The second tanpura follows the first in Sa, jawari, cycle, register, irregularity and volumes. It has its own first
  * string (default Ni), phase (20%), extra string and on/off state. Both are summed into the mixer's tanpura source at
@@ -32,7 +31,6 @@ typedef struct {
     taal_t taal;                       /* its events go to the tabla, sub-block by sub-block */
     reftone_t reftone;
     mixer_t mixer;
-    fx_t fx;                           /* after the mixer's MASTER: the sends add to the dry sum */
     volatile int32_t muted;        /* engine_panic: silence at once */
     int32_t buf[MIX_NSRC][DSP_BLOCK];
     int32_t tan[ENGINE_MAXN], tan2[ENGINE_MAXN];   /* engine_render's own tanpura blocks */

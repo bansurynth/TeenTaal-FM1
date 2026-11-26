@@ -9,7 +9,7 @@
 #define TUNING_A4_DHZ_MIN 4150      /* 415.0 Hz */
 #define TUNING_A4_DHZ_MAX 4660      /* 466.0 Hz */
 #define TUNING_A4_DHZ_DEFAULT 4400
-#define TUNING_SA_MIN (-1800)       /* F#2, ~92.5 Hz at A440 */
+#define TUNING_SA_MIN (-1900)       /* F2, ~87.3 Hz at A440 */
 #define TUNING_SA_MAX 700           /* G4, ~392 Hz at A440 */
 #define TUNING_SA_DEFAULT (-300)    /* A3, 220 Hz: the tanpura's Sa for an A bansuri (Sa A4), an octave below */
 

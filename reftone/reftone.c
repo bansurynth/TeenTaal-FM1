@@ -39,7 +39,7 @@ void reftone_set_param(reftone_t *m, int id, int32_t v)
     switch (id) {
     case REFTONE_P_ON:     m->on = v != 0; break;
     case REFTONE_P_SWARA:  m->swara = clampi(v, 0, SW_N - 1); retune(m); break;
-    case REFTONE_P_OCTAVE: m->octave = clampi(v, -1, 1); retune(m); break;
+    case REFTONE_P_OCTAVE: m->octave = clampi(v, REFTONE_OCT_MIN, REFTONE_OCT_MAX); retune(m); break;
     case REFTONE_P_VOLUME: m->volume = clampi(v, 0, 100); break;
     default: break;
     }

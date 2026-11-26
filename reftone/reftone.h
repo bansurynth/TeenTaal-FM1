@@ -3,7 +3,7 @@
  * Parameters (reftone_set_param): the shared tuning (DSP_P_A4_DHZ, DSP_P_SA_CENTS, DSP_P_TEMPERAMENT) and
  *   REFTONE_P_ON      0 / 1        on fades in, off fades out (20 ms)
  *   REFTONE_P_SWARA   0..11        SW_SA .. SW_NI (dsp/tuning.h)
- *   REFTONE_P_OCTAVE  -1..+1       mandra, madhya, tar saptak
+ *   REFTONE_P_OCTAVE  -3..+3       octaves from Sa (the key tone uses up to -3..+2 for F2..G4)
  *   REFTONE_P_VOLUME  0..100       percent, on a squared curve
  * Changes never click: the gain moves in linear ramps, the phase is continuous. */
 #pragma once
@@ -19,6 +19,8 @@ enum {
 };
 
 #define REFTONE_LEVEL 0.5f             /* volume 100 % = -6 dBFS before the mixer; fades: dsp/ramp.h */
+#define REFTONE_OCT_MIN (-3)
+#define REFTONE_OCT_MAX 3
 
 typedef struct {
     tuning_t tuning;

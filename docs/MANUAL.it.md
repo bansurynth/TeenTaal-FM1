@@ -15,7 +15,7 @@ schermata. All'accensione è tutto spento; le impostazioni salvate tornano come 
  9 /16          KHALI                      ← la matra che suona ora: rossa sul sam, blu nel khali
  X       2       0       3                 ← il ciclo: una casella per matra, divise in vibhag
  ■ □ □ □ □ □ □ □ ■ □ □ □ □ □ □ □
- TANPURA ON     PA J50 V100                ← prima corda, jawari, volume
+ TANPURA ON     PA J75 V100                ← prima corda, jawari, volume
  TONE    OFF    SA V70                     ← swara del tono, ottava, volume
  CPU …  TABLA V100
 ```
@@ -29,13 +29,13 @@ schermata. All'accensione è tutto spento; le impostazioni salvate tornano come 
 | **ARP** | tono di riferimento acceso / spento |
 | **un tasto** | il tono su quello swara **finché lo tieni premuto** (come un harmonium) |
 | **SEL + un tasto** | imposta Sa alla nota (i cents restano) |
-| **FX + un tasto fisico C4-C5** | con entrambi i tanpura spenti, pizzica una corda un'ottava sotto la nota premuta, senza cambiare Sa |
+| **FX + un tasto da C4 a G4** | con entrambi i tanpura spenti, pizzica una corda un'ottava sotto la nota premuta, senza cambiare Sa |
 | **SEL + OCT− / OCT+** | il Sa un'ottava sotto / sopra |
 | **PRESETS** | il Sa di un cent per scatto |
 | **SELECT** | il taal; se i tabla suonano, il nuovo taal parte **alla fine del ciclo** |
 | **KNOB1** | il tempo, 1 matra al minuto per scatto (**SEL + KNOB1**: 10) |
 | **KNOB2 / KNOB3 / KNOB4** | volume di tanpura / tabla / tono |
-| **ALGORITHM** | jawari (il ronzio del tanpura: dal filo vicino al ponte, più brillante, a lontano) |
+| **ALGORITHM** | jawari: la posizione del filo di cotone, 75 o 100. In senso orario 100, in antiorario 75 |
 | **OCT− / OCT+** | l'ottava del tono (mandra, madhya, tar) |
 | **MASTER** | volume generale |
 | **EDIT** | le impostazioni (sotto); **HOME** torna indietro |
@@ -47,10 +47,9 @@ la tastiera mostra dove sono gli swara rispetto al Sa scelto.
 ## Il Sa
 
 Il Sa di default è **La3 (220 Hz)**, adatto a un bansuri in La (il Sa del flauto è un'ottava sopra). Per un bansuri
-in Sol: **SEL + il primo tasto Sol a sinistra** (Sol3, 196 Hz). Il tanpura suona un'ottava sotto il tuo Sa (si può cambiare in EDIT → TANPURA
-REGISTER). Il dayan dei tabla si accorda da solo sul Sa.
+in Sol: **SEL + il tasto del Sol3** (196 Hz). I 27 tasti danno da F2 a G4, una nota per tasto; SEL + OCT− / OCT+ sposta il Sa di un'ottava. Il tanpura suona sulla nota del Sa che vedi (di default La3). Il dayan dei tabla si accorda da solo sul Sa.
 
-Con entrambi i tanpura spenti, tieni premuto FX e premi un tasto fisico C4-C5: parte una sola corda del primo tanpura
+Con entrambi i tanpura spenti, tieni premuto FX e premi un tasto da C4 a G4: parte una sola corda del primo tanpura
 un'ottava sotto la nota premuta, senza cambiare Sa. Se uno dei tanpura è acceso, la combinazione FX non avvia la corda;
 SEL + un tasto imposta sempre Sa.
 

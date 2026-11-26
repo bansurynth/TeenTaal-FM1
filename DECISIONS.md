@@ -104,6 +104,34 @@ Formato: data — decisione — motivazione — alternative scartate.
 - `tools/reference/pitch_grid.py` misura ora i residui usando il renderer compensato; il profilo di anteprima usa invece
   il modello grezzo senza compensazione. I residui del renderer non rigenerano direttamente le tabelle originali.
 
+### 2026-11-26 — Tastiera F2–G4: un tasto, una nota (richiesta di ElectroNick)
+- SEL + tasto imposta il Sa alla nota del tasto: tasto 0 = F2, tasto 26 = G4, un tasto per semitono (27 tasti). Prima
+  i tasti erano ripiegati su C3–B3. I cents fini restano.
+- Il tono del singolo tasto prende l'ottava rispetto al Sa centrale. Con Sa tra −1900 e +700 cents l'ottava va da −3 a
+  +2, quindi la clamp del tono di riferimento è ±3 (`REFTONE_OCT_MIN/MAX`). I pulsanti OCT− / OCT+ restano entro ±1.
+- Anteprima FX (con entrambi i tanpura spenti): tasto da C4 a G4 pizzica una corda un'ottava sotto la nota del tasto
+  (C4..G4 → C3..G3). Sotto C4 non c'è anteprima, come prima.
+- La base (`platform/fm1-base/include/plat.h`) chiama i 27 tasti F3…G5. Il firmware segue la richiesta F2–G4. Da
+  verificare sul device: se le etichette fisiche sono F3–G5, la mappatura va rivista.
+
+### 2026-11-26 — Jawari a due valori: 75 e 100 (richiesta di ElectroNick)
+- Il jawari è 75 (LO) o 100 (HI), non più un valore libero. Le tabelle di intonazione hanno due colonne (standard e
+  upper). Default 75, prima 50. Scartata l'opzione "100 fisso" (chiesta prima, poi superata).
+- Pulsante ALGORITHM: senso orario → 100, antiorario → 75. Geometria del contatto: 75 → 7 mm, 100 → 8 mm.
+- Tabelle rigenerate con `tools/reference/calibrate_pitch.py`: standard 1794/1794 punti, residuo 0,31 cent; upper
+  644/644, residuo 0,29 cent. Sa da −1900 (F2) a +700 (G4).
+
+### 2026-11-26 — Effetti tolti: reverb, delay ed echo (richiesta di ElectroNick)
+- Eliminati `mixer/fx.c` e `mixer/fx.h`, le righe e le impostazioni dell'interfaccia e gli scenari `fx.*`. Il buffer
+  dell'echo (17,6 KB) e quelli di reverb e delay non esistono più. La pizzicata FX + tasto resta: è un'altra funzione.
+- Versione del record di impostazioni: 7. I record precedenti vengono scartati e il primo avvio riparte dai default.
+- Build target: .data+.bss 67 920 di 98 304 B; pool 178 848 di 344 064 B.
+
+### 2026-11-26 — Test di stress del tanpura: finestre a cicli interi
+- Il test 2 di `tanpura_stress` confrontava il picco del primo attacco con una finestra parziale del ciclo di 5 s, e
+  falliva di circa 6 dB senza instabilità. Le finestre ora coprono cicli interi (10 s in quick, 20 s in full).
+  L'inviluppo è periodico con periodo di 5 s: il suono non cresce.
+
 ### 2026-11-17 — Più modi sulle note alte del tanpura
 - Il limite statico resta a 96 modi per corda: nei render ad alta Sa non era quello il limite, ma il taglio `fmax`.
 - Il taglio per corda cresce da 1x a Sa C4 fino a 2x a G4; sotto C4 resta invariato. A G4 i modi attivi sulle quattro corde standard passano da 151 a 238.

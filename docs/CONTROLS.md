@@ -13,12 +13,12 @@ settings live on one separate page (EDIT).
 | ARP | reference tone on / off | — |
 | key | the tone on that swara while held (the last key pressed wins) | — |
 | SEL + key | Sa = that key's note, cents kept | — |
-| FX + physical C4-C5 | with both tanpuras off, pluck one string an octave below the key without changing Sa | — |
+| FX + a key from C4 to G4 | with both tanpuras off, pluck one string an octave below the key without changing Sa | — |
 | SEL + OCT− / OCT+ | Sa an octave down / up | — |
 | OCT− / OCT+ | the tone's octave | — |
 | SELECT | the taal (round the list); while playing, the change waits for the end of the cycle | the row |
 | PRESETS | Sa by one cent | the row's value |
-| ALGORITHM | jawari | jawari |
+| ALGORITHM | jawari: 75 or 100 (clockwise 100, counter-clockwise 75) | the same |
 | KNOB1 | tempo (SEL: ×10) | tempo |
 | KNOB2, KNOB3, KNOB4 | tanpura, tabla, tone volume | the same |
 | EDIT / HOME | to the EDIT page / back | temperament, cycle, first string, tuning, irregularity, shared tanpura low-pass cutoff (2.0-8.5 kHz), and other settings |

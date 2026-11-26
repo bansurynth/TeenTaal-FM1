@@ -12,29 +12,28 @@ static int32_t reg_offset(const tanpura_t *m);   /* (the register: below) */
 #define TANPURA_LEVEL 0.151f       /* body output -> full scale: RMS about -23.5 dBFS after LEVEL_DB, the worst peak -1.4 */
 
 /* loudness compensation (dB to add), measured by tools/reference/level_grid.py (RMS over 3 cycles) so that neither
- * Sa nor the jawari changes the loudness: rows Sa (cents above C4), columns jawari 0, 25, 50, 75, 100 */
+ * Sa nor the jawari changes the loudness: rows Sa (cents above C4), columns jawari 75, 100 */
 static const float LEVEL_SA[6] = {-1800.0f, -1500.0f, -1000.0f, -300.0f, 0.0f, 700.0f};
-static const float LEVEL_DB[6][5] = {
-    {-0.5f, 0.9f, 2.1f, 3.7f, 5.9f},
-    {-1.1f, -0.6f, 0.0f, 1.8f, 3.9f},
-    {-0.4f, 0.9f, 1.6f, 2.1f, 3.1f},
-    {1.5f, 1.9f, 2.3f, 2.4f, 2.8f},
-    {1.8f, 2.2f, 3.0f, 3.7f, 4.0f},
-    {3.0f, 4.6f, 4.5f, 4.6f, 5.3f},          /* G4, jawari 0: +3.0, not the measured +6.1: its peaks stand 22 dB over its
-                                                RMS, and with the irregularity they clipped (tools/test/tanpura_stress) */
+static const float LEVEL_DB[6][PITCH_JAWARI_N] = {
+    {3.7f, 5.9f},
+    {1.8f, 3.9f},
+    {2.1f, 3.1f},
+    {2.4f, 2.8f},
+    {3.7f, 4.0f},
+    {4.6f, 5.3f},
 };
 
 static int32_t clampi(int32_t v, int32_t lo, int32_t hi) { return v < lo ? lo : v > hi ? hi : v; }
 
-/* the jawari takes five values (no interpolation across them): the nearest of 0, 25, 50, 75, 100 */
+/* the jawari takes two values (no interpolation across them): 75 or 100, the nearer of the two */
 static int32_t jawari_snap(int32_t v)
 {
-    return TANPURA_JAWARI_STEP * ((clampi(v, 0, 100) + TANPURA_JAWARI_STEP / 2) / TANPURA_JAWARI_STEP);
+    return clampi(v, 0, 100) <= (TANPURA_JAWARI_LO + TANPURA_JAWARI_HI) / 2 ? TANPURA_JAWARI_LO : TANPURA_JAWARI_HI;
 }
 
 static int jawari_column(const tanpura_t *m)
 {
-    return m->jawari / TANPURA_JAWARI_STEP;
+    return m->jawari == TANPURA_JAWARI_HI;
 }
 
 /* a loudness column at Sa: linear in Sa */
@@ -174,11 +173,11 @@ void tanpura_default_config(tanpura_config_t *cfg)
     cfg->eq = 0;                                 /* off: ElectroNick heard no difference (step 2b) */
 }
 
-/* the register (step 3): the tanpura an octave under the player's Sa (1, "large": the default) when that stays in
- * the range the strings cover (Sa F#2 and up), else at the Sa itself */
+/* the register (step 3): the tanpura an octave under the player's Sa (1, "large": the default) when that stays at or above
+ * F#2 (Sa F#3 and up), else at the Sa itself. The bound is its own: the keyboard's F2 Sa does not move the register */
 static int32_t reg_offset(const tanpura_t *m)
 {
-    return m->reg && m->tuning.sa_cents - 1200 >= TUNING_SA_MIN ? -1200 : 0;
+    return m->reg && m->tuning.sa_cents - 1200 >= REG_LOWEST_CENTS ? -1200 : 0;
 }
 
 /* the string parameters for string j at the current settings */
@@ -284,7 +283,7 @@ void tanpura_init(tanpura_t *m, const tanpura_config_t *cfg)
     else
         tanpura_default_config(&m->cfg);
     m->tuning = m->cfg.tuning;
-    m->on = 0, m->mute = 0, m->first = SW_PA, m->extra = -1, m->jawari = 50, m->cycle = 50, m->human = 50, m->reg = 1;
+    m->on = 0, m->mute = 0, m->first = SW_PA, m->extra = -1, m->jawari = TANPURA_JAWARI_LO, m->cycle = 50, m->human = 50, m->reg = 1;
     m->filter_hz = TANPURA_FILTER_MAX_HZ, m->lp_stage_ready = 0;
     lowpass_coefficients(m->lp_coef, m->filter_hz);
     m->start_req = m->extra_silence_req = 0;

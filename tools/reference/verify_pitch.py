@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check tanpura pitches between the calibration grid points (Sa interpolated), with the five jawari values.
+"""Check tanpura pitches between the calibration grid points (Sa interpolated), with the two jawari values (75, 100).
 
 Run after building the probe: python3 tools/reference/verify_pitch.py --all-notes --jobs 4
 Reports all cases beyond 0.5 cents and fails if any exceeds that limit.
@@ -12,20 +12,20 @@ import random
 from calibrate_pitch import render_pitch
 
 LIMIT_CENTS = 0.5
-JAWARI_VALUES = (0, 25, 50, 75, 100)
+JAWARI_VALUES = (75, 100)
 
 
 def cases():
     rng = random.Random(20261120)
     for kind, count in (("first", 500), ("sa", 200), ("kharaj", 200), ("preview", 200)):
         for _ in range(count):
-            sa, reg, jawari = rng.randint(-1800, 700), rng.randrange(2), rng.choice(JAWARI_VALUES)
+            sa, reg, jawari = rng.randint(-1900, 700), rng.randrange(2), rng.choice(JAWARI_VALUES)
             selection = rng.randrange(18) if kind == "first" else rng.randrange(-12, 1) * 100 if kind == "preview" else 0
             fine = 0 if kind == "preview" else rng.randint(-50, 50)
             a4 = rng.choice((4150, 4320, 4400, 4460, 4660, rng.randint(4150, 4660)))
             yield kind, sa, reg, jawari, selection, fine, a4
 
-    sas = (-1800, -1200, -500, 0, 350, 500, 600, 700)
+    sas = (-1900, -1800, -1200, -500, 0, 350, 500, 600, 700)
     tuning = ((-50, 4150), (-50, 4400), (-43, 4460), (0, 4400), (50, 4400), (50, 4660))
     for sa, reg, jawari, swara, (fine, a4) in itertools.product(
             sas, (0, 1), JAWARI_VALUES, (0, 10, 11, 12, 16, 17), tuning):
@@ -39,7 +39,7 @@ def measure(case):
 
 
 def all_note_cases():
-    for sa, reg, jawari in itertools.product(range(-1800, 701, 100), (0, 1), JAWARI_VALUES):
+    for sa, reg, jawari in itertools.product(range(-1900, 701, 100), (0, 1), JAWARI_VALUES):
         for swara in range(18):
             yield "first", sa, reg, jawari, swara, 0, 4400
         yield "sa", sa, reg, jawari, 0, 0, 4400
@@ -72,7 +72,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--jobs", type=int, default=4, help="parallel probe processes (default: 4)")
     parser.add_argument("--all-notes", action="store_true",
-                        help="also check all 26 semitone Sa values, both registers, all five jawari values and all swaras")
+                        help="also check all 27 Sa values (F2..G4), both registers, both jawari values and all swaras")
     args = parser.parse_args()
     if args.jobs < 1:
         parser.error("--jobs must be positive")

@@ -1,5 +1,5 @@
 /* tanpura_stress — step 2b robustness of the float tanpura (tanpura/), host:
- *   1. every Sa from F#2 to G4 (6 values) x jawari 0, 50, 100 x first string Pa, Ma, Ni: 40 s each, the output finite,
+ *   1. every Sa from F2 to G4 (6 values) x jawari 75, 100 x first string Pa, Ma, Ni: 40 s each, the output finite,
  *      no clipping, the loudness steady (the last 10 s within 2x the peak of the first 10 s: nothing grows)
  *   2. every swara for the extra string at low, middle and high Sa: finite, no clipping, stable loudness
  *   3. one string, one pluck, 60 s, at both ends of the Sa range and of the thread: the modal energy sampled every
@@ -63,7 +63,7 @@ static void run(tanpura_t *t, double secs, double t_first, double t_last, stats_
 static int retune_step;
 static void retune(tanpura_t *t, long k)
 {
-    static const int32_t SA[] = {-1800, -300, -1500, 700, -1000, 0};
+    static const int32_t SA[] = {-1900, -300, -1500, 700, -1000, 0};
     tanpura_set_param(t, DSP_P_SA_CENTS, SA[k % 6]);
     tanpura_set_param(t, TANPURA_P_FIRST, (int32_t)(k * 5 % 12));
     tanpura_set_param(t, TANPURA_P_JAWARI, (int32_t)(k * 37 % 101));
@@ -89,9 +89,9 @@ static double lowpass_response(const float c[2][5], double hz)
 int main(int argc, char **argv)
 {
     static tanpura_t t;
-    static const int32_t SA[] = {-1800, -1500, -1000, -300, 0, 700};
-    static const char *const SAN[] = {"F#2", "A2", "D3", "A3", "C4", "G4"};
-    static const int32_t JW[] = {0, 50, 100}, FIRST[] = {SW_PA, SW_MA, SW_NI};
+    static const int32_t SA[] = {-1900, -1500, -1000, -300, 0, 700};
+    static const char *const SAN[] = {"F2", "A2", "D3", "A3", "C4", "G4"};
+    static const int32_t JW[] = {75, 100}, FIRST[] = {SW_PA, SW_MA, SW_NI};
     int quick = argc > 1 && !strcmp(argv[1], "quick");
     char buf[160];
     int a, b, c;
@@ -99,7 +99,7 @@ int main(int argc, char **argv)
     /* 1 */
     printf("1. range x thread x first string, %d s each\n", quick ? 12 : 40);
     for (a = 0; a < 6; a++)
-        for (b = 0; b < 3; b++)
+        for (b = 0; b < 2; b++)
             for (c = 0; c < 3; c++) {
                 double secs = quick ? 12 : 40;
                 tanpura_init(&t, NULL);
@@ -118,19 +118,20 @@ int main(int argc, char **argv)
                 }
             }
     /* 2 */
-    printf("2. every extra-string swara at low, middle and high Sa, %d s each\n", quick ? 6 : 20);
+    printf("2. every extra-string swara at low, middle and high Sa, %d s each\n", quick ? 10 : 20);
     {
         static const int sa_idx[] = {0, 3, 5};
-        static const char *const sa_name[] = {"F#2", "A3", "G4"};
+        static const char *const sa_name[] = {"F2", "A3", "G4"};
         int i, sw;
-        double secs = quick ? 6 : 20;
+        double secs = quick ? 10 : 20;
+        const double cyc = 5.0;     /* one cycle at the default cycle setting (50 = 5 s): compare whole cycles */
         for (i = 0; i < 3; i++)
             for (sw = 0; sw < 18; sw++) {
                 tanpura_init(&t, NULL);
                 tanpura_set_param(&t, DSP_P_SA_CENTS, SA[sa_idx[i]]);
                 tanpura_set_param(&t, TANPURA_P_EXTRA, sw);
                 tanpura_set_param(&t, TANPURA_P_ON, 1);
-                run(&t, secs, secs / 4, secs * 3 / 4, &st, NULL, 1);
+                run(&t, secs, cyc, secs - cyc, &st, NULL, 1);
                 snprintf(buf, sizeof buf, "peak %.1f dBFS first, %.1f dBFS last; %ld clipped, %ld non-finite",
                          20 * log10(st.peak_first / DSP_Q23_MAX + 1e-12),
                          20 * log10(st.peak_last / DSP_Q23_MAX + 1e-12), st.clipped, st.nonfinite);
@@ -145,7 +146,7 @@ int main(int argc, char **argv)
     /* 3 */
     printf("3. one string, one pluck, 60 s: the energy never rises\n");
     for (a = 0; a < 6; a += 5)
-        for (b = 0; b < 3; b += 2) {
+        for (b = 0; b < 2; b++) {
             static tstring_t s;
             static tstring_coefs_t co;
             tstring_par_t p;

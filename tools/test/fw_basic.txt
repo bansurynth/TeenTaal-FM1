@@ -7,13 +7,13 @@ expect register 0
 expect tan_on 0
 expect tan2_on 0
 expect peak 0
-# SEL always sets Sa; FX + physical C4-C5 previews one string an octave lower while both tanpuras are off
+# SEL always sets Sa (keys 0..26 = F2..G4); FX + C4-G4 (keys 19..26) previews one string an octave lower (C3..G3) while both tanpuras are off
 peakreset
 press SEL
 tapkey 6
 release SEL
 wait 100
-expect sa_cents -100
+expect sa_cents -1300
 expect tan_preview 0
 expect peak 0
 press SEL
@@ -25,6 +25,11 @@ expect tan_preview 0
 expect peak 0
 press FX
 tapkey 7
+release FX
+wait 100
+expect tan_preview 0
+press FX
+tapkey 19
 release FX
 wait 100
 expect sa_cents -1200
@@ -33,12 +38,12 @@ expect tan_preview_cents -1200
 expect kt_key -1
 expect peak >0
 press FX
-tapkey 19
+tapkey 26
 release FX
 wait 100
 expect sa_cents -1200
 expect tan_preview 1
-expect tan_preview_cents 0
+expect tan_preview_cents -500
 # the tanpuras on: SEQ starts both
 tap SEQ
 wait 3000
@@ -48,7 +53,7 @@ expect peak >200000
 expect tan_preview 0
 expect jobs >400
 shot main_tanpura_on.png
-# With a tanpura on, SEL still sets Sa and FX + C4-C5 does not preview
+# With a tanpura on, SEL still sets Sa and FX + C4-G4 does not preview
 press SEL
 tapkey 8
 release SEL
@@ -56,14 +61,14 @@ wait 200
 expect sa_cents -1100
 expect tan_preview 0
 press FX
-tapkey 7
+tapkey 19
 release FX
 wait 100
 expect sa_cents -1100
 expect tan_preview 0
-# Sa: SEL + the G key (key 2 = G3), then a cent up and down on PRESET
+# Sa: SEL + the G key (key 14 = G3), then a cent up and down on PRESET
 press SEL
-tapkey 2
+tapkey 14
 release SEL
 wait 200
 expect sa_cents -500
@@ -83,8 +88,15 @@ expect tan_sa 700
 turn ALGO 10
 turn K2 -4
 wait 200
-expect jawari 70
+expect jawari 100
 expect tan_vol 80
+# ALGORITHM toggles the two jawari values: counter-clockwise 75, clockwise 100
+turn ALGO -10
+wait 100
+expect jawari 75
+turn ALGO 10
+wait 100
+expect jawari 100
 # the tone: ARP, its octave up
 tap ARP
 tap OCT+
@@ -213,23 +225,33 @@ tap PLAY
 wait 2500
 expect taal_on 0
 expect peak 0
-# step 8: a key alone sounds the tone on its swara while held (Sa is G4 here: key 14 = G4 = Sa, key 16 = A4 = Re)
+# step 8: a key alone sounds the tone on its swara while held (Sa is G4 here: key 26 = G4 = Sa, key 16 = A3 = Re an octave down, key 0 = F2 three octaves down)
 expect unsaved 1
 expect octave 1
-key 14 down
+key 26 down
 wait 200
 expect ref_on 1
 expect swara 0
 expect octave 0
-expect kt_key 14
+expect kt_key 26
 key 16 down
 wait 200
 expect swara 2
+expect octave -1
 leds
 key 16 up
 wait 100
 expect swara 0
-key 14 up
+expect kt_key 26
+key 0 down
+wait 200
+expect swara 10
+expect octave -3
+expect kt_key 0
+key 0 up
+wait 100
+expect kt_key 26
+key 26 up
 wait 300
 expect ref_on 0
 expect octave 1
@@ -294,6 +316,7 @@ expect tan2_extra 16
 expect tan2_on 0
 expect tab_vol 90
 expect sa_cents 700
+expect jawari 100
 expect tan_on 0
 expect taal_on 0
 expect unsaved 0
@@ -333,7 +356,7 @@ expect a4_dhz 4400
 expect first 7
 expect temperament 0
 expect register 0
-expect jawari 50
+expect jawari 75
 expect cycle 50
 expect tan2_cycle 50
 expect tan_human 50

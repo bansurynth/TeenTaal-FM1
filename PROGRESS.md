@@ -1,6 +1,38 @@
 # PROGRESS
 
-## Stato: tanpura a cutoff 1×, cap 80 (2026-11-25)
+## Stato: tasti F2–G4, jawari 75/100, effetti rimossi (2026-11-26)
+
+### Fatto
+- Tabelle di intonazione del tanpura rigenerate con `calibrate_pitch.py`: standard 1794/1794 punti, residuo 0,31 cent; upper 644/644, residuo 0,29 cent. `PITCH_JAWARI_N = 2`, Sa da −1900 (F2).
+- Tastiera a 27 tasti: tasto 0 = F2, tasti 0..26 = F2..G4, un tasto una nota. C4 = tasto 19 (cents relativi a C4). SEL + nota imposta il Sa su tutta la tastiera. Il vecchio fold su C3..B3 è stato tolto.
+- Jawari a due valori, 75 e 100. `ALGORITHM` su `HI` (100) in senso orario, `LO` (75) in senso antiorario. Default `LO`. Geometria del punto di contatto 7 mm (75) e 8 mm (100).
+- Effetti rimossi: `mixer/fx.c` e `fx.h` cancellati, righe e impostazioni tolte dalla UI, `fx.*` tolti da `scen.c`. Settings record versione 7: i record vecchi vengono scartati e il primo avvio usa i default. Liberati circa 17,6 KB di buffer echo più reverb e delay.
+- Tasto FX (pluck di anteprima) attivo su C4..G4, con pitch (k−19)·100 − 1200.
+- Bug corretto: `ui_key_tone` limitava l'ottava a ±1, ma con Sa tra −1900 e 700 i tasti F2–G4 richiedono −3..+2. Range ampliato a ±3 (`REFTONE_OCT_MIN/MAX`). I pulsanti OCT± restano entro ±1.
+- `tanpura_stress`, test 2: finestre a cicli interi (10 s in quick, 20 s in full, ciclo 5 s). Il fallimento era un errore di allineamento delle finestre, non instabilità: l'inviluppo è periodico con periodo 5 s e picchi di ciclo a circa −9,2 / −11,5 / −12 / −9,7 dBFS.
+- Documentazione aggiornata: `docs/MANUAL.md`, `docs/MANUAL.it.md`, `docs/CONTROLS.md`, `docs/CONTROLS.it.md`, `docs/DEVELOPMENT.md`. Quattro nuove voci in `DECISIONS.md` datate 2026-11-26.
+
+### Misure e test
+- `make build-host/regress build-host/render build-host/tanpura_stress`: compilazione pulita con `-Werror`.
+- `./build-host/regress`: 0 fallimenti, exit 0. Costo peggiore 79,68 % (budget 85 %). Golden rigenerati (`GOLDEN_UPDATE=1`): cambiano solo gli hash tanpura e `taal_teentaal_tanpura`. Tabla, taal-only e mixer invariati.
+- `tanpura_stress quick` e full: 0 fallimenti, exit 0. Nessun clipping, nessun valore non finito.
+- Simulatore host (`sh tools/fw.sh --host`, `fw_basic.txt`): 204 ok, 0 FAIL.
+- Build target (`sh tools/fw.sh`, Docker via Colima): exit 0, nessuna riga di errore o warning. Immagine app 421 020 B. `.ram_text` 5 800 / 32 768 B. `.data+.bss` 67 920 / 98 304 B. Pool 178 848 / 344 064 B (circa 48 % libero). Pacchetto `build/teentaal.fwsc` 614 938 B, identità FM-1_7700, build C47533FE.
+- Controlli su simboli: nessuna routine soft-double, accesso ai registri solo tramite felucca-bsp, stack Bluetooth proprio.
+- Nessun flash in questa tornata. L'ultimo flash è quello già confermato da ElectroNick ("così va bene, regge tutto").
+
+### Aperto
+- `tools/test/cpu_baseline.txt` è obsoleto: contiene ancora `cpu/tan_Fs2_j0_Ma`. Il controllo CPU usa `perf_event_open`, disponibile solo su Linux. Su WSL va eseguito `BUDGET_UPDATE=1 ./build-host/regress` per rigenerarlo. Fino ad allora `tan_Fs2_j75_Ma` e gli scenari tanpura cambiati falliscono il controllo CPU su WSL.
+- Il default del jawari è passato da 50 a 75 (`LO`). Da confermare con ElectroNick.
+- Le etichette fisiche dei tasti: il base layer (`platform/fm1-base/include/plat.h`, riga 53) chiama il tasto 0 F3. Il firmware lo mappa su F2, come richiesto. Verificare sul device dopo il flash.
+- Il loudness di F2 è estrapolato da F#2 (`LEVEL_SA` clampato). Da misurare se suona fuori livello.
+- Il registro resta spento sul device (`reg 0`), quindi il tanpura suona la nota mostrata. Il manuale italiano diceva il contrario ed è stato corretto. Confermare che è il comportamento voluto.
+- `tanpura_stress` test 1 (quick, 12 s) usa ancora finestre a ciclo parziale. Passa, ma è un punto debole: allinearlo a cicli interi.
+- `docs/audio/README.md` cita `01_tanpura_Pa_SaA2_jawari50.wav`, una registrazione vecchia. Da rigenerare quando serve.
+- `docs/CONTROLS.md`, riga EDIT: cita un "low-pass cutoff (2.0-8.5 kHz)" che non trovo in `ui.c`. Verificare prima di usarla come riferimento.
+- Push: `origin` risponde 403. Il fork `bansurynth` richiede approvazione esplicita. Nessun force-push.
+
+## Stato precedente: tanpura a cutoff 1×, cap 80 (2026-11-25)
 
 ### Fatto
 - `fmax` ripristinato al valore del commit (6000/8000/3000 Hz). Cap dei modi a 80.
@@ -15,8 +47,8 @@
 - Letture device: CPU 99 con E3 (tipo di lettura da confermare: CPU0 o TANPURA MEAN/MAX). Servono le letture a C3, D3, F3, A3 con tan2 spento.
 - Rigenerare le tabelle di pitch (std e upper) per il cutoff attuale, poi rigenerare i golden.
 - Trasformare l'hook `TANPURA_MAXM` in costante.
-- Pool margin ~5 % libero contro 25 % richiesto da CLAUDE.md.
-- Effetti (ECHO, REVERB, DELAY) non coperti da regress.
+- Pool margin ~5 % libero contro 25 % richiesto da CLAUDE.md. *Superato (2026-11-26): pool 48 % libero, vedi sezione sopra.*
+- Effetti (ECHO, REVERB, DELAY) non coperti da regress. *Superato (2026-11-26): effetti rimossi.*
 - Commit locali (non ancora su origin): `2e1c3db` (tanpura cap 80, cutoff 1×, effetti, UI, tooling) e `c837475` (CLAUDE.md, test su device solo su richiesta esplicita).
 - Push su `origin main` bloccato: 403, l'account git attivo (`bansurynth`) non ha permesso di scrittura su ELENICK97/TeenTaal-FM1. origin/main (`5f206c4`) è antenato dei commit locali, quindi basta un push normale, senza force. Il remote `fork` non va usato: Pages si aggiorna solo da `origin`.
 - Rigenerazione delle tabelle di intonazione: il processo è terminato senza scrivere. `pitch_coefs.h` e `pitch_upper_coefs.h` sono ancora quelli committati, da rigenerare.

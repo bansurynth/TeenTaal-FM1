@@ -15,7 +15,7 @@ fisso e nessun menu; le impostazioni che si toccano di rado stanno in una pagina
                          │ schermo  │   [FX ][SCL][ENV][LFO][EDIT][GLO]
  PRESETS ALGORITHM       │ 240×240  │   [HOME][SAVE][ARP][SEQ][PLAY][REC]
  [OCT-][OCT+]            └──────────┘
- 27 tasti: F3 … G5 (16 bianchi, 11 neri)
+ 27 tasti: F2 … G4 (16 bianchi, 11 neri)
 ```
 
 ## Schermata principale (proposta)
@@ -32,14 +32,15 @@ fisso e nessun menu; le impostazioni che si toccano di rado stanno in una pagina
 | **MASTER** | volume generale (come oggi) |
 | **SELECT** | taal: ruoti per scegliere (nome sullo schermo) |
 | **PRESETS** | Sa fine: ±1 cent per scatto |
-| **ALGORITHM** | jawari (posizione del filo) |
+| **ALGORITHM** | jawari: 75 o 100 (in senso orario 100) |
 | **OCT− / OCT+** | ottava del tono di riferimento (mandra / madhya / tar) |
 | **SCL + tasto** | Sa = la nota di quel tasto (i cents fini restano) |
 | **tasto da solo** | tono di riferimento sullo swara di quel tasto, rispetto al Sa (vedi domanda 2) |
 | **EDIT** | pagina delle impostazioni (sotto) |
 | **HOME** | torna alla schermata principale |
 | **SAVE** | salva le impostazioni (vedi domanda 4) |
-| FX, ENV, LFO, GLO, REC | non usati |
+| FX + un tasto da C4 a G4 | con entrambi i tanpura spenti, pizzica una corda un'ottava sotto la nota del tasto (vedi MANUAL.it.md) |
+| ENV, LFO, GLO, REC | non usati |
 
 I tasti dalla nota del Sa in su si illuminano sui swara della scala (Sa e Pa più accesi), così la tastiera
 mostra dove sono gli swara rispetto al Sa scelto.

@@ -31,7 +31,7 @@ ending with a stop for ElectroNick to listen and approve:
 | Audio | 44117.647 Hz (24 MHz / 544), stereo Q23 in int32, blocks of 256 frames |
 | Flash | 1 MB; application slot 581,564 B |
 | RAM | `.data+.bss` 96 KB, pool 336 KB, RAM code 32 KB |
-| Panel | 240×240 LCD, 27 keys (F3–G5), 14 buttons, 7 encoders, MASTER pot |
+| Panel | 240×240 LCD, 27 keys (F2–G4 in the firmware; the base layer labels them F3–G5, to check on the device), 14 buttons, 7 encoders, MASTER pot |
 
 ## Layout
 

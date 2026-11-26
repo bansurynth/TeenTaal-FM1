@@ -78,14 +78,14 @@ static scenario_t SC[] = {
     {"tan_G3_cycle_human", 12, {"0:sa=G3", "0:tan.human=50", "0:tan2.on=1", "0:tan.on=1"},
      0, 0, -1, 1, 0},
     {"tan_preview_G3", 6, {"0:sa=G3", "0:tan.reg=1", "0:tan.preview=G3"}, 0, 0, -1, 1, 0},
-    {"tan_Fs2_j0_Ma", 6, {"0:sa=F#2", "0:tan.jawari=0", "0:tan.first=Ma", "0:tan2.on=1", "0:tan.on=1"},
+    {"tan_Fs2_j75_Ma", 6, {"0:sa=F#2", "0:tan.jawari=75", "0:tan.first=Ma", "0:tan2.on=1", "0:tan.on=1"},
      0, 0, -1, 1, 0},
     {"tan_G4_j100_Ni", 6, {"0:sa=G4", "0:tan.reg=0", "0:tan.jawari=100", "0:tan.first=Ni", "0:tan2.on=1",
                            "0:tan.on=1"},
      0, 0, -1, 1, 0},
-    {"tan_retune", 6, {"0:sa=A2", "0:tan2.on=1", "0:tan.on=1", "1:sa=A2+30", "1.5:tan.jawari=10",
+    {"tan_retune", 6, {"0:sa=A2", "0:tan2.on=1", "0:tan.on=1", "1:sa=A2+30", "1.5:tan.jawari=75",
                        "2:tan.first=Ma", "2.5:sa=D3",
-                       "3:tan.fine1=-20", "3.5:tan.jawari=90", "4:tan.cycle=25", "4.5:tan.human=0"}, 0, 0, -1, 1, 0},
+                       "3:tan.fine1=-20", "3.5:tan.jawari=100", "4:tan.cycle=25", "4.5:tan.human=0"}, 0, 0, -1, 1, 0},
     {"tan_onoff", 5, {"0:sa=A2", "0:tan2.on=1", "0:tan.on=1", "3:tan.on=0", "3:tan2.on=0"},
      0, 0, 3.4, 1, 0},
     /* the tabla (step 5) */
@@ -266,7 +266,7 @@ static double tanpura_pitch_cents(tanpura_t *t, double target)
 
 static double sa_note_hz(int a4_dhz, int sa_cents, int reg, double relative_cents)
 {
-    int32_t offset = reg && sa_cents - 1200 >= TUNING_SA_MIN ? -1200 : 0;
+    int32_t offset = reg && sa_cents - 1200 >= REG_LOWEST_CENTS ? -1200 : 0;
     return (double)a4_dhz * 0.1 * pow(2.0, ((double)sa_cents + offset + relative_cents - 900.0) / 1200.0);
 }
 
@@ -346,42 +346,47 @@ static void tanpura_preview_pitch_check(const char *name, int sa_cents, int reg,
 
 static void tanpura_pitch_checks(void)
 {
-    int jawari;
-    tanpura_pitch_check("tan_pitch_A2", -1500, 50, 0, 1, -1, 0, 0, 4400);
-    tanpura_pitch_check("tan_pitch_E3_Pa", -800, 50, 0, 0, SW_PA, 0, -500, 4400);
-    tanpura_pitch_check("tan_pitch_E3_Sa", -800, 50, 0, 1, -1, 0, 0, 4400);
-    tanpura_pitch_check("tan_pitch_E3_kharaj", -800, 50, 0, 3, -1, 0, -1200, 4400);
-    tanpura_pitch_check("tan_pitch_Ni", -800, 50, 0, 0, SW_NI, 0, -100, 4400);
-    tanpura_pitch_check("tan_pitch_Ma", -800, 50, 0, 0, SW_MA, 0, -700, 4400);
-    tanpura_pitch_check("tan_pitch_fine", -800, 50, 0, 0, SW_PA, 37, -500, 4400);
-    tanpura_pitch_check("tan_pitch_G4", 700, 50, 0, 1, -1, 0, 0, 4400);
-    tanpura_pitch_check("tan_pitch_G4_reg", 700, 50, 1, 1, -1, 0, 0, 4400);
-    tanpura_pitch_check("tan_pitch_Ma_high", -800, 50, 0, 0, 17, 0, 500, 4400);
-    tanpura_pitch_check("tan_pitch_G3_Pa", 0, 50, 0, 0, SW_PA, 0, -500, 4400);
-    tanpura_pitch_check("tan_pitch_G3_upper", 200, 0, 1, 0, 17, 0, 500, 4400);
-    tanpura_pitch_check("tan_pitch_G3_extra", 200, 0, 1, 4, 17, 0, 500, 4400);
-    tanpura_pitch_check("tan_pitch_G3_kharaj", 700, 50, 0, 3, -1, 0, -1200, 4400);
-    tanpura_pitch_check("tan_pitch_G3_A415", -500, 50, 0, 1, -1, 0, 0, 4150);
-    tanpura_pitch_check("tan_pitch_G3_A466", -500, 50, 0, 1, -1, 0, 0, 4660);
+    int k;
+    tanpura_pitch_check("tan_pitch_A2", -1500, 75, 0, 1, -1, 0, 0, 4400);
+    tanpura_pitch_check("tan_pitch_E3_Pa", -800, 75, 0, 0, SW_PA, 0, -500, 4400);
+    tanpura_pitch_check("tan_pitch_E3_Sa", -800, 100, 0, 1, -1, 0, 0, 4400);
+    tanpura_pitch_check("tan_pitch_E3_kharaj", -800, 75, 0, 3, -1, 0, -1200, 4400);
+    tanpura_pitch_check("tan_pitch_Ni", -800, 75, 0, 0, SW_NI, 0, -100, 4400);
+    tanpura_pitch_check("tan_pitch_Ma", -800, 100, 0, 0, SW_MA, 0, -700, 4400);
+    tanpura_pitch_check("tan_pitch_fine", -800, 75, 0, 0, SW_PA, 37, -500, 4400);
+    tanpura_pitch_check("tan_pitch_G4", 700, 100, 0, 1, -1, 0, 0, 4400);
+    tanpura_pitch_check("tan_pitch_G4_reg", 700, 75, 1, 1, -1, 0, 0, 4400);
+    tanpura_pitch_check("tan_pitch_Ma_high", -800, 75, 0, 0, 17, 0, 500, 4400);
+    tanpura_pitch_check("tan_pitch_G3_Pa", 0, 75, 0, 0, SW_PA, 0, -500, 4400);
+    tanpura_pitch_check("tan_pitch_G3_upper", 200, 75, 1, 0, 17, 0, 500, 4400);
+    tanpura_pitch_check("tan_pitch_G3_extra", 200, 100, 1, 4, 17, 0, 500, 4400);
+    tanpura_pitch_check("tan_pitch_G3_kharaj", 700, 75, 0, 3, -1, 0, -1200, 4400);
+    tanpura_pitch_check("tan_pitch_G3_A415", -500, 75, 0, 1, -1, 0, 0, 4150);
+    tanpura_pitch_check("tan_pitch_G3_A466", -500, 100, 0, 1, -1, 0, 0, 4660);
     tanpura_pitch_check("tan_pitch_kharaj_fine", -500, 75, 0, 3, -1, -50, -1200, 4660);
-    tanpura_pitch_check("tan_pitch_upper_A466_fine", 500, 0, 0, 0, 17, 50, 500, 4660);
-    tanpura_pitch_check("tan_pitch_upper_Sa_A466", 700, 0, 0, 0, 12, 50, 0, 4660);
-    tanpura_pitch_check("tan_pitch_upper_large_fine", 350, 50, 1, 0, 17, 50, 500, 4660);
-    tanpura_pitch_check_volume("tan_pitch_G3_volume25", -500, 50, 0, 1, -1, 0, 0, 4400, 25, TUNING_TEMPERAMENT_EQUAL);
-    tanpura_pitch_check_volume("tan_pitch_G3_upper_volume25", 200, 0, 1, 0, 17, 0, 500, 4400, 25,
+    tanpura_pitch_check("tan_pitch_upper_A466_fine", 500, 75, 0, 0, 17, 50, 500, 4660);
+    tanpura_pitch_check("tan_pitch_upper_Sa_A466", 700, 100, 0, 0, 12, 50, 0, 4660);
+    tanpura_pitch_check("tan_pitch_upper_large_fine", 350, 75, 1, 0, 17, 50, 500, 4660);
+    tanpura_pitch_check_volume("tan_pitch_G3_volume25", -500, 75, 0, 1, -1, 0, 0, 4400, 25, TUNING_TEMPERAMENT_EQUAL);
+    tanpura_pitch_check_volume("tan_pitch_G3_upper_volume25", 200, 75, 1, 0, 17, 0, 500, 4400, 25,
                                TUNING_TEMPERAMENT_EQUAL);
-    tanpura_pitch_check("tan_pitch_upper_negative_fine", 669, 0, 0, 0, 17, -43, 500, 4460);
-    tanpura_pitch_check("tan_pitch_upper_extreme_fine", 600, 0, 0, 0, 17, 50, 500, 4660);
-    for (jawari = 0; jawari <= 100; jawari += 50) {
+    tanpura_pitch_check("tan_pitch_upper_negative_fine", 669, 75, 0, 0, 17, -43, 500, 4460);
+    tanpura_pitch_check("tan_pitch_upper_extreme_fine", 600, 100, 0, 0, 17, 50, 500, 4660);
+    /* F2 is the bottom of the range: its octave-down register would fall below F#2, so the register stays off */
+    tanpura_pitch_check("tan_pitch_F2_Pa", -1900, 75, 0, 0, SW_PA, 0, -500, 4400);
+    tanpura_pitch_check("tan_pitch_F2_Sa_reg", -1900, 100, 1, 1, -1, 0, 0, 4400);
+    for (k = 0; k < 2; k++) {
         char name[32];
+        int jawari = k == 0 ? TANPURA_JAWARI_LO : TANPURA_JAWARI_HI;
         snprintf(name, sizeof name, "tan_G3_Sa_j%d", jawari);
         tanpura_pitch_check(name, -500, jawari, 0, 1, -1, 0, 0, 4400);
         snprintf(name, sizeof name, "tan_G3_large_j%d", jawari);
         tanpura_pitch_check(name, -500, jawari, 1, 2, -1, 0, 0, 4400);
     }
-    tanpura_preview_pitch_check("tan_preview_Ma", -800, 0, 50, -300);
-    tanpura_preview_pitch_check("tan_preview_G3", -500, 1, 50, -500);
-    tanpura_preview_pitch_check("tan_preview_C4", -1800, 0, 0, 0);
+    tanpura_preview_pitch_check("tan_preview_Ma", -800, 0, 75, -300);
+    tanpura_preview_pitch_check("tan_preview_G3", -500, 1, 100, -500);
+    tanpura_preview_pitch_check("tan_preview_C4", -1800, 0, 75, 0);
+    tanpura_preview_pitch_check("tan_preview_F2", -1900, 0, 75, -1900);
 }
 
 /* each JUST swara on the first string, and the high Ma, against the target of its ratio */
@@ -394,7 +399,7 @@ static void tanpura_just_pitch_checks(void)
             if (s == 12)
                 continue;
             snprintf(name, sizeof name, "tan_just%d_swara%d", t, s);
-            tanpura_pitch_check_volume(name, -800, 50, 0, 0, s, 0, just_cents(s, t) - 1200.0, 4400, 100, t);
+            tanpura_pitch_check_volume(name, -800, 75, 0, 0, s, 0, just_cents(s, t) - 1200.0, 4400, 100, t);
         }
     }
 }

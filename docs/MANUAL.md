@@ -16,7 +16,7 @@ silent; the saved settings come back as you left them.
  9 /16         KHALI                     <- the matra playing now: red on sam, blue in khali
  X       2       0       3               <- the cycle: a cell for each matra, grouped by vibhag
  # . . . . . . . # . . . . . . .
- TANPURA ON    PA J50 V100               <- first string, jawari, volume
+ TANPURA ON    PA J75 V100               <- first string, jawari, volume
  TONE    OFF   SA V70                    <- the tone's swara, octave, volume
  CPU ...  TABLA V100
 ```
@@ -30,13 +30,13 @@ silent; the saved settings come back as you left them.
 | **ARP** | reference tone on / off |
 | **a key** | the tone on that key's swara **while you hold it** (like an harmonium) |
 | **SEL + a key** | Sa becomes that key's note (the cents are kept) |
-| **FX + a physical C4-C5 key** | with both tanpuras off, pluck one string an octave below the key without changing Sa |
+| **FX + a key from C4 to G4** | with both tanpuras off, pluck one string an octave below the key without changing Sa |
 | **SEL + OCT− / OCT+** | Sa an octave down / up |
 | **PRESETS** | Sa up or down by one cent per click |
 | **SELECT** | the taal; while the tabla play, the new taal starts **at the end of the cycle** |
 | **KNOB1** | tempo, 1 matra a minute per click (**SEL + KNOB1**: 10) |
 | **KNOB2 / KNOB3 / KNOB4** | volume of tanpura / tabla / tone |
-| **ALGORITHM** | jawari: the tanpura's buzz, from a short thread position (bright) to a long one (darker, slower) |
+| **ALGORITHM** | jawari, the position of the cotton thread: 75 or 100. Clockwise sets 100, counter-clockwise 75 |
 | **OCT− / OCT+** | the tone's octave (mandra, madhya, tar) |
 | **MASTER** | overall volume |
 | **EDIT** | the settings page (below); **HOME** goes back |
@@ -48,9 +48,9 @@ keyboard shows where the swaras are for the Sa you chose.
 ## Sa
 
 The default Sa is **A3 (220 Hz)**, for a bansuri in A (the flute's Sa is an octave higher). For a bansuri in G: **SEL
-+ the G key** (G3, 196 Hz). The keys give C3 to B3 (A3, G3, F3, E3 ...); the octave buttons move it. Sa can go from F#2 to G4. The tanpura plays at the note shown (default A3). The dayan of the tabla tunes itself to Sa (to the octave between 190 and 380 Hz).
++ the G key** (G3, 196 Hz). The 27 keys play F2 to G4, one note each. SEL + OCT− / OCT+ moves Sa by an octave; the cents are kept. The tanpura plays at the note shown (default A3). The dayan of the tabla tunes itself to Sa (to the octave between 190 and 380 Hz).
 
-With both tanpuras off, hold FX and press a physical C4-C5 key to pluck one string on the first tanpura an octave below
+With both tanpuras off, hold FX and press a key from C4 to G4 to pluck one string on the first tanpura an octave below
 that key, without changing Sa. If either tanpura is on, this FX chord does not preview; SEL + key always sets Sa.
 
 The default tanpura cycle (5 seconds) plucks its first string, Sa, Sa and the lower kharaj at 0, 1.0, 1.75 and 2.5 seconds,
